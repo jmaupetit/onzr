@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "onzr"
+version = "0.1.0"
+description = "The one-hour-late Deezer CLI."
+authors = ["Julien Maupetit <julien@maupetit.net>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+deezer-py = "^1.3.7"
+dynaconf = "^3.2.10"
+httpx = "^0.28.1"
+pycryptodomex = "^3.21.0"
+python = ">3.10"
+python-vlc = "^3.0.21203"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+ruff = "^0.9.7"
+mypy = "^1.15.0"
+
+
+[tool.ruff]
+target-version = "py310"
+# Exclude a variety of commonly ignored directories.
+exclude = []
+
+[tool.ruff.lint]
+select = [
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "D",  # pydocstyle
+    "E",  # pycodestyle error
+    "F",  # Pyflakes
+    "I",  # Isort
+    "ISC",  # flake8-implicit-str-concat
+    "PLC",  # Pylint Convention
+    "PLE",  # Pylint Error
+    "PLR",  # Pylint Refactor
+    "PLW",  # Pylint Warning
+    "RUF100",  # Ruff unused-noqa
+    "S",  # flake8-bandit
+    "T20", # flake8-print
+    "W",  # pycodestyle warning
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101", # use of assert
+]
+
+[tool.ruff.lint.pydocstyle]
+# Use Google-style docstrings.
+convention = "google"
+
+[tool.mypy]
+plugins = ""
+files = "./**/*.py"
+exclude = []
+
+[[tool.mypy.overrides]]
+module = []
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
