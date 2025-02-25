@@ -4,10 +4,11 @@ import logging
 import random
 import socket
 import struct
+from enum import IntEnum
 from socket import SocketType
 from typing import List
 
-from .deezer import DeezerClient, StreamQuality, Track
+from .deezer import DeezerClient, StreamQuality, Track, TrackStatus
 from .player import Player
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,15 @@ class Queue:
         self.current = self.tracks.pop(0)
 
 
+class OnzrStatus(IntEnum):
+    """Onzr player status."""
+
+    IDLE = 1
+    PLAYING = 2
+    PAUSED = 3
+    STOPPED = 4
+
+
 class Onzr:
     """Onzr core class."""
 
@@ -63,6 +73,7 @@ class Onzr:
         self.socket: SocketType = self.configure_socket()
         self.player: Player = Player(self.socket)
         self._queue: Queue = Queue()
+        self.status: OnzrStatus = OnzrStatus.IDLE
 
     def configure_socket(self):
         """Open and configure the casting socket."""
@@ -102,7 +113,23 @@ class Onzr:
             return
 
         # Play current track
+        self.status = OnzrStatus.PLAYING
+        self._queue.current.paused = False
         self.player.play(self._queue.current)
         self._queue.next()
 
         return self.play()
+
+    def pause(self):
+        """Pause current track playing."""
+        logger.info("⏯ Toggling pause…")
+        logger.debug(f"Onzr Status? {self.status.name}")
+        if self._queue.current is None:
+            return
+
+        if self.status == OnzrStatus.PLAYING:
+            self.status = OnzrStatus.PAUSED
+            self._queue.current.paused = True
+        elif self.status == OnzrStatus.PAUSED:
+            self.status = OnzrStatus.PLAYING
+            self._queue.current.paused = False

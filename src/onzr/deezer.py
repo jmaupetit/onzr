@@ -233,6 +233,7 @@ class Track:
         self._content_mv: memoryview = memoryview(self.content)
         self.fetched: int = 0
         self.streamed: int = 0
+        self.paused: bool = False
         self.bitrate = self.filesize / self.duration
         self.buffer_size: int = int(self.bitrate * buffer)
 
@@ -377,6 +378,11 @@ class Track:
 
         slow_connection: bool = False
         for start in range(self.streamed, self.filesize, chunk_size):
+
+            # Track has been paused, wait for resume
+            while self.paused:
+                sleep(0.001)
+
             # We have buffering issues
             while (self.fetched - start) < self.buffer_size and start < (
                 self.filesize - self.buffer_size
