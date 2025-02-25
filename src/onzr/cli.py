@@ -2,12 +2,15 @@
 
 import logging
 from random import shuffle
+from threading import Thread
 from typing import List
 
 import click
 import typer
+from pynput import keyboard
 from rich.console import Console
 from rich.logging import RichHandler
+from rich.prompt import Prompt
 from rich.table import Table
 
 from .core import Onzr
@@ -16,7 +19,7 @@ from .deezer import AlbumShort, ArtistShort, Collection, StreamQuality, TrackSho
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format=FORMAT,
     datefmt="[%X]",
     handlers=[RichHandler(console=logging_console)],
@@ -176,7 +179,7 @@ def play(
 ):
     """Play one (or more) tracks."""
     onzr = start()
-    console.print("▶️ starting the player…")
+    console.print("🚀 starting the player…")
     if track_ids == ["-"]:
         logger.debug("Reading track ids from stdin…")
         track_ids = click.get_text_stream("stdin").read().split()
@@ -184,5 +187,19 @@ def play(
     onzr.add(track_ids, quality)
     if shuffle:
         onzr.shuffle()
-    onzr.play()
+
+    # Start playing in a new thread
+    thread = Thread(target=onzr.play)
+    thread.start()
+
+    # Controls
+    def on_press(key, injected):
+        """Player control actions."""
+        match key:
+            case keyboard.Key.media_play_pause:
+                onzr.pause()
+
+    with keyboard.Listener(on_press=on_press) as listener:
+        listener.join()
+
     typer.Exit()
