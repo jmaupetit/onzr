@@ -63,6 +63,7 @@ class Track:
         self.track_info: dict = self._get_track_info()
         self.url: str = self._get_url()
         self.key: bytes = self._generate_blowfish_key()
+        self.is_playable : bool = False
 
     def _get_track_info(self) -> dict:
         """Get track info."""
@@ -102,14 +103,13 @@ class Track:
         """Get track token."""
         return self.track_info["TRACK_TOKEN"]
 
-    def play(self):
+    def fetch(self):
         """Play track."""
         # 5 seconds for a 128kbs file
         buffer = 128000 * 5
         chunk_sep = 2048
         chunk_size = 3 * chunk_sep
         fetched = 0
-        is_playing = False
 
         with httpx.stream("GET", self.url, follow_redirects=True) as r:
             r.raise_for_status()
@@ -128,7 +128,8 @@ class Track:
                     fp.write(dchunk)
                     fetched += chunk_size
 
-                    if fetched >= buffer and not is_playing:
-                        logger.debug("Buffer ok. Will start playing.")
+                    if fetched >= buffer and not self.is_playable:
+                        logger.debug("Buffering ok")
+                        self.is_playable = True
                         self.player.play()
-                        is_playing = True
+                        self.player.pause()

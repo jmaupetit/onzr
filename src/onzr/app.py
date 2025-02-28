@@ -6,7 +6,7 @@ from textual.widgets import Footer, Header, Button
 from .deezer import DeezerClient, StreamQuality, Track
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class OnzrPlayerApp(App):
@@ -18,16 +18,24 @@ class OnzrPlayerApp(App):
         """Create child widgets for the app."""
         yield Header()
         yield Button(label="play", variant="primary", action="app.play")
+        yield Button(label="pause", variant="default", action="app.pause")
         yield Footer()
 
     def _action_play(self):
-        self.notify("Start playing...")
-        track.play()
+        if track.is_playable:
+            track.player.play()
+        else:
+            self.notify("Still fetching current track...")
+
+    def _action_pause(self):
+        self.notify("Toggling pause...")
+        track.player.pause()
 
     def on_mount(self) -> None:
         """Set application properties."""
         self.title = "Onzr"
         self.sub_title = "Player"
+        track.fetch()
 
 
 # Deezer API client
