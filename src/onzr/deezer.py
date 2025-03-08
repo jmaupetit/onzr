@@ -62,6 +62,7 @@ class Track:
         client: DeezerClient,
         track_id: str,
         quality: StreamQuality | None = None,
+        buffer: float = 0.5,  # 500ms
     ) -> None:
         """Instantiate a new track."""
         self.deezer = client
@@ -72,9 +73,12 @@ class Track:
         self.url: str = self._get_url()
         self.key: bytes = self._generate_blowfish_key()
         self.status: TrackStatus = TrackStatus.IDLE
-        self.content: BytesIO | None = None
+        self.content: bytearray = bytearray(self.filesize)
+        self._content_mv: memoryview = memoryview(self.content)
         self.fetched: int = 0
         self.streamed: int = 0
+        self.bitrate = self.filesize / self.duration
+        self.buffer_size: int = int(self.bitrate * buffer)
 
     def _get_track_info(self) -> dict:
         """Get track info."""
@@ -124,16 +128,15 @@ class Track:
         """Get file size (in bits)."""
         return int(self.track_info[f"FILESIZE_{self.quality}"])
 
-    def fetch(self, buffer_size: int = 128000 * 5):
+    def fetch(self):
         """Fetch track in-memory.
 
         buffer_size (int): the buffer size (defaults to 5 seconds for a 128kbs file)
         """
-        logger.debug(f"Start fetching track with {buffer_size=}")
+        logger.debug(f"Start fetching track with {self.buffer_size=}")
         chunk_sep = 2048
         chunk_size = 3 * chunk_sep
         self.fetched = 0
-        self.content = BytesIO()
         self.status = TrackStatus.IDLE
 
         with self.http_client.stream("GET", self.url, follow_redirects=True) as r:
@@ -147,14 +150,14 @@ class Track:
                     dchunk = self._decrypt(chunk[:chunk_sep]) + chunk[chunk_sep:]
                 else:
                     dchunk = chunk
-                # As we may be reading the track while downloading, force to write
-                # at the end of the file
-                self.content.seek(0, 2)
-                self.content.write(dchunk)
+                self._content_mv[self.fetched : self.fetched + chunk_size] = dchunk
                 self.fetched += chunk_size
 
-                if self.fetched >= buffer_size and self.status < TrackStatus.PLAYABLE:
-                    logger.debug(f"Buffering ok ({buffer_size=})")
+                if (
+                    self.fetched >= self.buffer_size
+                    and self.status < TrackStatus.PLAYABLE
+                ):
+                    logger.debug("Buffering ok")
                     self.status = TrackStatus.PLAYABLE
 
         # We are done here
@@ -172,13 +175,9 @@ class Track:
             )
         )
 
-        bitrate = self.filesize / self.duration
-        logger.debug(f"Filesize={self.filesize} duration={self.duration}")
-        # FIXME: we need a better buffering strategy
-        buffer_size: int = int(bitrate * 0.5)  # 500ms
         if self.status < TrackStatus.FETCHING:
             logger.debug("Will start fetching content in a new thead…")
-            thread = Thread(target=self.fetch, kwargs={"buffer_size": buffer_size})
+            thread = Thread(target=self.fetch)
             thread.start()
 
         # Wait for the track to be playable
@@ -186,15 +185,22 @@ class Track:
             sleep(0.01)
 
         # Sleep time while playing
-        wait = 1.0 / (bitrate / chunk_size)
-        logger.debug(f"Wait time: {wait}s ({bitrate=})")
+        wait = 1.0 / (self.bitrate / chunk_size)
+        logger.debug(f"Wait time: {wait}s ({self.bitrate=})")
 
-        def read_chunk(position: int, size: int) -> bytes:
-            """Read size bytes from position."""
-            self.content.seek(position)
-            return self.content.read(size)
+        slow_connection: bool = False
+        for start in range(self.streamed, self.filesize, chunk_size):
+            # We have buffer issues
+            while self.fetched - self.streamed < self.buffer_size:
+                if not slow_connection:
+                    logger.warning(
+                        "Slow connection, filling the buffer "
+                        f"{self.fetched - self.streamed} < {self.buffer_size}"
+                    )
+                slow_connection = True
+                sleep(0.01)
+            slow_connection = False
 
-        while chunk := read_chunk(self.streamed, chunk_size):
-            socket.sendto(chunk, multicast_group)
+            socket.sendto(self._content_mv[start : start + chunk_size], multicast_group)
             self.streamed += chunk_size
             sleep(wait)
