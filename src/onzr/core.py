@@ -4,6 +4,7 @@ import logging
 import socket
 import struct
 from socket import SocketType
+from typing import List
 
 from .deezer import DeezerClient, StreamQuality, Track
 from .player import Player
@@ -11,16 +12,52 @@ from .player import Player
 logger = logging.getLogger(__name__)
 
 
+class Queue:
+    """Onzr playing queue."""
+
+    def __init__(self):
+        """Instantiate the tracks queue."""
+        self.current: Track | None = None
+        self.tracks: List[Track] = []
+
+    def __len__(self):
+        """Get queue length."""
+        return len(self.tracks)
+
+    @property
+    def is_empty(self):
+        """Check if tracks are queued."""
+        return len(self) == 0 and self.current is None
+
+    def add(self, track: Track | None = None, tracks: List[Track] | None = None):
+        """Add one or more tracks to queue."""
+        if not track and not tracks:
+            raise TypeError("Argument missing, you should either add a track or tracks")
+        self.tracks.extend(tracks or [track])
+
+    def next(self):
+        """Set next track as the current."""
+        del self.current
+        if not len(self):
+            self.current = None
+            return
+        self.current = self.tracks.pop(0)
+
+
 class Onzr:
     """Onzr core class."""
 
-    def __init__(self) -> None:
-        """Initialize all the things."""
+    def __init__(self, fast: bool = False) -> None:
+        """Initialize all the things.
+
+        fast (bool): activate Deezer fast login
+        """
         logger.debug("Instantiating Onzr…")
 
-        self.deezer: DeezerClient = DeezerClient()
+        self.deezer: DeezerClient = DeezerClient(fast=fast)
         self.socket: SocketType = self.configure_socket()
         self.player: Player = Player(self.socket)
+        self._queue: Queue = Queue()
 
     def configure_socket(self):
         """Open and configure the casting socket."""
@@ -33,6 +70,23 @@ class Onzr:
         logger.debug(f"Socket: {sock}")
         return sock
 
-    def play(self, track_id: str, quality: StreamQuality = StreamQuality.MP3_320):
-        """Little helper to play a track."""
-        self.player.play(Track(self.deezer, track_id, quality))
+    def add(self, track_ids: List[str], quality: StreamQuality = StreamQuality.MP3_320):
+        """Little helper to queue tracks."""
+        tracks = [Track(self.deezer, track_id, quality) for track_id in track_ids]
+        self._queue.add(tracks=tracks)
+
+    def play(self):
+        """Little helper to start playing the queue."""
+        # No active track, try to queue the next one in line
+        if self._queue.current is None:
+            self._queue.next()
+
+        # There is no track left in queue
+        if self._queue.is_empty:
+            return
+
+        # Play current track
+        self.player.play(self._queue.current)
+        self._queue.next()
+
+        return self.play()

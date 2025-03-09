@@ -19,7 +19,7 @@ class Player:
         """Instantiate the player."""
         logger.debug(f"Instantiating Player using socket: {socket} ({local=})")
         self.socket: SocketType = socket
-        self.current_track: Track | None = None
+        self.track: Track | None = None
         self.chunk_size: int = 1024
         self.vlc: MediaPlayer | None = None
         if local:
@@ -36,5 +36,6 @@ class Player:
 
     def play(self, track: Track):
         """Play a track."""
-        self.current_track = track
-        self.current_track.cast(self.socket, self.chunk_size)
+        logger.info(f"▶️  {track.artist} - {track.title} [{track.album}]")
+        self.track = track
+        self.track.cast(self.socket, self.chunk_size)

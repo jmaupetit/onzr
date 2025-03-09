@@ -3,14 +3,14 @@
 import functools
 import hashlib
 import logging
+from dataclasses import dataclass
 from enum import IntEnum, StrEnum
-from io import BytesIO
-from pprint import pformat
 from threading import Thread
 from time import sleep
+from typing import List
 
 import deezer
-import httpx
+import requests
 from Cryptodome.Cipher import Blowfish
 
 from .config import settings
@@ -26,23 +26,116 @@ class StreamQuality(StrEnum):
     FLAC = "FLAC"
 
 
+@dataclass
+class TrackSearch:
+    """Search result is a always a list of tracks."""
+
+    track_id: str
+    artist: str
+    title: str
+    album: str
+    album_id: str
+
+
 class DeezerClient(deezer.Deezer):
     """A wrapper for the Deezer API client."""
 
     def __init__(
-        self, arl: str | None = None, quality: StreamQuality | None = None
+        self,
+        arl: str | None = None,
+        quality: StreamQuality | None = None,
+        fast: bool = False,
     ) -> None:
-        """Instantiate the Deezer API client."""
+        """Instantiate the Deezer API client.
+
+        Fast login is useful to quicky access some API endpoints such as "search" but
+        won't work if you need to stream tracks.
+        """
         super().__init__()
 
         self.arl = arl or settings.arl
         self.quality = quality or settings.quality
-        self._login()
+        if fast:
+            self._fast_login()
+        else:
+            self._login()
 
     def _login(self):
         """Login to deezer API."""
-        logger.info("Login in to deezer using defined ARL…")
+        logger.debug("Login in to deezer using defined ARL…")
         self.login_via_arl(self.arl)
+
+    def _fast_login(self):
+        """Fasting login using ARL cookie."""
+        cookie_obj = requests.cookies.create_cookie(
+            domain=".deezer.com",
+            name="arl",
+            value=self.arl,
+            path="/",
+            rest={"HttpOnly": True},
+        )
+        self.session.cookies.set_cookie(cookie_obj)
+        self.logged_in = True
+
+    def search(
+        self,
+        artist: str = "",
+        album: str = "",
+        track: str = "",
+        strict: bool = False,
+    ) -> List[TrackSearch] | None:  # FIXME: should be a generator instead?
+        """Mixed custom search."""
+        tracks = []
+
+        def track_search_to_tracks(data):
+            return [
+                TrackSearch(
+                    track_id=str(t.get("id")),
+                    artist=t.get("artist").get("name"),
+                    title=t.get("title"),
+                    album_id=str(t.get("album").get("id")),
+                    album=t.get("album").get("title"),
+                )
+                for t in data
+            ]
+
+        def album_search_to_tracks(data):
+            tracks = []
+            for album_id, album_title in (
+                (album_.get("id"), album_.get("title")) for album_ in data
+            ):
+                album_tracks = self.api.get_album_tracks(album_id)
+                tracks += [
+                    TrackSearch(
+                        track_id=str(t.get("id")),
+                        artist=t.get("artist").get("name"),
+                        title=t.get("title"),
+                        album_id=str(album_id),
+                        album=album_title,
+                    )
+                    for t in album_tracks["data"]
+                ]
+            return tracks
+
+        if len(list(filter(None, (artist, album, track)))) > 1:
+            response = self.api.advanced_search(
+                artist=artist, album=album, track=track, strict=strict
+            )
+            tracks = track_search_to_tracks(response["data"])
+        elif artist:
+            response = self.api.search_artist(artist)
+            # Only consider the first artist. Silly idea?
+            artist_id = response["data"][0].get("id")
+            response = self.api.get_artist_albums(artist_id)
+            tracks = album_search_to_tracks(response["data"])
+        elif album:
+            response = self.api.search_album(album)
+            tracks = album_search_to_tracks(response["data"])
+        elif track:
+            response = self.api.search_track(track)
+            tracks = track_search_to_tracks(response["data"])
+
+        return tracks
 
 
 class TrackStatus(IntEnum):
@@ -67,14 +160,16 @@ class Track:
         """Instantiate a new track."""
         self.deezer = client
         self.track_id = track_id
-        self.http_client = httpx.Client()
+        self.session = requests.Session()
         self.quality = quality or self.deezer.quality
         self.track_info: dict = self._get_track_info()
         self.url: str = self._get_url()
         self.key: bytes = self._generate_blowfish_key()
         self.status: TrackStatus = TrackStatus.IDLE
-        self.content: bytearray = bytearray(self.filesize)
-        self._content_mv: memoryview = memoryview(self.content)
+        # Content and related memory view will be allocated later (right before fetching
+        # the track to decrease memory footprint while adding tracks to queue).
+        self.content: bytearray | None = None
+        self._content_mv: memoryview | None = None
         self.fetched: int = 0
         self.streamed: int = 0
         self.bitrate = self.filesize / self.duration
@@ -83,15 +178,20 @@ class Track:
     def _get_track_info(self) -> dict:
         """Get track info."""
         track_info = self.deezer.gw.get_track(self.track_id)
-        logger.debug("Track info: %s", pformat(track_info))
+        logger.debug("Track info: %s", track_info)
         return track_info
 
     def _get_url(self) -> str:
         """Get URL of the track to stream."""
-        logger.info(f"Getting track url with quality {self.quality}…")
+        logger.debug(f"Getting track url with quality {self.quality}…")
         url = self.deezer.get_track_url(self.token, self.quality.value)
         logger.debug(f"Track url: {url}")
         return url
+
+    def _allocate_content(self) -> None:
+        """Allocate memory where we will read/write track bytes."""
+        self.content = bytearray(self.filesize)
+        self._content_mv = memoryview(self.content)
 
     def _generate_blowfish_key(self) -> bytes:
         """Generate the blowfish key for Deezer downloads.
@@ -128,6 +228,21 @@ class Track:
         """Get file size (in bits)."""
         return int(self.track_info[f"FILESIZE_{self.quality}"])
 
+    @property
+    def artist(self) -> str:
+        """Get track artist."""
+        return self.track_info["ART_NAME"]
+
+    @property
+    def title(self) -> str:
+        """Get track title."""
+        return self.track_info["SNG_TITLE"]
+
+    @property
+    def album(self) -> str:
+        """Get track album."""
+        return self.track_info["ALB_TITLE"]
+
     def fetch(self):
         """Fetch track in-memory.
 
@@ -138,14 +253,15 @@ class Track:
         chunk_size = 3 * chunk_sep
         self.fetched = 0
         self.status = TrackStatus.IDLE
+        self._allocate_content()
 
-        with self.http_client.stream("GET", self.url, follow_redirects=True) as r:
+        with self.session.get(self.url, stream=True) as r:
             r.raise_for_status()
             filesize = int(r.headers.get("Content-Length", 0))
             logger.debug(f"Track size: {filesize} ({self.filesize})")
             self.status = TrackStatus.FETCHING
 
-            for chunk in r.iter_raw(chunk_size):
+            for chunk in r.iter_content(chunk_size):
                 if len(chunk) > chunk_sep:
                     dchunk = self._decrypt(chunk[:chunk_sep]) + chunk[chunk_sep:]
                 else:
@@ -190,15 +306,21 @@ class Track:
 
         slow_connection: bool = False
         for start in range(self.streamed, self.filesize, chunk_size):
-            # We have buffer issues
-            while self.fetched - self.streamed < self.buffer_size:
+            # We have buffering issues
+            while (self.fetched - start) < self.buffer_size and start < (
+                self.filesize - self.buffer_size
+            ):
                 if not slow_connection:
                     logger.warning(
                         "Slow connection, filling the buffer "
                         f"{self.fetched - self.streamed} < {self.buffer_size}"
                     )
+                    logger.debug(
+                        f"{start=} | {self.filesize=} | {self.fetched=} | "
+                        f"{self.streamed=} | {chunk_size=}"
+                    )
                 slow_connection = True
-                sleep(0.01)
+                sleep(0.05)
             slow_connection = False
 
             socket.sendto(self._content_mv[start : start + chunk_size], multicast_group)
