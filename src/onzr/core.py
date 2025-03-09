@@ -14,11 +14,14 @@ logger = logging.getLogger(__name__)
 class Onzr:
     """Onzr core class."""
 
-    def __init__(self) -> None:
-        """Initialize all the things."""
+    def __init__(self, fast: bool = False ) -> None:
+        """Initialize all the things.
+
+        fast (bool): activate Deezer fast login
+        """
         logger.debug("Instantiating Onzr…")
 
-        self.deezer: DeezerClient = DeezerClient()
+        self.deezer: DeezerClient = DeezerClient(fast=fast)
         self.socket: SocketType = self.configure_socket()
         self.player: Player = Player(self.socket)
 

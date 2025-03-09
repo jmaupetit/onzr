@@ -11,6 +11,7 @@ from time import sleep
 
 import deezer
 import httpx
+import requests
 from Cryptodome.Cipher import Blowfish
 
 from .config import settings
@@ -30,19 +31,41 @@ class DeezerClient(deezer.Deezer):
     """A wrapper for the Deezer API client."""
 
     def __init__(
-        self, arl: str | None = None, quality: StreamQuality | None = None
+        self,
+        arl: str | None = None,
+        quality: StreamQuality | None = None,
+        fast: bool = False,
     ) -> None:
-        """Instantiate the Deezer API client."""
+        """Instantiate the Deezer API client.
+
+        Fast login is useful to quicky access some API endpoints such as "search" but
+        won't work if you need to stream tracks.
+        """
         super().__init__()
 
         self.arl = arl or settings.arl
         self.quality = quality or settings.quality
-        self._login()
+        if fast:
+            self._fast_login()
+        else:
+            self._login()
 
     def _login(self):
         """Login to deezer API."""
         logger.info("Login in to deezer using defined ARL…")
         self.login_via_arl(self.arl)
+
+    def _fast_login(self):
+        """Fasting login using ARL cookie."""
+        cookie_obj = requests.cookies.create_cookie(
+            domain=".deezer.com",
+            name="arl",
+            value=self.arl,
+            path="/",
+            rest={"HttpOnly": True},
+        )
+        self.session.cookies.set_cookie(cookie_obj)
+        self.logged_in = True
 
 
 class TrackStatus(IntEnum):

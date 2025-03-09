@@ -13,10 +13,10 @@ from .deezer import StreamQuality
 cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
 console = Console()
 
-def start() -> Onzr:
+def start(fast: bool = False) -> Onzr:
     """Start onzr."""
     console.print("🚀 login in to Deezer…", style="cyan")
-    return Onzr()
+    return Onzr(fast=fast)
 
 @cli.command()
 def search(
@@ -26,7 +26,7 @@ def search(
     strict: bool = False,
 ):
     """Search track, artist and/or album."""
-    onzr = start()
+    onzr = start(fast=True)
     console.print("🔍 start searching…")
     response = onzr.deezer.api.advanced_search(
         artist=artist, album=album, track=track, strict=strict
