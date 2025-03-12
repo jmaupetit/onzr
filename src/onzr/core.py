@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class Queue:
     """Onzr playing queue."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Instantiate the tracks queue."""
         self.current: Track | None = None
         self.tracks: List[Track] = []
@@ -31,9 +31,9 @@ class Queue:
 
     def add(self, track: Track | None = None, tracks: List[Track] | None = None):
         """Add one or more tracks to queue."""
-        if not track and not tracks:
+        if track is None and tracks is None:
             raise TypeError("Argument missing, you should either add a track or tracks")
-        self.tracks.extend(tracks or [track])
+        self.tracks.extend(tracks or [track])  # type: ignore[list-item]
 
     def next(self):
         """Set next track as the current."""

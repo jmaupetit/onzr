@@ -34,7 +34,7 @@ def start(fast: bool = False, quiet: bool = False) -> Onzr:
 
 
 @cli.command()
-def search(
+def search(  # noqa: PLR0913
     artist: str = "",
     album: str = "",
     track: str = "",

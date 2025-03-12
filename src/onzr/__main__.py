@@ -1,4 +1,4 @@
-"""Onzr."""
+"""Onzr: module script."""
 
 from .cli import cli
 
