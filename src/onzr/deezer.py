@@ -83,7 +83,7 @@ class DeezerClient(deezer.Deezer):
         album: str = "",
         track: str = "",
         strict: bool = False,
-    ) -> List[TrackSearch] | None:  # FIXME: should be a generator instead?
+    ) -> List[TrackSearch]:
         """Mixed custom search."""
         tracks = []
 
@@ -168,8 +168,8 @@ class Track:
         self.status: TrackStatus = TrackStatus.IDLE
         # Content and related memory view will be allocated later (right before fetching
         # the track to decrease memory footprint while adding tracks to queue).
-        self.content: bytearray | None = None
-        self._content_mv: memoryview | None = None
+        self.content: bytearray = bytearray()
+        self._content_mv: memoryview = memoryview(self.content)
         self.fetched: int = 0
         self.streamed: int = 0
         self.bitrate = self.filesize / self.duration
@@ -198,16 +198,21 @@ class Track:
 
         Taken from: https://github.com/nathom/streamrip/
         """
-        md5_hash = hashlib.md5(self.track_id.encode()).hexdigest()
+        md5_hash = hashlib.md5(self.track_id.encode()).hexdigest()  # noqa: S324
         # good luck :)
         return "".join(
             chr(functools.reduce(lambda x, y: x ^ y, map(ord, t)))
-            for t in zip(md5_hash[:16], md5_hash[16:], settings.DEEZER_BLOWFISH_SECRET)
+            for t in zip(
+                md5_hash[:16],
+                md5_hash[16:],
+                settings.DEEZER_BLOWFISH_SECRET,
+                strict=False,
+            )
         ).encode()
 
     def _decrypt(self, chunk):
         """Decrypt blowfish encrypted chunk."""
-        return Blowfish.new(
+        return Blowfish.new(  # noqa: S304
             self.key,
             Blowfish.MODE_CBC,
             b"\x00\x01\x02\x03\x04\x05\x06\x07",

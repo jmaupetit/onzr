@@ -18,6 +18,8 @@ typer = "^0.15.2"
 black = "^25.1.0"
 mypy = "^1.15.0"
 ruff = "^0.9.7"
+pytest = "^8.3.5"
+types-requests = "^2.32.0.20250306"
 
 [tool.poetry.scripts]
 onzr = "onzr.cli:cli"
@@ -56,12 +58,11 @@ select = [
 convention = "google"
 
 [tool.mypy]
-plugins = ""
 files = "./**/*.py"
 exclude = []
 
 [[tool.mypy.overrides]]
-module = []
+module = ["deezer.*", "dynaconf.*", "vlc.*"]
 ignore_missing_imports = true
 
 [build-system]
