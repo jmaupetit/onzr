@@ -43,35 +43,63 @@ def search(  # noqa: PLR0913
     ids: bool = False,
 ):
     """Search track, artist and/or album."""
+    if ids:
+        quiet = True
     onzr = start(fast=True, quiet=quiet)
     if not quiet:
         console.print("🔍 start searching…")
 
-    tracks = onzr.deezer.search(artist, album, track, strict)
+    results = onzr.deezer.search(artist, album, track, strict)
 
-    if not tracks:
+    if not results:
+        console.print("No match found.")
         typer.Exit(code=1)
+
+    sample = results[0]
+    show_artist = True if sample.artist else False
+    show_album = True if sample.album else False
+    show_track = True if sample.title else False
+
+    search_ids = [r.track_id for r in results]
+    if not show_track:
+        if show_artist:
+            search_ids = [r.artist_id for r in results]
+        elif show_album:
+            search_ids = [r.album_id for r in results]
 
     if ids:
         # We want to print raw output
-        for match in tracks:
-            console.print(match.track_id)
+        for search_id in search_ids:
+            console.print(search_id)
         return
 
     table = Table(title="Search matches")
-    table.add_column("Track (ID)", justify="right")
-    table.add_column("Album (ID)", justify="right")
-    table.add_column("Artist", style="cyan")
-    table.add_column("Album", style="green")
-    table.add_column("Title", style="magenta")
+    if show_artist:
+        table.add_column("ID", justify="right")
+        table.add_column("Artist", style="cyan")
+    if show_album:
+        table.add_column("ID", justify="right")
+        table.add_column("Album", style="green")
+    if show_track:
+        table.add_column("ID", justify="right")
+        table.add_column("Title", style="magenta")
 
-    for match in tracks:
+
+    for match in results:
         table.add_row(
-            match.track_id,
-            match.album_id,
-            match.artist,
-            match.album,
-            match.title,
+            *list(
+                filter(
+                    None,
+                    [
+                        match.artist_id,
+                        match.artist,
+                        match.album_id,
+                        match.album,
+                        match.track_id,
+                        match.title,
+                    ],
+                )
+            )
         )
 
     console.print(table)

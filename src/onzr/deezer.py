@@ -27,14 +27,15 @@ class StreamQuality(StrEnum):
 
 
 @dataclass
-class TrackSearch:
-    """Search result is a always a list of tracks."""
+class SearchResult:
+    """Search result can be a track, an artist or an album."""
 
-    track_id: str
-    artist: str
-    title: str
-    album: str
-    album_id: str
+    track_id: str | None = None
+    title: str | None = None
+    artist_id: str | None = None
+    artist: str | None = None
+    album: str | None = None
+    album_id: str | None = None
 
 
 class DeezerClient(deezer.Deezer):
@@ -83,15 +84,16 @@ class DeezerClient(deezer.Deezer):
         album: str = "",
         track: str = "",
         strict: bool = False,
-    ) -> List[TrackSearch]:
+    ) -> List[SearchResult]:
         """Mixed custom search."""
-        tracks = []
+        results = []
 
-        def track_search_to_tracks(data):
+        def track_search(data):
             return [
-                TrackSearch(
-                    track_id=str(t.get("id")),
+                SearchResult(
+                    artist_id=str(t.get("artist").get("id")),
                     artist=t.get("artist").get("name"),
+                    track_id=str(t.get("id")),
                     title=t.get("title"),
                     album_id=str(t.get("album").get("id")),
                     album=t.get("album").get("title"),
@@ -99,43 +101,34 @@ class DeezerClient(deezer.Deezer):
                 for t in data
             ]
 
-        def album_search_to_tracks(data):
-            tracks = []
-            for album_id, album_title in (
-                (album_.get("id"), album_.get("title")) for album_ in data
-            ):
-                album_tracks = self.api.get_album_tracks(album_id)
-                tracks += [
-                    TrackSearch(
-                        track_id=str(t.get("id")),
-                        artist=t.get("artist").get("name"),
-                        title=t.get("title"),
-                        album_id=str(album_id),
-                        album=album_title,
-                    )
-                    for t in album_tracks["data"]
-                ]
-            return tracks
-
         if len(list(filter(None, (artist, album, track)))) > 1:
             response = self.api.advanced_search(
                 artist=artist, album=album, track=track, strict=strict
             )
-            tracks = track_search_to_tracks(response["data"])
+            results = track_search(response["data"])
         elif artist:
             response = self.api.search_artist(artist)
-            # Only consider the first artist. Silly idea?
-            artist_id = response["data"][0].get("id")
-            response = self.api.get_artist_albums(artist_id)
-            tracks = album_search_to_tracks(response["data"])
+            results = [
+                SearchResult(
+                    artist_id=str(a.get("id")),
+                    artist=a.get("name"),
+                ) for a in response["data"]
+            ]
         elif album:
             response = self.api.search_album(album)
-            tracks = album_search_to_tracks(response["data"])
+            results = [
+                SearchResult(
+                    album_id=str(a.get("id")),
+                    album=a.get("title"),
+                    artist_id=str(a.get("artist").get("id")),
+                    artist=str(a.get("artist").get("name")),
+                ) for a in response["data"]
+            ]
         elif track:
             response = self.api.search_track(track)
-            tracks = track_search_to_tracks(response["data"])
+            results = track_search(response["data"])
 
-        return tracks
+        return results
 
 
 class TrackStatus(IntEnum):
