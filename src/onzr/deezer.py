@@ -241,6 +241,11 @@ class Track:
         """Get track album."""
         return self.track_info["ALB_TITLE"]
 
+    @property
+    def full_title(self) -> str:
+        """Get track full title (artist/title/album)."""
+        return f"{self.artist} - {self.title} [{self.album}]"
+
     def fetch(self):
         """Fetch track in-memory.
 

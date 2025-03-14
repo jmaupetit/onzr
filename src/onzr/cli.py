@@ -84,7 +84,6 @@ def search(  # noqa: PLR0913
         table.add_column("ID", justify="right")
         table.add_column("Title", style="magenta")
 
-
     for match in results:
         table.add_row(
             *list(
@@ -103,6 +102,33 @@ def search(  # noqa: PLR0913
         )
 
     console.print(table)
+
+
+@cli.command()
+def artist(
+    artist_id: str,
+    top: bool = True,
+    radio: bool = False,
+    limit: int = 10,
+    quiet: bool = True,
+):
+    """Get artist popular track ids."""
+    if not top and not radio:
+        console.print("You should choose either top titles or artist radio.")
+        raise typer.Exit(code=2)
+
+    if artist_id == ["-"]:
+        logger.debug("Reading artist id from stdin…")
+        artist_id = click.get_text_stream("stdin").read().strip()
+        logger.debug(f"{artist_id=}")
+
+    onzr = start(fast=True, quiet=quiet)
+    if radio:
+        response = onzr.deezer.api.get_artist_radio(artist_id, limit=limit)
+    else:
+        response = onzr.deezer.api.get_artist_top(artist_id, limit=limit)
+    for track in response["data"]:
+        console.print(track.get("id"))
 
 
 @cli.command()
