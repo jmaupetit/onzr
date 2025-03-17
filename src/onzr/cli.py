@@ -10,7 +10,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from .core import Onzr
-from .deezer import StreamQuality
+from .deezer import AlbumShort, ArtistShort, Collection, StreamQuality, TrackShort
 
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
@@ -31,6 +31,47 @@ def start(fast: bool = False, quiet: bool = False) -> Onzr:
     if not quiet:
         console.print("🚀 login in to Deezer…", style="cyan")
     return Onzr(fast=fast)
+
+
+def print_collection_ids(collection: Collection):
+    """Print a collection as ids."""
+    for item in collection:
+        console.print(item.id)
+
+
+def print_collection_table(collection: Collection, title="Collection"):
+    """Print a collection as a table."""
+    table = Table(title=title)
+
+    sample = collection[0]
+    show_artist = (
+        True
+        if isinstance(sample, TrackShort)
+        or isinstance(sample, AlbumShort)
+        or isinstance(sample, ArtistShort)
+        else False
+    )
+    show_album = (
+        True
+        if isinstance(sample, TrackShort) or isinstance(sample, AlbumShort)
+        else False
+    )
+    show_track = True if isinstance(sample, TrackShort) else False
+
+    if show_track:
+        table.add_column("ID", justify="right")
+        table.add_column("Track", style="magenta")
+    if show_album:
+        table.add_column("ID", justify="right")
+        table.add_column("Album", style="green")
+    if show_artist:
+        table.add_column("ID", justify="right")
+        table.add_column("Artist", style="cyan")
+
+    for item in collection:
+        table.add_row(*item.to_list())
+
+    console.print(table)
 
 
 @cli.command()
@@ -55,53 +96,11 @@ def search(  # noqa: PLR0913
         console.print("No match found.")
         typer.Exit(code=1)
 
-    sample = results[0]
-    show_artist = True if sample.artist else False
-    show_album = True if sample.album else False
-    show_track = True if sample.title else False
-
-    search_ids = [r.track_id for r in results]
-    if not show_track:
-        if show_artist:
-            search_ids = [r.artist_id for r in results]
-        elif show_album:
-            search_ids = [r.album_id for r in results]
-
     if ids:
-        # We want to print raw output
-        for search_id in search_ids:
-            console.print(search_id)
+        print_collection_ids(results)
         return
 
-    table = Table(title="Search matches")
-    if show_artist:
-        table.add_column("ID", justify="right")
-        table.add_column("Artist", style="cyan")
-    if show_album:
-        table.add_column("ID", justify="right")
-        table.add_column("Album", style="green")
-    if show_track:
-        table.add_column("ID", justify="right")
-        table.add_column("Title", style="magenta")
-
-    for match in results:
-        table.add_row(
-            *list(
-                filter(
-                    None,
-                    [
-                        match.artist_id,
-                        match.artist,
-                        match.album_id,
-                        match.album,
-                        match.track_id,
-                        match.title,
-                    ],
-                )
-            )
-        )
-
-    console.print(table)
+    print_collection_table(results, title="Search results")
 
 
 @cli.command()
@@ -111,24 +110,29 @@ def artist(
     radio: bool = False,
     limit: int = 10,
     quiet: bool = True,
+    ids: bool = False,
 ):
     """Get artist popular track ids."""
     if not top and not radio:
         console.print("You should choose either top titles or artist radio.")
         raise typer.Exit(code=2)
 
-    if artist_id == ["-"]:
+    if ids:
+        quiet = True
+
+    if artist_id == "-":
         logger.debug("Reading artist id from stdin…")
         artist_id = click.get_text_stream("stdin").read().strip()
         logger.debug(f"{artist_id=}")
 
     onzr = start(fast=True, quiet=quiet)
-    if radio:
-        response = onzr.deezer.api.get_artist_radio(artist_id, limit=limit)
-    else:
-        response = onzr.deezer.api.get_artist_top(artist_id, limit=limit)
-    for track in response["data"]:
-        console.print(track.get("id"))
+    tracks = onzr.deezer.artist(artist_id, radio=radio, top=top, limit=limit)
+
+    if ids:
+        print_collection_ids(tracks)
+        return
+
+    print_collection_table(tracks, title="Artist tracks")
 
 
 @cli.command()
