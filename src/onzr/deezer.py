@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from enum import IntEnum, StrEnum
 from threading import Thread
 from time import sleep
-from typing import Generator, List
+from typing import Generator, List, Protocol
 
 import deezer
 import requests
@@ -26,7 +26,12 @@ class StreamQuality(StrEnum):
     FLAC = "FLAC"
 
 
-class ToListMixin:
+@dataclass
+class IsDataclassProtocol(Protocol):
+    """A protocol to type check dataclass mixins."""
+
+
+class ToListMixin(IsDataclassProtocol):
     """A dataclass mixin that converts all fields values to a list."""
 
     def _dataclass_to_list(self, target=None) -> List[str | List]:

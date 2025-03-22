@@ -104,7 +104,7 @@ def search(  # noqa: PLR0913
 
 
 @cli.command()
-def artist(
+def artist(  # noqa: PLR0913
     artist_id: str,
     top: bool = True,
     radio: bool = False,
