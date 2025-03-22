@@ -3,11 +3,11 @@
 import functools
 import hashlib
 import logging
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import IntEnum, StrEnum
 from threading import Thread
 from time import sleep
-from typing import List
+from typing import Generator, List, Protocol
 
 import deezer
 import requests
@@ -27,14 +27,62 @@ class StreamQuality(StrEnum):
 
 
 @dataclass
-class TrackSearch:
-    """Search result is a always a list of tracks."""
+class IsDataclassProtocol(Protocol):
+    """A protocol to type check dataclass mixins."""
 
-    track_id: str
-    artist: str
+
+class ToListMixin(IsDataclassProtocol):
+    """A dataclass mixin that converts all fields values to a list."""
+
+    def _dataclass_to_list(self, target=None) -> List[str | List]:
+        """Convert all field values to a list."""
+        if target is None:
+            target = asdict(self)
+        return [
+            v if not isinstance(v, dict) else self._dataclass_to_list(v)
+            for v in target.values()
+        ]
+
+    def to_list(self, target: List[str | List] | None = None) -> List[str]:
+        """Convert nested dataclasses to values list."""
+        if target is None:
+            target = self._dataclass_to_list()
+        out = []
+        for i in target:
+            if isinstance(i, list):
+                out += self.to_list(i)
+            else:
+                out.append(i)
+        return out
+
+
+@dataclass
+class ArtistShort(ToListMixin):
+    """A small model to represent an artist."""
+
+    id: str
+    name: str
+
+
+@dataclass
+class AlbumShort(ToListMixin):
+    """A small model to represent an artist."""
+
+    id: str
+    name: str
+    artist: ArtistShort
+
+
+@dataclass
+class TrackShort(ToListMixin):
+    """A small model to represent an artist."""
+
+    id: str
     title: str
-    album: str
-    album_id: str
+    album: AlbumShort
+
+
+Collection = List[ArtistShort] | list[AlbumShort] | List[TrackShort]
 
 
 class DeezerClient(deezer.Deezer):
@@ -77,65 +125,78 @@ class DeezerClient(deezer.Deezer):
         self.session.cookies.set_cookie(cookie_obj)
         self.logged_in = True
 
+    @staticmethod
+    def _to_tracks(data) -> Generator[TrackShort, None, None]:
+        """API results to TrackShort."""
+        for track in data:
+            yield TrackShort(
+                id=str(track.get("id")),
+                title=track.get("title"),
+                album=AlbumShort(
+                    id=str(track.get("album").get("id")),
+                    name=track.get("album").get("title"),
+                    artist=ArtistShort(
+                        id=str(track.get("artist").get("id")),
+                        name=track.get("artist").get("name"),
+                    ),
+                ),
+            )
+
+    def artist(
+        self, artist_id: str, radio: bool = False, top: bool = True, limit: int = 10
+    ) -> List[TrackShort]:
+        """Get artist tracks."""
+        if radio:
+            response = self.api.get_artist_radio(artist_id, limit=limit)
+        elif top:
+            response = self.api.get_artist_top(artist_id, limit=limit)
+        else:
+            raise ValueError("Either radio or top should be True to get artist tracks")
+
+        return list(self._to_tracks(response["data"]))
+
     def search(
         self,
         artist: str = "",
         album: str = "",
         track: str = "",
         strict: bool = False,
-    ) -> List[TrackSearch]:
+    ) -> Collection:
         """Mixed custom search."""
-        tracks = []
-
-        def track_search_to_tracks(data):
-            return [
-                TrackSearch(
-                    track_id=str(t.get("id")),
-                    artist=t.get("artist").get("name"),
-                    title=t.get("title"),
-                    album_id=str(t.get("album").get("id")),
-                    album=t.get("album").get("title"),
-                )
-                for t in data
-            ]
-
-        def album_search_to_tracks(data):
-            tracks = []
-            for album_id, album_title in (
-                (album_.get("id"), album_.get("title")) for album_ in data
-            ):
-                album_tracks = self.api.get_album_tracks(album_id)
-                tracks += [
-                    TrackSearch(
-                        track_id=str(t.get("id")),
-                        artist=t.get("artist").get("name"),
-                        title=t.get("title"),
-                        album_id=str(album_id),
-                        album=album_title,
-                    )
-                    for t in album_tracks["data"]
-                ]
-            return tracks
+        results: Collection = []
 
         if len(list(filter(None, (artist, album, track)))) > 1:
             response = self.api.advanced_search(
                 artist=artist, album=album, track=track, strict=strict
             )
-            tracks = track_search_to_tracks(response["data"])
+            results = list(self._to_tracks(response["data"]))
         elif artist:
             response = self.api.search_artist(artist)
-            # Only consider the first artist. Silly idea?
-            artist_id = response["data"][0].get("id")
-            response = self.api.get_artist_albums(artist_id)
-            tracks = album_search_to_tracks(response["data"])
+            results = [
+                ArtistShort(
+                    id=str(a.get("id")),
+                    name=a.get("name"),
+                )
+                for a in response["data"]
+            ]
         elif album:
             response = self.api.search_album(album)
-            tracks = album_search_to_tracks(response["data"])
+            results = [
+                AlbumShort(
+                    id=str(a.get("id")),
+                    name=a.get("title"),
+                    artist=ArtistShort(
+                        id=str(a.get("artist").get("id")),
+                        name=str(a.get("artist").get("name")),
+                    ),
+                )
+                for a in response["data"]
+            ]
         elif track:
             response = self.api.search_track(track)
-            tracks = track_search_to_tracks(response["data"])
+            results = list(self._to_tracks(response["data"]))
 
-        return tracks
+        return results
 
 
 class TrackStatus(IntEnum):
@@ -247,6 +308,11 @@ class Track:
     def album(self) -> str:
         """Get track album."""
         return self.track_info["ALB_TITLE"]
+
+    @property
+    def full_title(self) -> str:
+        """Get track full title (artist/title/album)."""
+        return f"{self.artist} - {self.title} [{self.album}]"
 
     def fetch(self):
         """Fetch track in-memory.

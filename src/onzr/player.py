@@ -36,6 +36,6 @@ class Player:
 
     def play(self, track: Track):
         """Play a track."""
-        logger.info(f"▶️  {track.artist} - {track.title} [{track.album}]")
+        logger.info(f"▶️ {track.full_title}")
         self.track = track
         self.track.cast(self.socket, self.chunk_size)

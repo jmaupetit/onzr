@@ -72,8 +72,12 @@ class Onzr:
 
     def add(self, track_ids: List[str], quality: StreamQuality = StreamQuality.MP3_320):
         """Little helper to queue tracks."""
+        logger.info("➕ Adding new tracks to queue…")
         tracks = [Track(self.deezer, track_id, quality) for track_id in track_ids]
+        for track in tracks:
+            logger.info(f"{track.full_title}")
         self._queue.add(tracks=tracks)
+        logger.info(f"✅ {len(tracks)} tracks queued")
 
     def play(self):
         """Little helper to start playing the queue."""

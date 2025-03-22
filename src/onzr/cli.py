@@ -10,7 +10,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from .core import Onzr
-from .deezer import StreamQuality
+from .deezer import AlbumShort, ArtistShort, Collection, StreamQuality, TrackShort
 
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
@@ -33,6 +33,47 @@ def start(fast: bool = False, quiet: bool = False) -> Onzr:
     return Onzr(fast=fast)
 
 
+def print_collection_ids(collection: Collection):
+    """Print a collection as ids."""
+    for item in collection:
+        console.print(item.id)
+
+
+def print_collection_table(collection: Collection, title="Collection"):
+    """Print a collection as a table."""
+    table = Table(title=title)
+
+    sample = collection[0]
+    show_artist = (
+        True
+        if isinstance(sample, TrackShort)
+        or isinstance(sample, AlbumShort)
+        or isinstance(sample, ArtistShort)
+        else False
+    )
+    show_album = (
+        True
+        if isinstance(sample, TrackShort) or isinstance(sample, AlbumShort)
+        else False
+    )
+    show_track = True if isinstance(sample, TrackShort) else False
+
+    if show_track:
+        table.add_column("ID", justify="right")
+        table.add_column("Track", style="magenta")
+    if show_album:
+        table.add_column("ID", justify="right")
+        table.add_column("Album", style="green")
+    if show_artist:
+        table.add_column("ID", justify="right")
+        table.add_column("Artist", style="cyan")
+
+    for item in collection:
+        table.add_row(*item.to_list())
+
+    console.print(table)
+
+
 @cli.command()
 def search(  # noqa: PLR0913
     artist: str = "",
@@ -43,38 +84,55 @@ def search(  # noqa: PLR0913
     ids: bool = False,
 ):
     """Search track, artist and/or album."""
+    if ids:
+        quiet = True
     onzr = start(fast=True, quiet=quiet)
     if not quiet:
         console.print("🔍 start searching…")
 
-    tracks = onzr.deezer.search(artist, album, track, strict)
+    results = onzr.deezer.search(artist, album, track, strict)
 
-    if not tracks:
+    if not results:
+        console.print("No match found.")
         typer.Exit(code=1)
 
     if ids:
-        # We want to print raw output
-        for match in tracks:
-            console.print(match.track_id)
+        print_collection_ids(results)
         return
 
-    table = Table(title="Search matches")
-    table.add_column("Track (ID)", justify="right")
-    table.add_column("Album (ID)", justify="right")
-    table.add_column("Artist", style="cyan")
-    table.add_column("Album", style="green")
-    table.add_column("Title", style="magenta")
+    print_collection_table(results, title="Search results")
 
-    for match in tracks:
-        table.add_row(
-            match.track_id,
-            match.album_id,
-            match.artist,
-            match.album,
-            match.title,
-        )
 
-    console.print(table)
+@cli.command()
+def artist(  # noqa: PLR0913
+    artist_id: str,
+    top: bool = True,
+    radio: bool = False,
+    limit: int = 10,
+    quiet: bool = True,
+    ids: bool = False,
+):
+    """Get artist popular track ids."""
+    if not top and not radio:
+        console.print("You should choose either top titles or artist radio.")
+        raise typer.Exit(code=2)
+
+    if ids:
+        quiet = True
+
+    if artist_id == "-":
+        logger.debug("Reading artist id from stdin…")
+        artist_id = click.get_text_stream("stdin").read().strip()
+        logger.debug(f"{artist_id=}")
+
+    onzr = start(fast=True, quiet=quiet)
+    tracks = onzr.deezer.artist(artist_id, radio=radio, top=top, limit=limit)
+
+    if ids:
+        print_collection_ids(tracks)
+        return
+
+    print_collection_table(tracks, title="Artist tracks")
 
 
 @cli.command()
