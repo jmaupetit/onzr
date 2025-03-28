@@ -1,6 +1,7 @@
 """Onzr: command line interface."""
 
 import logging
+from random import shuffle
 from typing import List
 
 import click
@@ -136,7 +137,42 @@ def artist(  # noqa: PLR0913
 
 
 @cli.command()
-def play(track_ids: List[str], quality: StreamQuality = StreamQuality.MP3_128):
+def mix(
+    artist: list[str],
+    limit: int = 10,
+    quiet: bool = True,
+    ids: bool = False,
+):
+    """Create a playlist from multiple artists."""
+    if ids:
+        quiet = True
+
+    onzr = start(fast=True, quiet=quiet)
+    tracks = []
+
+    if not quiet:
+        console.print("🍪 cooking the mix…")
+
+    for artist_ in artist:
+        result = onzr.deezer.search(artist_, strict=True)
+        # We expect the search engine to be relevant 🤞
+        artist_id = result[0].id
+        tracks += onzr.deezer.artist(artist_id, radio=False, top=True, limit=limit)
+    shuffle(tracks)
+
+    if ids:
+        print_collection_ids(tracks)
+        return
+
+    print_collection_table(tracks, title="Onzr Mix tracks")
+
+
+@cli.command()
+def play(
+    track_ids: List[str],
+    quality: StreamQuality = StreamQuality.MP3_128,
+    shuffle: bool = False,
+):
     """Play one (or more) tracks."""
     onzr = start()
     console.print("▶️ starting the player…")
@@ -145,5 +181,7 @@ def play(track_ids: List[str], quality: StreamQuality = StreamQuality.MP3_128):
         track_ids = click.get_text_stream("stdin").read().split()
         logger.debug(f"{track_ids=}")
     onzr.add(track_ids, quality)
+    if shuffle:
+        onzr.shuffle()
     onzr.play()
     typer.Exit()
