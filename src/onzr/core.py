@@ -1,6 +1,7 @@
 """Onzr: core module."""
 
 import logging
+import random
 import socket
 import struct
 from socket import SocketType
@@ -34,6 +35,10 @@ class Queue:
         if track is None and tracks is None:
             raise TypeError("Argument missing, you should either add a track or tracks")
         self.tracks.extend(tracks or [track])  # type: ignore[list-item]
+
+    def shuffle(self):
+        """Shuffle current track list."""
+        random.shuffle(self.tracks)
 
     def next(self):
         """Set next track as the current."""
@@ -78,6 +83,13 @@ class Onzr:
             logger.info(f"{track.full_title}")
         self._queue.add(tracks=tracks)
         logger.info(f"✅ {len(tracks)} tracks queued")
+
+    def shuffle(self):
+        """Shuffle tracks queue."""
+        logger.info("🔀 Shuffling tracks queue…")
+        self._queue.shuffle()
+        for track in self._queue.tracks:
+            logger.info(f"{track.full_title}")
 
     def play(self):
         """Little helper to start playing the queue."""
