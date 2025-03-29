@@ -61,13 +61,13 @@ def print_collection_table(collection: Collection, title="Collection"):
 
     if show_track:
         table.add_column("ID", justify="right")
-        table.add_column("Track", style="magenta")
+        table.add_column("Track", style="#9B6BDF")
     if show_album:
         table.add_column("ID", justify="right")
-        table.add_column("Album", style="green")
+        table.add_column("Album", style="#E356A7")
     if show_artist:
         table.add_column("ID", justify="right")
-        table.add_column("Artist", style="cyan")
+        table.add_column("Artist", style="#75D7EC")
 
     for item in collection:
         table.add_row(*item.to_list())
