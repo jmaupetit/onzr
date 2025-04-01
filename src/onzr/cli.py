@@ -139,6 +139,7 @@ def artist(  # noqa: PLR0913
 @cli.command()
 def mix(
     artist: list[str],
+    deep: bool = False,
     limit: int = 10,
     quiet: bool = True,
     ids: bool = False,
@@ -157,7 +158,7 @@ def mix(
         result = onzr.deezer.search(artist_, strict=True)
         # We expect the search engine to be relevant 🤞
         artist_id = result[0].id
-        tracks += onzr.deezer.artist(artist_id, radio=False, top=True, limit=limit)
+        tracks += onzr.deezer.artist(artist_id, radio=deep, top=True, limit=limit)
     shuffle(tracks)
 
     if ids:
