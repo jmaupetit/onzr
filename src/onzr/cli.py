@@ -10,7 +10,6 @@ import typer
 from pynput import keyboard
 from rich.console import Console
 from rich.logging import RichHandler
-from rich.prompt import Prompt
 from rich.table import Table
 
 from .core import Onzr
@@ -193,13 +192,13 @@ def play(
     thread.start()
 
     # Controls
-    def on_press(key, injected):
+    def on_press(key: keyboard.Key):
         """Player control actions."""
         match key:
             case keyboard.Key.media_play_pause:
                 onzr.pause()
 
-    with keyboard.Listener(on_press=on_press) as listener:
+    with keyboard.Listener(on_press=on_press) as listener:  # type: ignore[arg-type]
         listener.join()
 
     typer.Exit()

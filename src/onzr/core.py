@@ -8,7 +8,7 @@ from enum import IntEnum
 from socket import SocketType
 from typing import List
 
-from .deezer import DeezerClient, StreamQuality, Track, TrackStatus
+from .deezer import DeezerClient, StreamQuality, Track
 from .player import Player
 
 logger = logging.getLogger(__name__)
