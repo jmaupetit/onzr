@@ -8,5 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.1.0] - 2025-04-02
 
-[unreleased]: https://github.com/jmaupetit/onzr/
+### Added
+
+- Implement a draft CLI using VLC
+
+[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.1.0...main
+[0.1.0] https://github.com/jmaupetit/onzr/compare/13ca0d7...v0.1.0
