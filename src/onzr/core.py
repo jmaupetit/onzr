@@ -8,7 +8,9 @@ from enum import IntEnum
 from socket import SocketType
 from typing import List
 
+from .config import settings
 from .deezer import DeezerClient, StreamQuality, Track
+from .exceptions import OnzrConfigurationError
 from .player import Player
 
 logger = logging.getLogger(__name__)
@@ -68,12 +70,22 @@ class Onzr:
         fast (bool): activate Deezer fast login
         """
         logger.debug("Instantiating Onzr…")
+        self._ensure_settings()
 
         self.deezer: DeezerClient = DeezerClient(fast=fast)
         self.socket: SocketType = self.configure_socket()
         self.player: Player = Player(self.socket)
         self._queue: Queue = Queue()
         self.status: OnzrStatus = OnzrStatus.IDLE
+
+    def _ensure_settings(self):
+        """Ensure Onzr settings are valid."""
+        try:
+            settings.get("arl")
+        except OSError as err:
+            raise OnzrConfigurationError(
+                "Onzr is not configured. You should run the 'onzr init' command first."
+            ) from err
 
     def configure_socket(self):
         """Open and configure the casting socket."""
