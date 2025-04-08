@@ -5,6 +5,14 @@ description = "The one-hour-late Deezer CLI."
 authors = ["Julien Maupetit <julien@maupetit.net>"]
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/jmaupetit/onzr"
+keywords = ["deezer", "cli", "tui", "audio", "mp3", "flac"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Topic :: Multimedia :: Sound/Audio :: Players",
+  "Topic :: Terminals",
+]
+
 
 [tool.poetry.dependencies]
 deezer-py = "^1.3.7"
