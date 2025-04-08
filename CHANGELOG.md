@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - Bootstrap installation using the `init` command
+- Document base CLI commands
 
 ## [0.1.0] - 2025-04-02
 
