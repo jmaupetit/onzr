@@ -20,7 +20,7 @@ class Player:
         logger.debug(f"Instantiating Player using socket: {socket} ({local=})")
         self.socket: SocketType = socket
         self.track: Track | None = None
-        self.chunk_size: int = 1024 * 16
+        self.chunk_size: int = 1024 * 4
         self.vlc: MediaPlayer | None = None
         if local:
             self._start_udp_client(settings.MULTICAST_URL)
