@@ -1,17 +1,21 @@
 """Onzr: command line interface."""
 
 import logging
+from pathlib import Path
 from random import shuffle
 from threading import Thread
 from typing import List
 
 import click
 import typer
+from dynaconf import loaders
 from pynput import keyboard
 from rich.console import Console
 from rich.logging import RichHandler
+from rich.prompt import Prompt
 from rich.table import Table
 
+from .config import APP_DIRECTORY, SECRETS_FILE, SETTINGS_FILES
 from .core import Onzr
 from .deezer import AlbumShort, ArtistShort, Collection, StreamQuality, TrackShort
 
@@ -24,7 +28,7 @@ logging.basicConfig(
     handlers=[RichHandler(console=logging_console)],
 )
 
-cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
+cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=False)
 console = Console()
 logger = logging.getLogger(__name__)
 
@@ -75,6 +79,50 @@ def print_collection_table(collection: Collection, title="Collection"):
         table.add_row(*item.to_list())
 
     console.print(table)
+
+
+@cli.command()
+def init(reset: bool = False):
+    """Intialize onzr player."""
+    console.print("⚙️ Initializing onzr…")
+
+    app_dir = Path(APP_DIRECTORY)
+    module_dir = Path(__file__).parent
+
+    # Create Onzr config directory if needed
+    logger.debug(f"Creating application directory: {app_dir}")
+    app_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
+
+    # Copy original dist
+    logger.debug("Will copy distributed configurations…")
+    for file_name in SETTINGS_FILES:
+        setting_file = Path(file_name)
+        src = module_dir / Path(setting_file.name + ".dist")
+        dest = app_dir / setting_file
+        logger.debug(f"{src=} -> {dest=}")
+
+        if dest.exists():
+            logger.info(f"Setting file '{setting_file}' already exists.")
+            continue
+        dest.write_text(src.read_text())
+        logger.debug(f"Copied setting file: {setting_file}")
+
+    # Set ARL value
+    from .config import settings
+
+    try:
+        arl = settings.ARL
+    except AttributeError:
+        arl = None
+
+    if arl is None or reset:
+        logger.debug("ARL value will be (re)set.")
+        arl = Prompt.ask("Paste your ARL 📋")
+
+        logger.info(f"Writing secrets configuration: {SECRETS_FILE}")
+        loaders.write(str(SECRETS_FILE), {"ARL": arl}, merge=True)
+
+    console.print("🎉 Everything looks ok from here. You can start playing 💫")
 
 
 @cli.command()
