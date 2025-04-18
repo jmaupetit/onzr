@@ -4,7 +4,6 @@ import functools
 import hashlib
 import logging
 from dataclasses import asdict, dataclass
-from datetime import date, datetime
 from enum import IntEnum, StrEnum
 from threading import Thread
 from time import sleep
@@ -13,8 +12,6 @@ from typing import Generator, List, Optional, Protocol
 import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
-
-from .config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +69,7 @@ class AlbumShort(ToListMixin):
 
     id: str
     name: str
-    release_date: Optional[date] = None
+    release_date: Optional[str] = None
     artist: Optional[ArtistShort] = None
 
 
@@ -93,8 +90,9 @@ class DeezerClient(deezer.Deezer):
 
     def __init__(
         self,
-        arl: str | None = None,
-        quality: StreamQuality | None = None,
+        arl: str,
+        blowfish: str,
+        multicast_group: str,
         fast: bool = False,
     ) -> None:
         """Instantiate the Deezer API client.
@@ -104,8 +102,9 @@ class DeezerClient(deezer.Deezer):
         """
         super().__init__()
 
-        self.arl = arl or settings.arl
-        self.quality = quality or settings.quality
+        self.arl = arl
+        self.blowfish = blowfish
+        self.multicast_group = multicast_group
         if fast:
             self._fast_login()
         else:
@@ -146,11 +145,6 @@ class DeezerClient(deezer.Deezer):
                 ),
             )
 
-    @staticmethod
-    def parse_release_date(input: str) -> date:
-        """Parse release date string."""
-        return datetime.strptime(input, "%Y-%m-%d").date()
-
     def _to_albums(
         self, data, artist: ArtistShort
     ) -> Generator[AlbumShort, None, None]:
@@ -160,7 +154,6 @@ class DeezerClient(deezer.Deezer):
             yield AlbumShort(
                 id=str(album.get("id")),
                 name=album.get("title"),
-                # release_date=self.parse_release_date(album.get("release_date")),
                 release_date=album.get("release_date"),
                 artist=artist,
             )
@@ -259,14 +252,14 @@ class Track:
         self,
         client: DeezerClient,
         track_id: str,
-        quality: StreamQuality | None = None,
+        quality: StreamQuality = StreamQuality.MP3_128,
         buffer: float = 0.5,  # 500ms
     ) -> None:
         """Instantiate a new track."""
         self.deezer = client
         self.track_id = track_id
         self.session = requests.Session()
-        self.quality = quality or self.deezer.quality
+        self.quality = quality
         self.track_info: dict = self._get_track_info()
         self.url: str = self._get_url()
         self.key: bytes = self._generate_blowfish_key()
@@ -311,7 +304,7 @@ class Track:
             for t in zip(
                 md5_hash[:16],
                 md5_hash[16:],
-                settings.DEEZER_BLOWFISH_SECRET,
+                self.deezer.blowfish,
                 strict=False,
             )
         ).encode()
@@ -398,7 +391,7 @@ class Track:
 
     def cast(self, socket, chunk_size: int = 1024):
         """Cast the track via UDP using given socket."""
-        multicast_group = tuple(settings.MULTICAST_GROUP)
+        multicast_group = tuple(self.deezer.multicast_group)
         logger.debug(
             (
                 f"Casting from position {self.streamed} with {chunk_size=} "

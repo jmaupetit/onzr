@@ -8,7 +8,9 @@ from enum import IntEnum
 from socket import SocketType
 from typing import List
 
-from .config import settings
+from dynaconf import Dynaconf
+
+from .config import get_settings
 from .deezer import DeezerClient, StreamQuality, Track
 from .exceptions import OnzrConfigurationError
 from .player import Player
@@ -70,27 +72,42 @@ class Onzr:
         fast (bool): fast boot (not player) and fast login mode (for Deezer)
         """
         logger.debug("Instantiating Onzr…")
+        self.settings: Dynaconf = get_settings()
         self._ensure_settings()
 
-        self.deezer: DeezerClient = DeezerClient(fast=fast)
+        self.deezer: DeezerClient = DeezerClient(
+            arl=self.settings.arl,
+            blowfish=self.settings.DEEZER_BLOWFISH_SECRET,
+            multicast_group=self.settings.MULTICAST_GROUP,
+            fast=fast,
+        )
 
         # We just make API requests
         if fast:
             return
 
         self.socket: SocketType = self.configure_socket()
-        self.player: Player = Player(self.socket)
+        self.player: Player = Player(
+            self.socket, local=True, multicast_url=self.settings.MULTICAST_URL
+        )
         self._queue: Queue = Queue()
         self.status: OnzrStatus = OnzrStatus.IDLE
 
     def _ensure_settings(self):
         """Ensure Onzr settings are valid."""
+        # Settings or secret files does not exist
         try:
-            settings.get("arl")
+            self.settings.get("arl")
         except OSError as err:
             raise OnzrConfigurationError(
                 "Onzr is not configured. You should run the 'onzr init' command first."
             ) from err
+
+        # ARL is not set
+        if self.settings.get("arl", None) is None:
+            raise OnzrConfigurationError(
+                "Onzr is not properly configured. You should set the ARL secret."
+            )
 
     def configure_socket(self):
         """Open and configure the casting socket."""
