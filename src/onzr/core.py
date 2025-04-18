@@ -67,12 +67,17 @@ class Onzr:
     def __init__(self, fast: bool = False) -> None:
         """Initialize all the things.
 
-        fast (bool): activate Deezer fast login
+        fast (bool): fast boot (not player) and fast login mode (for Deezer)
         """
         logger.debug("Instantiating Onzr…")
         self._ensure_settings()
 
         self.deezer: DeezerClient = DeezerClient(fast=fast)
+
+        # We just make API requests
+        if fast:
+            return
+
         self.socket: SocketType = self.configure_socket()
         self.player: Player = Player(self.socket)
         self._queue: Queue = Queue()

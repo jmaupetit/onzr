@@ -189,6 +189,86 @@ Enjoy:
 └────────────┴─────────────────────────────────────────┴───────────┴──────────────────────────────────────────┴──────┴───────────────────┘
 ```
 
+You can also explore artist's albums using the `--albums` option:
+
+```sh
+$ onzr search --artist Radiohead --ids | \
+    head -n 1 | \
+    onzr artist --albums --limit 20
+```
+
+There you go, here is Radiohead's discography:
+
+```
+                             Artist collection
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━━━━┓
+┃        ID ┃ Album                         ┃ Released   ┃  ID ┃ Artist    ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━━━━┩
+│ 265569082 │ KID A MNESIA                  │ 2021-11-05 │ 399 │ Radiohead │
+│ 264685862 │ Follow Me Around              │ 2021-11-01 │ 399 │ Radiohead │
+│  43197211 │ OK Computer OKNOTOK 1997 2017 │ 2017-06-23 │ 399 │ Radiohead │
+│  14880561 │ In Rainbows (Disk 2)          │ 2016-10-14 │ 399 │ Radiohead │
+│  14879823 │ A Moon Shaped Pool            │ 2016-05-09 │ 399 │ Radiohead │
+│  14880501 │ TKOL RMX 1234567              │ 2011-10-10 │ 399 │ Radiohead │
+│  14880315 │ The King Of Limbs             │ 2011-02-18 │ 399 │ Radiohead │
+│  14880659 │ In Rainbows                   │ 2007-12-28 │ 399 │ Radiohead │
+│  14879789 │ Com Lag: 2+2=5                │ 2004-03-24 │ 399 │ Radiohead │
+│  14879739 │ Hail To the Thief             │ 2003-06-09 │ 399 │ Radiohead │
+│  14879753 │ I Might Be Wrong              │ 2001-11-12 │ 399 │ Radiohead │
+│  14879749 │ Amnesiac                      │ 2001-03-12 │ 399 │ Radiohead │
+│  14880741 │ Kid A                         │ 2000-10-02 │ 399 │ Radiohead │
+│  14879797 │ Karma Police                  │ 1997-08-25 │ 399 │ Radiohead │
+│  14879699 │ OK Computer                   │ 1997-06-17 │ 399 │ Radiohead │
+│  14880317 │ The Bends                     │ 1995-03-13 │ 399 │ Radiohead │
+│  14880813 │ My Iron Lung                  │ 1994-09-26 │ 399 │ Radiohead │
+│  14880711 │ Pablo Honey                   │ 1993-02-22 │ 399 │ Radiohead │
+│ 423524437 │ Creep EP                      │ 1992-09-21 │ 399 │ Radiohead │
+│ 121893052 │ Drill EP                      │ 1992-05-05 │ 399 │ Radiohead │
+└───────────┴───────────────────────────────┴────────────┴─────┴───────────┘
+```
+
+### `album`
+
+The `album` command list album tracks to check or play them:
+
+```sh
+# Display track list
+$ onzr search --album "Friday night in San Francisco" --ids | \
+    head -n 1 | \
+    onzr album -
+```
+
+And there it is:
+
+```
+                                                                   Album tracks
+┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━┓
+┃      ID ┃ Track                                                                   ┃     ID ┃ Album                         ┃   ID ┃ Artist      ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━┩
+│ 1031231 │ Mediterranean Sundance / Rio Ancho (Live at Warfield Theatre, San       │ 113027 │ Friday Night in San Francisco │ 8314 │ Al Di Meola │
+│         │ Francisco, CA - December 5, 1980)                                       │        │                               │      │             │
+│ 1028083 │ Short Tales of the Black Forest (Live at Warfield Theatre, San          │ 113027 │ Friday Night in San Francisco │ 8314 │ Al Di Meola │
+│         │ Francisco, CA - December 5, 1980)                                       │        │                               │      │             │
+│ 1030435 │ Frevo Rasgado (Live at Warfield Theatre, San Francisco, CA - December   │ 113027 │ Friday Night in San Francisco │ 8314 │ Al Di Meola │
+│         │ 5, 1980)                                                                │        │                               │      │             │
+│ 1028903 │ Fantasia Suite (Live at Warfield Theatre, San Francisco, CA - December  │ 113027 │ Friday Night in San Francisco │ 8314 │ Al Di Meola │
+│         │ 5, 1980)                                                                │        │                               │      │             │
+│ 1028399 │ Guardian Angel (Live at Warfield Theatre, San Francisco, CA - December  │ 113027 │ Friday Night in San Francisco │ 8314 │ Al Di Meola │
+│         │ 5, 1980)                                                                │        │                               │      │             │
+└─────────┴─────────────────────────────────────────────────────────────────────────┴────────┴───────────────────────────────┴──────┴─────────────┘
+```
+
+To play the entire album, don't forget to list only track ids and pass them to
+the `play` command:
+
+```sh
+# Get track ids and play them
+$ onzr search --album "Friday night in San Francisco" --ids | \
+    head -n 1 | \
+    onzr album --ids - | \
+    onzr play -
+```
+
 ### `mix`
 
 The `mix` command generates playlists using various artists definition. You can

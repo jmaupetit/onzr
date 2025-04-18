@@ -4,10 +4,11 @@ import functools
 import hashlib
 import logging
 from dataclasses import asdict, dataclass
+from datetime import date, datetime
 from enum import IntEnum, StrEnum
 from threading import Thread
 from time import sleep
-from typing import Generator, List, Protocol
+from typing import Generator, List, Optional, Protocol
 
 import deezer
 import requests
@@ -51,7 +52,8 @@ class ToListMixin(IsDataclassProtocol):
         for i in target:
             if isinstance(i, list):
                 out += self.to_list(i)
-            else:
+            # Ignore None
+            elif i:
                 out.append(i)
         return out
 
@@ -70,7 +72,8 @@ class AlbumShort(ToListMixin):
 
     id: str
     name: str
-    artist: ArtistShort
+    release_date: Optional[date] = None
+    artist: Optional[ArtistShort] = None
 
 
 @dataclass
@@ -82,7 +85,7 @@ class TrackShort(ToListMixin):
     album: AlbumShort
 
 
-Collection = List[ArtistShort] | list[AlbumShort] | List[TrackShort]
+Collection = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
 
 
 class DeezerClient(deezer.Deezer):
@@ -135,6 +138,7 @@ class DeezerClient(deezer.Deezer):
                 album=AlbumShort(
                     id=str(track.get("album").get("id")),
                     name=track.get("album").get("title"),
+                    release_date=track.get("album").get("release_date"),
                     artist=ArtistShort(
                         id=str(track.get("artist").get("id")),
                         name=track.get("artist").get("name"),
@@ -142,18 +146,57 @@ class DeezerClient(deezer.Deezer):
                 ),
             )
 
+    @staticmethod
+    def parse_release_date(input: str) -> date:
+        """Parse release date string."""
+        return datetime.strptime(input, "%Y-%m-%d").date()
+
+    def _to_albums(
+        self, data, artist: ArtistShort
+    ) -> Generator[AlbumShort, None, None]:
+        """API results to AlbumShort."""
+        for album in data:
+            logger.debug(f"{album=}")
+            yield AlbumShort(
+                id=str(album.get("id")),
+                name=album.get("title"),
+                # release_date=self.parse_release_date(album.get("release_date")),
+                release_date=album.get("release_date"),
+                artist=artist,
+            )
+
     def artist(
-        self, artist_id: str, radio: bool = False, top: bool = True, limit: int = 10
-    ) -> List[TrackShort]:
+        self,
+        artist_id: str,
+        radio: bool = False,
+        top: bool = True,
+        albums: bool = False,
+        limit: int = 10,
+    ) -> List[TrackShort] | List[AlbumShort]:
         """Get artist tracks."""
+        response = self.api.get_artist(artist_id)
+        artist = ArtistShort(id=str(response.get("id")), name=response.get("name"))
+        logger.debug(f"{artist=}")
+
         if radio:
             response = self.api.get_artist_radio(artist_id, limit=limit)
+            return list(self._to_tracks(response["data"]))
         elif top:
             response = self.api.get_artist_top(artist_id, limit=limit)
+            return list(self._to_tracks(response["data"]))
+        elif albums:
+            response = self.api.get_artist_albums(artist_id, limit=limit)
+            return list(self._to_albums(response["data"], artist))
         else:
-            raise ValueError("Either radio or top should be True to get artist tracks")
+            raise ValueError(
+                "Either radio, top or albums should be True to get artist details"
+            )
 
-        return list(self._to_tracks(response["data"]))
+    def album(self, album_id: str) -> List[TrackShort]:
+        """Get album tracks."""
+        response = self.api.get_album(album_id)
+        logger.debug(f"{response=}")
+        return list(self._to_tracks(response["tracks"]["data"]))
 
     def search(
         self,
@@ -185,6 +228,7 @@ class DeezerClient(deezer.Deezer):
                 AlbumShort(
                     id=str(a.get("id")),
                     name=a.get("title"),
+                    release_date=a.get("release_date"),
                     artist=ArtistShort(
                         id=str(a.get("artist").get("id")),
                         name=str(a.get("artist").get("name")),
@@ -378,7 +422,6 @@ class Track:
 
         slow_connection: bool = False
         for start in range(self.streamed, self.filesize, chunk_size):
-
             # Track has been paused, wait for resume
             while self.paused:
                 sleep(0.001)

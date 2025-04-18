@@ -10,6 +10,8 @@ and this project adheres to
 
 ### Added
 
+- Explore album tracks using the `album` command
+- Explore artist albums using the `artist` command `--albums` option
 - Bootstrap installation using the `init` command
 - Document base CLI commands
 
@@ -20,4 +22,5 @@ and this project adheres to
 - Implement a draft CLI using VLC
 
 [unreleased]: https://github.com/jmaupetit/onzr/compare/v0.1.0...main
+
 [0.1.0] https://github.com/jmaupetit/onzr/compare/13ca0d7...v0.1.0
