@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-04-18
+
 ### Added
 
 - Explore album tracks using the `album` command
@@ -21,6 +23,6 @@ and this project adheres to
 
 - Implement a draft CLI using VLC
 
-[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.1.0...main
-
+[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.2.0...main
+[0.2.0] https://github.com/jmaupetit/onzr/compare/v0.1.0...v0.2.0
 [0.1.0] https://github.com/jmaupetit/onzr/compare/13ca0d7...v0.1.0
