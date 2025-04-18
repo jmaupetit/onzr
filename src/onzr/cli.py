@@ -1,10 +1,11 @@
 """Onzr: command line interface."""
 
 import logging
+from datetime import date
 from pathlib import Path
 from random import shuffle
 from threading import Thread
-from typing import List
+from typing import List, cast
 
 import click
 import typer
@@ -64,6 +65,10 @@ def print_collection_table(collection: Collection, title="Collection"):
         else False
     )
     show_track = True if isinstance(sample, TrackShort) else False
+    show_release = (
+        True if isinstance(sample, AlbumShort) and sample.release_date else False
+    )
+    logger.debug(f"{show_artist=} - {show_album=} - {show_track=}")
 
     if show_track:
         table.add_column("ID", justify="right")
@@ -71,9 +76,22 @@ def print_collection_table(collection: Collection, title="Collection"):
     if show_album:
         table.add_column("ID", justify="right")
         table.add_column("Album", style="#E356A7")
+    if show_release:
+        table.add_column("Released")
     if show_artist:
         table.add_column("ID", justify="right")
         table.add_column("Artist", style="#75D7EC")
+
+    # Sort albums by release date
+    if isinstance(collection[0], AlbumShort):
+        collection = cast(
+            Collection,
+            sorted(
+                collection,
+                key=lambda i: date.fromisoformat(i.release_date),
+                reverse=True,
+            ),
+        )
 
     for item in collection:
         table.add_row(*item.to_list())
@@ -159,14 +177,17 @@ def artist(  # noqa: PLR0913
     artist_id: str,
     top: bool = True,
     radio: bool = False,
+    albums: bool = False,
     limit: int = 10,
     quiet: bool = True,
     ids: bool = False,
 ):
     """Get artist popular track ids."""
-    if not top and not radio:
-        console.print("You should choose either top titles or artist radio.")
+    if all([not top, not radio, not albums]):
+        console.print("You should choose either top titles, artist radio or albums.")
         raise typer.Exit(code=2)
+    elif albums:
+        top = False
 
     if ids:
         quiet = True
@@ -177,13 +198,40 @@ def artist(  # noqa: PLR0913
         logger.debug(f"{artist_id=}")
 
     onzr = start(fast=True, quiet=quiet)
-    tracks = onzr.deezer.artist(artist_id, radio=radio, top=top, limit=limit)
+    collection = onzr.deezer.artist(
+        artist_id, radio=radio, top=top, albums=albums, limit=limit
+    )
 
     if ids:
-        print_collection_ids(tracks)
+        print_collection_ids(collection)
         return
 
-    print_collection_table(tracks, title="Artist tracks")
+    print_collection_table(collection, title="Artist collection")
+
+
+@cli.command()
+def album(
+    album_id: str,
+    quiet: bool = True,
+    ids: bool = False,
+):
+    """Get album track ids."""
+    if ids:
+        quiet = True
+
+    if album_id == "-":
+        logger.debug("Reading artist id from stdin…")
+        album_id = click.get_text_stream("stdin").read().strip()
+        logger.debug(f"{album_id=}")
+
+    onzr = start(fast=True, quiet=quiet)
+    collection = onzr.deezer.album(album_id)
+
+    if ids:
+        print_collection_ids(collection)
+        return
+
+    print_collection_table(collection, title="Album tracks")
 
 
 @cli.command()
@@ -199,7 +247,7 @@ def mix(
         quiet = True
 
     onzr = start(fast=True, quiet=quiet)
-    tracks = []
+    tracks: List[TrackShort] = []
 
     if not quiet:
         console.print("🍪 cooking the mix…")
@@ -208,7 +256,10 @@ def mix(
         result = onzr.deezer.search(artist_, strict=True)
         # We expect the search engine to be relevant 🤞
         artist_id = result[0].id
-        tracks += onzr.deezer.artist(artist_id, radio=deep, top=True, limit=limit)
+        tracks += cast(
+            List[TrackShort],
+            onzr.deezer.artist(artist_id, radio=deep, top=True, limit=limit),
+        )
     shuffle(tracks)
 
     if ids:
