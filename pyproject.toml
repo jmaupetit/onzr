@@ -34,6 +34,20 @@ types-pynput = "^1.8.1.20250318"
 [tool.poetry.scripts]
 onzr = "onzr.cli:cli"
 
+# Third party packages configuration
+[tool.coverage.run]
+omit = []
+
+[tool.pytest.ini_options]
+addopts = "-v --cov-report term-missing --cov=onzr"
+python_files = [
+    "test_*.py",
+    "tests.py",
+]
+testpaths = [
+    "tests",
+]
+
 [tool.ruff]
 target-version = "py310"
 # Exclude a variety of commonly ignored directories.
