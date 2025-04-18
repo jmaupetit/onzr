@@ -1,18 +1,28 @@
 """Dzr configuration."""
 
+import logging
 from pathlib import Path
-from typing import List
 
-from click import get_app_dir
 from dynaconf import Dynaconf
+from typer import get_app_dir
 
-APP_DIRECTORY: Path = Path(get_app_dir("onzr"))
-SETTINGS_FILE: Path = APP_DIRECTORY / "settings.toml"
-SECRETS_FILE: Path = APP_DIRECTORY / ".secrets.toml"
-SETTINGS_FILES: List[str] = [SETTINGS_FILE.name, SECRETS_FILE.name]
+logger = logging.getLogger(__name__)
 
-settings = Dynaconf(
-    envvar_prefix="ONZR",
-    root_path=APP_DIRECTORY,
-    settings_files=SETTINGS_FILES,
-)
+APP_NAME: str = "onzr"
+SECRETS_FILE: Path = Path(".secrets.toml")
+SETTINGS_FILE: Path = Path("settings.toml")
+
+
+def get_onzr_dir() -> Path:
+    """Get Onzr application directory."""
+    return Path(get_app_dir(APP_NAME))
+
+
+def get_settings() -> Dynaconf:
+    """Get Dynaconf settiings."""
+    logger.debug("Getting settings…")
+    return Dynaconf(
+        envvar_prefix=APP_NAME.upper(),
+        root_path=get_onzr_dir(),
+        settings_files=[SECRETS_FILE.name, SETTINGS_FILE.name],
+    )

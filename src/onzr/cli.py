@@ -2,6 +2,7 @@
 
 import logging
 from datetime import date
+from enum import IntEnum
 from pathlib import Path
 from random import shuffle
 from threading import Thread
@@ -16,22 +17,32 @@ from rich.logging import RichHandler
 from rich.prompt import Prompt
 from rich.table import Table
 
-from .config import APP_DIRECTORY, SECRETS_FILE, SETTINGS_FILES
+from .config import SECRETS_FILE, SETTINGS_FILE, get_onzr_dir, get_settings
 from .core import Onzr
 from .deezer import AlbumShort, ArtistShort, Collection, StreamQuality, TrackShort
 
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format=FORMAT,
     datefmt="[%X]",
     handlers=[RichHandler(console=logging_console)],
 )
 
-cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=False)
+cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
 console = Console()
 logger = logging.getLogger(__name__)
+
+
+class ExitCodes(IntEnum):
+    """data7 exit codes."""
+
+    OK = 0
+    INCOMPLETE_CONFIGURATION = 10
+    INVALID_CONFIGURATION = 11
+    INVALID_ARGUMENTS = 20
+    NOT_FOUND = 30
 
 
 def start(fast: bool = False, quiet: bool = False) -> Onzr:
@@ -104,7 +115,7 @@ def init(reset: bool = False):
     """Intialize onzr player."""
     console.print("⚙️ Initializing onzr…")
 
-    app_dir = Path(APP_DIRECTORY)
+    app_dir = get_onzr_dir()
     module_dir = Path(__file__).parent
 
     # Create Onzr config directory if needed
@@ -113,9 +124,8 @@ def init(reset: bool = False):
 
     # Copy original dist
     logger.debug("Will copy distributed configurations…")
-    for file_name in SETTINGS_FILES:
-        setting_file = Path(file_name)
-        src = module_dir / Path(setting_file.name + ".dist")
+    for setting_file in [SECRETS_FILE, SETTINGS_FILE]:
+        src = module_dir / setting_file.with_suffix(".toml.dist")
         dest = app_dir / setting_file
         logger.debug(f"{src=} -> {dest=}")
 
@@ -126,8 +136,7 @@ def init(reset: bool = False):
         logger.debug(f"Copied setting file: {setting_file}")
 
     # Set ARL value
-    from .config import settings
-
+    settings = get_settings()
     try:
         arl = settings.ARL
     except AttributeError:
@@ -136,9 +145,10 @@ def init(reset: bool = False):
     if arl is None or reset:
         logger.debug("ARL value will be (re)set.")
         arl = Prompt.ask("Paste your ARL 📋")
+        secrets_file = app_dir / SECRETS_FILE
 
-        logger.info(f"Writing secrets configuration: {SECRETS_FILE}")
-        loaders.write(str(SECRETS_FILE), {"ARL": arl}, merge=True)
+        logger.info(f"Writing secrets configuration: {secrets_file}")
+        loaders.write(str(secrets_file), {"ARL": arl}, merge=True)
 
     console.print("🎉 Everything looks ok from here. You can start playing 💫")
 
@@ -163,7 +173,7 @@ def search(  # noqa: PLR0913
 
     if not results:
         console.print("No match found.")
-        typer.Exit(code=1)
+        raise typer.Exit(code=ExitCodes.NOT_FOUND)
 
     if ids:
         print_collection_ids(results)
@@ -179,15 +189,16 @@ def artist(  # noqa: PLR0913
     radio: bool = False,
     albums: bool = False,
     limit: int = 10,
-    quiet: bool = True,
+    quiet: bool = False,
     ids: bool = False,
 ):
     """Get artist popular track ids."""
     if all([not top, not radio, not albums]):
         console.print("You should choose either top titles, artist radio or albums.")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS)
     elif albums:
         top = False
+        radio = False
 
     if ids:
         quiet = True
@@ -212,7 +223,7 @@ def artist(  # noqa: PLR0913
 @cli.command()
 def album(
     album_id: str,
-    quiet: bool = True,
+    quiet: bool = False,
     ids: bool = False,
 ):
     """Get album track ids."""
@@ -239,7 +250,7 @@ def mix(
     artist: list[str],
     deep: bool = False,
     limit: int = 10,
-    quiet: bool = True,
+    quiet: bool = False,
     ids: bool = False,
 ):
     """Create a playlist from multiple artists."""
@@ -300,4 +311,4 @@ def play(
     with keyboard.Listener(on_press=on_press) as listener:  # type: ignore[arg-type]
         listener.join()
 
-    typer.Exit()
+    raise typer.Exit()

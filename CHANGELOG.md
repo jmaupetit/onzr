@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Refactor settings management to improve testability
+
 ## [0.2.0] - 2025-04-18
 
 ### Added
