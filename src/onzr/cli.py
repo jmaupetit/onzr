@@ -1,5 +1,6 @@
 """Onzr: command line interface."""
 
+from enum import IntEnum
 import logging
 from datetime import date
 from pathlib import Path
@@ -29,9 +30,17 @@ logging.basicConfig(
     handlers=[RichHandler(console=logging_console)],
 )
 
-cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=False)
+cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
 console = Console()
 logger = logging.getLogger(__name__)
+
+
+class ExitCodes(IntEnum):
+    """data7 exit codes."""
+
+    OK = 0
+    INCOMPLETE_CONFIGURATION = 1
+    INVALID_CONFIGURATION = 2
 
 
 def start(fast: bool = False, quiet: bool = False) -> Onzr:
