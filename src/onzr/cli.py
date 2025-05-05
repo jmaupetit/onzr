@@ -2,6 +2,7 @@
 
 import logging
 from datetime import date
+from enum import IntEnum
 from pathlib import Path
 from random import shuffle
 from threading import Thread
@@ -23,15 +24,25 @@ from .deezer import AlbumShort, ArtistShort, Collection, StreamQuality, TrackSho
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format=FORMAT,
     datefmt="[%X]",
     handlers=[RichHandler(console=logging_console)],
 )
 
-cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=False)
+cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
 console = Console()
 logger = logging.getLogger(__name__)
+
+
+class ExitCodes(IntEnum):
+    """data7 exit codes."""
+
+    OK = 0
+    INCOMPLETE_CONFIGURATION = 10
+    INVALID_CONFIGURATION = 11
+    INVALID_ARGUMENTS = 20
+    NOT_FOUND = 30
 
 
 def start(fast: bool = False, quiet: bool = False) -> Onzr:
@@ -163,7 +174,7 @@ def search(  # noqa: PLR0913
 
     if not results:
         console.print("No match found.")
-        typer.Exit(code=1)
+        raise typer.Exit(code=ExitCodes.NOT_FOUND)
 
     if ids:
         print_collection_ids(results)
@@ -179,15 +190,16 @@ def artist(  # noqa: PLR0913
     radio: bool = False,
     albums: bool = False,
     limit: int = 10,
-    quiet: bool = True,
+    quiet: bool = False,
     ids: bool = False,
 ):
     """Get artist popular track ids."""
     if all([not top, not radio, not albums]):
         console.print("You should choose either top titles, artist radio or albums.")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS)
     elif albums:
         top = False
+        radio = False
 
     if ids:
         quiet = True
@@ -212,7 +224,7 @@ def artist(  # noqa: PLR0913
 @cli.command()
 def album(
     album_id: str,
-    quiet: bool = True,
+    quiet: bool = False,
     ids: bool = False,
 ):
     """Get album track ids."""
@@ -239,7 +251,7 @@ def mix(
     artist: list[str],
     deep: bool = False,
     limit: int = 10,
-    quiet: bool = True,
+    quiet: bool = False,
     ids: bool = False,
 ):
     """Create a playlist from multiple artists."""
@@ -300,4 +312,4 @@ def play(
     with keyboard.Listener(on_press=on_press) as listener:  # type: ignore[arg-type]
         listener.join()
 
-    typer.Exit()
+    raise typer.Exit()

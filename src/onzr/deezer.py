@@ -4,7 +4,6 @@ import functools
 import hashlib
 import logging
 from dataclasses import asdict, dataclass
-from datetime import date, datetime
 from enum import IntEnum, StrEnum
 from threading import Thread
 from time import sleep
@@ -72,7 +71,7 @@ class AlbumShort(ToListMixin):
 
     id: str
     name: str
-    release_date: Optional[date] = None
+    release_date: Optional[str] = None
     artist: Optional[ArtistShort] = None
 
 
@@ -146,11 +145,6 @@ class DeezerClient(deezer.Deezer):
                 ),
             )
 
-    @staticmethod
-    def parse_release_date(input: str) -> date:
-        """Parse release date string."""
-        return datetime.strptime(input, "%Y-%m-%d").date()
-
     def _to_albums(
         self, data, artist: ArtistShort
     ) -> Generator[AlbumShort, None, None]:
@@ -160,7 +154,6 @@ class DeezerClient(deezer.Deezer):
             yield AlbumShort(
                 id=str(album.get("id")),
                 name=album.get("title"),
-                # release_date=self.parse_release_date(album.get("release_date")),
                 release_date=album.get("release_date"),
                 artist=artist,
             )
