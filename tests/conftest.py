@@ -27,6 +27,13 @@ def onzr_cli(onzr_dir):
 
 
 @pytest.fixture
+def onzr_cli_init(onzr_cli, runner):
+    """Configured onzr CLI instance."""
+    runner.invoke(onzr_cli, ["init"], input="fake-arl")
+    yield onzr_cli
+
+
+@pytest.fixture
 def settings_files(onzr_dir):
     """Configured onzr settings files."""
     yield [

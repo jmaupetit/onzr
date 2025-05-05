@@ -39,9 +39,9 @@ SYSTEM_EXIT_1 = 1
 SYSTEM_EXIT_2 = 2
 
 
-def test_command_help(runner, onzr_cli):
+def test_command_help(runner, onzr_cli_init):
     """Test the `onzr --help` command."""
-    result = runner.invoke(onzr_cli, ["--help"])
+    result = runner.invoke(onzr_cli_init, ["--help"])
     assert result.exit_code == ExitCodes.OK
 
 
@@ -146,14 +146,14 @@ def test_init_command_reset(runner, onzr_cli, settings_files):
     assert re.search(r'^ARL = "new-fake-arl"', secrets)
 
 
-def test_search_command_with_no_argument(runner, onzr_cli):
+def test_search_command_with_no_argument(runner, onzr_cli_init):
     """Test the `onzr search` without any argument."""
-    result = runner.invoke(onzr_cli, ["search"])
+    result = runner.invoke(onzr_cli_init, ["search"])
     assert result.exit_code == ExitCodes.NOT_FOUND
 
 
 @pytest.mark.parametrize("option", ("artist", "album", "track"))
-def test_search_command_with_no_match(runner, onzr_cli, monkeypatch, option):
+def test_search_command_with_no_match(runner, onzr_cli_init, monkeypatch, option):
     """Test the `onzr search` command with no match."""
 
     def search(*args, **kwargs):
@@ -162,7 +162,7 @@ def test_search_command_with_no_match(runner, onzr_cli, monkeypatch, option):
 
     monkeypatch.setattr(DeezerClient, "search", search)
 
-    result = runner.invoke(onzr_cli, ["search", f"--{option}", "foo"])
+    result = runner.invoke(onzr_cli_init, ["search", f"--{option}", "foo"])
     assert result.exit_code == ExitCodes.NOT_FOUND
 
 
@@ -174,7 +174,7 @@ def test_search_command_with_no_match(runner, onzr_cli, monkeypatch, option):
         ("track", tracks_collection),
     ),
 )
-def test_search_command(runner, onzr_cli, monkeypatch, option, results):
+def test_search_command(runner, onzr_cli_init, monkeypatch, option, results):
     """Test the `onzr search` command."""
 
     def search(*args, **kwargs):
@@ -183,27 +183,27 @@ def test_search_command(runner, onzr_cli, monkeypatch, option, results):
 
     monkeypatch.setattr(DeezerClient, "search", search)
 
-    result = runner.invoke(onzr_cli, ["search", f"--{option}", "foo"])
+    result = runner.invoke(onzr_cli_init, ["search", f"--{option}", "foo"])
     assert result.exit_code == ExitCodes.OK
 
     # Test ids option
-    result = runner.invoke(onzr_cli, ["search", f"--{option}", "foo", "--ids"])
+    result = runner.invoke(onzr_cli_init, ["search", f"--{option}", "foo", "--ids"])
     assert result.exit_code == ExitCodes.OK
     expected = "".join([f"{r.id}\n" for r in results])
     assert result.stdout == expected
 
 
-def test_artist_command_with_no_id(runner, onzr_cli):
+def test_artist_command_with_no_id(runner, onzr_cli_init):
     """Test the `onzr artist` command with no ID."""
-    result = runner.invoke(onzr_cli, ["artists"])
+    result = runner.invoke(onzr_cli_init, ["artists"])
     assert result.exit_code == SYSTEM_EXIT_2
 
 
-def test_artist_command(runner, onzr_cli, monkeypatch):
+def test_artist_command(runner, onzr_cli_init, monkeypatch):
     """Test the `onzr artist` command."""
     # One should choose one type of result
     result = runner.invoke(
-        onzr_cli, ["artist", "--no-top", "--no-radio", "--no-albums", "1"]
+        onzr_cli_init, ["artist", "--no-top", "--no-radio", "--no-albums", "1"]
     )
     assert result.exit_code == ExitCodes.INVALID_ARGUMENTS
 
@@ -222,35 +222,35 @@ def test_artist_command(runner, onzr_cli, monkeypatch):
     monkeypatch.setattr(DeezerClient, "artist", artist)
 
     # Default using an argument
-    result = runner.invoke(onzr_cli, ["artist", "1"])
+    result = runner.invoke(onzr_cli_init, ["artist", "1"])
     assert result.exit_code == ExitCodes.OK
-    result = runner.invoke(onzr_cli, ["artist", "--ids", "1"])
+    result = runner.invoke(onzr_cli_init, ["artist", "--ids", "1"])
     assert result.exit_code == ExitCodes.OK
     assert result.stdout == "".join([f"{t.id}\n" for t in top_collection])
 
     # Top using an argument
-    result = runner.invoke(onzr_cli, ["artist", "--ids", "--top", "1"])
+    result = runner.invoke(onzr_cli_init, ["artist", "--ids", "--top", "1"])
     assert result.exit_code == ExitCodes.OK
     assert result.stdout == "".join([f"{t.id}\n" for t in top_collection])
 
     # Top using stdin
     for input in ["1", " 1", " 1 ", "1 "]:
-        result = runner.invoke(onzr_cli, ["artist", "--ids", "--top", "-"], input=input)
+        result = runner.invoke(onzr_cli_init, ["artist", "--ids", "--top", "-"], input=input)
         assert result.exit_code == ExitCodes.OK
         assert result.stdout == "".join([f"{t.id}\n" for t in top_collection])
 
     # Radio
-    result = runner.invoke(onzr_cli, ["artist", "--ids", "--radio", "1"])
+    result = runner.invoke(onzr_cli_init, ["artist", "--ids", "--radio", "1"])
     assert result.exit_code == ExitCodes.OK
     assert result.stdout == "".join([f"{t.id}\n" for t in tracks_collection])
 
     # Albums
-    result = runner.invoke(onzr_cli, ["artist", "--ids", "--albums", "1"])
+    result = runner.invoke(onzr_cli_init, ["artist", "--ids", "--albums", "1"])
     assert result.exit_code == ExitCodes.OK
     assert result.stdout == "".join([f"{a.id}\n" for a in albums_collection])
 
 
-def test_album_command(runner, onzr_cli, monkeypatch):
+def test_album_command(runner, onzr_cli_init, monkeypatch):
     """Test the `onzr album` command."""
 
     def album(*args, **kwargs):
@@ -260,22 +260,22 @@ def test_album_command(runner, onzr_cli, monkeypatch):
     monkeypatch.setattr(DeezerClient, "album", album)
 
     # Standard run
-    result = runner.invoke(onzr_cli, ["album", "1"])
+    result = runner.invoke(onzr_cli_init, ["album", "1"])
     assert result.exit_code == ExitCodes.OK
 
     # Display only track ids
-    result = runner.invoke(onzr_cli, ["album", "--ids", "1"])
+    result = runner.invoke(onzr_cli_init, ["album", "--ids", "1"])
     assert result.exit_code == ExitCodes.OK
     assert result.stdout == "".join([f"{t.id}\n" for t in tracks_collection])
 
     # Use stdin
     for input in ["1", " 1", " 1 ", "1 "]:
-        result = runner.invoke(onzr_cli, ["album", "--ids", "-"], input=input)
+        result = runner.invoke(onzr_cli_init, ["album", "--ids", "-"], input=input)
         assert result.exit_code == ExitCodes.OK
         assert result.stdout == "".join([f"{t.id}\n" for t in tracks_collection])
 
 
-def test_mix_command(runner, onzr_cli, monkeypatch):
+def test_mix_command(runner, onzr_cli_init, monkeypatch):
     """Test the `onzr mix` command."""
 
     def search(*args, **kwargs):
@@ -298,10 +298,10 @@ def test_mix_command(runner, onzr_cli, monkeypatch):
     monkeypatch.setattr(DeezerClient, "artist", artist)
 
     # Standard mix
-    result = runner.invoke(onzr_cli, ["mix", "foo", "bar"])
+    result = runner.invoke(onzr_cli_init, ["mix", "foo", "bar"])
     assert result.exit_code == ExitCodes.OK
 
-    result = runner.invoke(onzr_cli, ["mix", "foo", "bar", "--ids"])
+    result = runner.invoke(onzr_cli_init, ["mix", "foo", "bar", "--ids"])
     assert result.exit_code == ExitCodes.OK
     # As tracks are shuffled, we need to sort them
     assert sorted(result.stdout.split()) == sorted(
@@ -309,10 +309,10 @@ def test_mix_command(runner, onzr_cli, monkeypatch):
     )
 
     # Deep mix
-    result = runner.invoke(onzr_cli, ["mix", "foo", "bar", "--deep"])
+    result = runner.invoke(onzr_cli_init, ["mix", "foo", "bar", "--deep"])
     assert result.exit_code == ExitCodes.OK
 
-    result = runner.invoke(onzr_cli, ["mix", "foo", "bar", "--ids", "--deep"])
+    result = runner.invoke(onzr_cli_init, ["mix", "foo", "bar", "--ids", "--deep"])
     assert result.exit_code == ExitCodes.OK
     # As tracks are shuffled, we need to sort them
     assert sorted(result.stdout.split()) == sorted(
