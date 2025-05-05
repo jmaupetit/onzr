@@ -26,10 +26,11 @@ typer = "^0.15.2"
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
 mypy = "^1.15.0"
-ruff = "^0.9.7"
 pytest = "^8.3.5"
-types-requests = "^2.32.0.20250306"
+pytest-coverage = "^0.0"
+ruff = "^0.9.7"
 types-pynput = "^1.8.1.20250318"
+types-requests = "^2.32.0.20250306"
 
 [tool.poetry.scripts]
 onzr = "onzr.cli:cli"
