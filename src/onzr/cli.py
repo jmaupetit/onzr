@@ -9,7 +9,9 @@ from threading import Thread
 from typing import List, cast
 
 import click
+import requests
 import typer
+import uvicorn
 from dynaconf import loaders
 from pynput import keyboard
 from rich.console import Console
@@ -280,35 +282,97 @@ def mix(
     print_collection_table(tracks, title="Onzr Mix tracks")
 
 
+# @cli.command()
+# def play(
+#     track_ids: List[str],
+#     quality: StreamQuality = StreamQuality.MP3_128,
+#     shuffle: bool = False,
+# ):
+#     """Play one (or more) tracks."""
+#     onzr = start()
+#     console.print("🚀 starting the player…")
+#     if track_ids == ["-"]:
+#         logger.debug("Reading track ids from stdin…")
+#         track_ids = click.get_text_stream("stdin").read().split()
+#         logger.debug(f"{track_ids=}")
+#     onzr.add(track_ids, quality)
+#     if shuffle:
+#         onzr.shuffle()
+#
+#     # Start playing in a new thread
+#     thread = Thread(target=onzr.play)
+#     thread.start()
+#
+#     # Controls
+#     def on_press(key: keyboard.Key):
+#         """Player control actions."""
+#         match key:
+#             case keyboard.Key.media_play_pause:
+#                 onzr.pause()
+#
+#     with keyboard.Listener(on_press=on_press) as listener:  # type: ignore[arg-type]
+#         listener.join()
+#
+#     raise typer.Exit()
+
+
 @cli.command()
-def play(
-    track_ids: List[str],
-    quality: StreamQuality = StreamQuality.MP3_128,
-    shuffle: bool = False,
-):
-    """Play one (or more) tracks."""
-    onzr = start()
-    console.print("🚀 starting the player…")
+def add(track_ids: List[str]):
+    """Add one (or more) tracks to the queue."""
     if track_ids == ["-"]:
         logger.debug("Reading track ids from stdin…")
         track_ids = click.get_text_stream("stdin").read().split()
         logger.debug(f"{track_ids=}")
-    onzr.add(track_ids, quality)
-    if shuffle:
-        onzr.shuffle()
 
-    # Start playing in a new thread
-    thread = Thread(target=onzr.play)
-    thread.start()
+    console.print("➕ adding tracks to queue…")
 
-    # Controls
-    def on_press(key: keyboard.Key):
-        """Player control actions."""
-        match key:
-            case keyboard.Key.media_play_pause:
-                onzr.pause()
+    url = "http://localhost:9473/queue/"
+    response = requests.post(url, json=track_ids, timeout=5)
 
-    with keyboard.Listener(on_press=on_press) as listener:  # type: ignore[arg-type]
-        listener.join()
+    console.print(response.json())
 
-    raise typer.Exit()
+
+@cli.command()
+def play():
+    """Play queue."""
+    url = "http://localhost:9473/play"
+    response = requests.post(url, timeout=5)
+    console.print(response.json())
+
+
+@cli.command()
+def pause():
+    """Pause/resume playing."""
+    url = "http://localhost:9473/pause"
+    response = requests.post(url, timeout=5)
+    console.print(response.json())
+
+
+@cli.command()
+def stop():
+    """Stop playing queue."""
+    url = "http://localhost:9473/stop"
+    response = requests.post(url, timeout=5)
+    console.print(response.json())
+
+
+@cli.command()
+def next():
+    """Play next track in queue."""
+    url = "http://localhost:9473/next"
+    response = requests.post(url, timeout=5)
+    console.print(response.json())
+
+
+@cli.command()
+def serve(
+    host: str = "localhost",
+    port: int = 9473,
+    log_level: str = "info",
+):
+    """Run onzr http server."""
+    config = uvicorn.Config(
+        "onzr.server:app", host=host, port=port, log_level=log_level
+    )
+    server = uvicorn.Server(config)
+    server.run()

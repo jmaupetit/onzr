@@ -243,6 +243,7 @@ class TrackStatus(IntEnum):
     FETCHING = 2
     PLAYABLE = 3
     FETCHED = 4
+    STREAMING = 5
 
 
 class Track:
@@ -284,7 +285,6 @@ class Track:
         """Get URL of the track to stream."""
         logger.debug(f"Getting track url with quality {self.quality}…")
         url = self.deezer.get_track_url(self.token, self.quality.value)
-        logger.debug(f"Track url: {url}")
         return url
 
     def _allocate_content(self) -> None:
@@ -439,3 +439,32 @@ class Track:
             socket.sendto(self._content_mv[start : start + chunk_size], multicast_group)
             self.streamed += chunk_size
             sleep(wait)
+
+    def stream(self):
+        """Fetch track in-memory.
+
+        buffer_size (int): the buffer size (defaults to 5 seconds for a 128kbs file)
+        """
+        logger.debug(f"Start fetching track with {self.buffer_size=}")
+        chunk_sep = 2048
+        chunk_size = 3 * chunk_sep
+        self.fetched = 0
+        self.status = TrackStatus.IDLE
+
+        with self.session.get(self.url, stream=True) as r:
+            r.raise_for_status()
+            filesize = int(r.headers.get("Content-Length", 0))
+            logger.debug(f"Track size: {filesize} ({self.filesize})")
+            self.status = TrackStatus.FETCHING
+
+            for chunk in r.iter_content(chunk_size):
+                if len(chunk) > chunk_sep:
+                    dchunk = self._decrypt(chunk[:chunk_sep]) + chunk[chunk_sep:]
+                else:
+                    dchunk = chunk
+                self.fetched += chunk_size
+                yield dchunk
+
+        # We are done here
+        self.status = TrackStatus.FETCHED
+        logger.debug("Track streamed")

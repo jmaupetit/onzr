@@ -23,17 +23,26 @@ class Queue:
 
     def __init__(self) -> None:
         """Instantiate the tracks queue."""
-        self.current: Track | None = None
+        self._current: int = 0
         self.tracks: List[Track] = []
 
     def __len__(self):
         """Get queue length."""
         return len(self.tracks)
 
+    def __getitem__(self, index: int) -> Track:
+        """Get track from its queue index."""
+        return self.tracks[index]
+
     @property
     def is_empty(self):
         """Check if tracks are queued."""
-        return len(self) == 0 and self.current is None
+        return len(self) == 0
+
+    @property
+    def current(self):
+        """Get the current track."""
+        return self.tracks[self._current]
 
     def add(self, track: Track | None = None, tracks: List[Track] | None = None):
         """Add one or more tracks to queue."""
@@ -44,14 +53,6 @@ class Queue:
     def shuffle(self):
         """Shuffle current track list."""
         random.shuffle(self.tracks)
-
-    def next(self):
-        """Set next track as the current."""
-        del self.current
-        if not len(self):
-            self.current = None
-            return
-        self.current = self.tracks.pop(0)
 
 
 class OnzrStatus(IntEnum):
@@ -108,17 +109,6 @@ class Onzr:
             raise OnzrConfigurationError(
                 "Onzr is not properly configured. You should set the ARL secret."
             )
-
-    def configure_socket(self):
-        """Open and configure the casting socket."""
-        logger.debug("Setting socket…")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-
-        # Configure TTL
-        ttl = struct.pack("b", 1)
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
-        logger.debug(f"Socket: {sock}")
-        return sock
 
     def add(self, track_ids: List[str], quality: StreamQuality = StreamQuality.MP3_320):
         """Little helper to queue tracks."""

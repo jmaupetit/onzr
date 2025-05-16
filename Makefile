@@ -25,6 +25,10 @@ build: ## install project
 	poetry install
 .PHONY: build
 
+run: ## run onzr server in development mode
+	poetry run uvicorn onzr.server:app --host localhost --port 9473 --reload --log-level debug
+.PHONY: run
+
 # -- Quality
 lint: ## lint all sources
 lint: \
