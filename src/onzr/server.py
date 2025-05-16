@@ -21,12 +21,13 @@ deezer: DeezerClient = DeezerClient(
     multicast_group=settings.MULTICAST_GROUP,
 )
 
-queue: Queue = Queue()
 
 vlc_instance = Instance()
 medialist = vlc_instance.media_list_new()
 player = vlc_instance.media_list_player_new()
 player.set_media_list(medialist)
+
+queue: Queue = Queue(playlist=medialist)
 
 # FIXME: should be configurable
 # quality = StreamQuality.FLAC
@@ -40,19 +41,38 @@ logger.info("Starting Onzr server…")
 async def queue_tracks(request):
     """Add tracks to queue given its identifier."""
     track_ids = await request.json()
-    start = len(queue)
     tracks = [Track(deezer, id_, quality) for id_ in track_ids]
     queue.add(tracks=tracks)
-    rank = start
-    for rank in range(start, len(queue), 1):
-        media = vlc_instance.media_new(f"http://localhost:9473/queue/{rank}/stream")
-        medialist.add_media(media)
     return JSONResponse({"status": "added"})
+
+
+async def queue_clear(request):
+    """Clear tracks queue."""
+    player.stop()
+    queue.clear()
+    return JSONResponse({"queue": "empty"})
+
+
+async def queue_list(request):
+    """List queue tracks."""
+    return JSONResponse(
+        [
+            {
+                "current": p == queue.playing,
+                "position": p,
+                "artist": t.artist,
+                "album": t.album,
+                "title": t.title,
+            }
+            for p, t in enumerate(queue.tracks)
+        ]
+    )
 
 
 async def stream_track(request):
     """Stream Deezer track given its identifer."""
     rank = int(request.path_params["rank"])
+    queue.playing = rank
     track = queue[rank]
     print(f"Now playing: {track.full_title}")
     return StreamingResponse(track.stream(), media_type=media_type)
@@ -97,7 +117,9 @@ app = Starlette(
     debug=True,
     routes=[
         Route("/queue/{rank}/stream", stream_track),
+        Route("/queue/clear", queue_clear, methods=["POST"]),
         Route("/queue/", queue_tracks, methods=["POST"]),
+        Route("/queue/", queue_list, methods=["GET"]),
         Route("/play", play, methods=["POST"]),
         Route("/pause", pause, methods=["POST"]),
         Route("/next", next, methods=["POST"]),

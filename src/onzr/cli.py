@@ -333,6 +333,22 @@ def add(track_ids: List[str]):
 
 
 @cli.command()
+def queue():
+    """List queue tracks."""
+    url = "http://localhost:9473/queue/"
+    response = requests.get(url, timeout=5)
+    console.print(response.json())
+
+
+@cli.command()
+def clear():
+    """Empty queue."""
+    url = "http://localhost:9473/queue/clear"
+    response = requests.post(url, timeout=5)
+    console.print(response.json())
+
+
+@cli.command()
 def play():
     """Play queue."""
     url = "http://localhost:9473/play"

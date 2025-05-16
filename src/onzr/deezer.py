@@ -262,7 +262,6 @@ class Track:
         self.session = requests.Session()
         self.quality = quality
         self.track_info: dict = self._get_track_info()
-        self.url: str = self._get_url()
         self.key: bytes = self._generate_blowfish_key()
         self.status: TrackStatus = TrackStatus.IDLE
         # Content and related memory view will be allocated later (right before fetching
@@ -364,7 +363,7 @@ class Track:
         self.status = TrackStatus.IDLE
         self._allocate_content()
 
-        with self.session.get(self.url, stream=True) as r:
+        with self.session.get(self._get_url(), stream=True) as r:
             r.raise_for_status()
             filesize = int(r.headers.get("Content-Length", 0))
             logger.debug(f"Track size: {filesize} ({self.filesize})")
@@ -451,7 +450,8 @@ class Track:
         self.fetched = 0
         self.status = TrackStatus.IDLE
 
-        with self.session.get(self.url, stream=True) as r:
+        url = self._get_url()
+        with self.session.get(url, stream=True) as r:
             r.raise_for_status()
             filesize = int(r.headers.get("Content-Length", 0))
             logger.debug(f"Track size: {filesize} ({self.filesize})")

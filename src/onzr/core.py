@@ -9,6 +9,7 @@ from socket import SocketType
 from typing import List
 
 from dynaconf import Dynaconf
+from vlc import MediaList
 
 from .config import get_settings
 from .deezer import DeezerClient, StreamQuality, Track
@@ -21,10 +22,11 @@ logger = logging.getLogger(__name__)
 class Queue:
     """Onzr playing queue."""
 
-    def __init__(self) -> None:
+    def __init__(self, playlist: MediaList) -> None:
         """Instantiate the tracks queue."""
-        self._current: int = 0
+        self.playing: int | None = None
         self.tracks: List[Track] = []
+        self.playlist: MediaList = playlist
 
     def __len__(self):
         """Get queue length."""
@@ -42,13 +44,29 @@ class Queue:
     @property
     def current(self):
         """Get the current track."""
-        return self.tracks[self._current]
+        return self.tracks[self.playing]
 
     def add(self, track: Track | None = None, tracks: List[Track] | None = None):
         """Add one or more tracks to queue."""
         if track is None and tracks is None:
             raise TypeError("Argument missing, you should either add a track or tracks")
-        self.tracks.extend(tracks or [track])  # type: ignore[list-item]
+
+        start = len(self)
+        tracks = tracks or [track]
+        self.tracks.extend(tracks)  # type: ignore[list-item]
+
+        # Add track streaming url to the playlist
+        end = len(self)
+        vlc_instance = self.playlist.get_instance()
+        for rank in range(start, end):
+            media = vlc_instance.media_new(f"http://localhost:9473/queue/{rank}/stream")
+            self.playlist.add_media(media)
+
+    def clear(self):
+        """Empty queue."""
+        self.playing = None
+        self.tracks = []
+        self.playlist.release()
 
     def shuffle(self):
         """Shuffle current track list."""
