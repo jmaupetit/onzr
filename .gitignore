@@ -48,7 +48,3 @@ venv.bak/
 # -- Tools
 .coverage
 site
-
-# dynaconf files
-.secrets.toml
-settings.toml

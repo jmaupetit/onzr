@@ -3,15 +3,16 @@
 import functools
 import hashlib
 import logging
-from dataclasses import asdict, dataclass
 from enum import IntEnum, StrEnum
 from threading import Thread
-from time import sleep
-from typing import Generator, List, Optional, Protocol
+from typing import Any, Generator, Iterator, List, Optional, no_type_check
 
 import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
+from pydantic import HttpUrl
+
+from .models import AlbumShort, ArtistShort, Collection, TrackInfo, TrackShort
 
 logger = logging.getLogger(__name__)
 
@@ -23,66 +24,12 @@ class StreamQuality(StrEnum):
     MP3_320 = "MP3_320"
     FLAC = "FLAC"
 
-
-@dataclass
-class IsDataclassProtocol(Protocol):
-    """A protocol to type check dataclass mixins."""
-
-
-class ToListMixin(IsDataclassProtocol):
-    """A dataclass mixin that converts all fields values to a list."""
-
-    def _dataclass_to_list(self, target=None) -> List[str | List]:
-        """Convert all field values to a list."""
-        if target is None:
-            target = asdict(self)
-        return [
-            v if not isinstance(v, dict) else self._dataclass_to_list(v)
-            for v in target.values()
-        ]
-
-    def to_list(self, target: List[str | List] | None = None) -> List[str]:
-        """Convert nested dataclasses to values list."""
-        if target is None:
-            target = self._dataclass_to_list()
-        out = []
-        for i in target:
-            if isinstance(i, list):
-                out += self.to_list(i)
-            # Ignore None
-            elif i:
-                out.append(i)
-        return out
-
-
-@dataclass
-class ArtistShort(ToListMixin):
-    """A small model to represent an artist."""
-
-    id: str
-    name: str
-
-
-@dataclass
-class AlbumShort(ToListMixin):
-    """A small model to represent an artist."""
-
-    id: str
-    name: str
-    release_date: Optional[str] = None
-    artist: Optional[ArtistShort] = None
-
-
-@dataclass
-class TrackShort(ToListMixin):
-    """A small model to represent an artist."""
-
-    id: str
-    title: str
-    album: AlbumShort
-
-
-Collection = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
+    @property
+    def media_type(self) -> str:
+        """Get media type corresponding to selected quality."""
+        if self == StreamQuality.FLAC:
+            return "audio/flac"
+        return "audio/mpeg"
 
 
 class DeezerClient(deezer.Deezer):
@@ -92,7 +39,6 @@ class DeezerClient(deezer.Deezer):
         self,
         arl: str,
         blowfish: str,
-        multicast_group: str,
         fast: bool = False,
     ) -> None:
         """Instantiate the Deezer API client.
@@ -104,7 +50,6 @@ class DeezerClient(deezer.Deezer):
 
         self.arl = arl
         self.blowfish = blowfish
-        self.multicast_group = multicast_group
         if fast:
             self._fast_login()
         else:
@@ -132,35 +77,27 @@ class DeezerClient(deezer.Deezer):
         """API results to TrackShort."""
         for track in data:
             yield TrackShort(
-                id=str(track.get("id")),
+                id=track.get("id"),
                 title=track.get("title"),
-                album=AlbumShort(
-                    id=str(track.get("album").get("id")),
-                    name=track.get("album").get("title"),
-                    release_date=track.get("album").get("release_date"),
-                    artist=ArtistShort(
-                        id=str(track.get("artist").get("id")),
-                        name=track.get("artist").get("name"),
-                    ),
-                ),
+                album=track.get("album").get("title"),
+                artist=track.get("artist").get("name"),
             )
 
-    def _to_albums(
-        self, data, artist: ArtistShort
-    ) -> Generator[AlbumShort, None, None]:
+    @staticmethod
+    def _to_albums(data, artist: ArtistShort) -> Generator[AlbumShort, None, None]:
         """API results to AlbumShort."""
         for album in data:
             logger.debug(f"{album=}")
             yield AlbumShort(
-                id=str(album.get("id")),
-                name=album.get("title"),
+                id=album.get("id"),
+                title=album.get("title"),
                 release_date=album.get("release_date"),
-                artist=artist,
+                artist=artist.name,
             )
 
     def artist(
         self,
-        artist_id: str,
+        artist_id: int,
         radio: bool = False,
         top: bool = True,
         albums: bool = False,
@@ -168,7 +105,7 @@ class DeezerClient(deezer.Deezer):
     ) -> List[TrackShort] | List[AlbumShort]:
         """Get artist tracks."""
         response = self.api.get_artist(artist_id)
-        artist = ArtistShort(id=str(response.get("id")), name=response.get("name"))
+        artist = ArtistShort(id=response.get("id"), name=response.get("name"))
         logger.debug(f"{artist=}")
 
         if radio:
@@ -185,7 +122,7 @@ class DeezerClient(deezer.Deezer):
                 "Either radio, top or albums should be True to get artist details"
             )
 
-    def album(self, album_id: str) -> List[TrackShort]:
+    def album(self, album_id: int) -> List[TrackShort]:
         """Get album tracks."""
         response = self.api.get_album(album_id)
         logger.debug(f"{response=}")
@@ -210,7 +147,7 @@ class DeezerClient(deezer.Deezer):
             response = self.api.search_artist(artist)
             results = [
                 ArtistShort(
-                    id=str(a.get("id")),
+                    id=a.get("id"),
                     name=a.get("name"),
                 )
                 for a in response["data"]
@@ -219,13 +156,10 @@ class DeezerClient(deezer.Deezer):
             response = self.api.search_album(album)
             results = [
                 AlbumShort(
-                    id=str(a.get("id")),
-                    name=a.get("title"),
+                    id=a.get("id"),
+                    title=a.get("title"),
                     release_date=a.get("release_date"),
-                    artist=ArtistShort(
-                        id=str(a.get("artist").get("id")),
-                        name=str(a.get("artist").get("name")),
-                    ),
+                    artist=a.get("artist").get("name"),
                 )
                 for a in response["data"]
             ]
@@ -240,9 +174,30 @@ class TrackStatus(IntEnum):
     """Track statuses."""
 
     IDLE = 1
-    FETCHING = 2
-    PLAYABLE = 3
-    FETCHED = 4
+    STREAMING = 2
+    STREAMED = 3
+
+
+class AlbumCoverSize(IntEnum):
+    """Album cover sizes."""
+
+    SMALL = 0
+    MEDIUM = 1
+    BIG = 2
+    XL = 3
+
+
+def get_album_cover_filename(size: AlbumCoverSize) -> str:
+    """Get album cover filename given its size."""
+    match size:
+        case AlbumCoverSize.SMALL:
+            return "56x56-000000-80-0-0.jpg"
+        case AlbumCoverSize.MEDIUM:
+            return "250x250-000000-80-0-0.jpg"
+        case AlbumCoverSize.BIG:
+            return "500x500-000000-80-0-0.jpg"
+        case AlbumCoverSize.XL:
+            return "1000x1000-000000-80-0-0.jpg"
 
 
 class Track:
@@ -251,53 +206,57 @@ class Track:
     def __init__(
         self,
         client: DeezerClient,
-        track_id: str,
-        quality: StreamQuality = StreamQuality.MP3_128,
-        buffer: float = 0.5,  # 500ms
+        track_id: int,
+        background: bool = False,
     ) -> None:
         """Instantiate a new track."""
         self.deezer = client
         self.track_id = track_id
         self.session = requests.Session()
-        self.quality = quality
-        self.track_info: dict = self._get_track_info()
-        self.url: str = self._get_url()
+
+        self.track_info: Optional[TrackInfo] = None
+        # Fetch track info in a separated thread to make instantiation non-blocking
+        if background:
+            thread = Thread(target=self._set_track_info)
+            thread.start()
+        else:
+            self._set_track_info()
+
         self.key: bytes = self._generate_blowfish_key()
         self.status: TrackStatus = TrackStatus.IDLE
-        # Content and related memory view will be allocated later (right before fetching
-        # the track to decrease memory footprint while adding tracks to queue).
-        self.content: bytearray = bytearray()
-        self._content_mv: memoryview = memoryview(self.content)
-        self.fetched: int = 0
         self.streamed: int = 0
-        self.paused: bool = False
-        self.bitrate = self.filesize / self.duration
-        self.buffer_size: int = int(self.bitrate * buffer)
 
-    def _get_track_info(self) -> dict:
+    def _set_track_info(self):
         """Get track info."""
         track_info = self.deezer.gw.get_track(self.track_id)
         logger.debug("Track info: %s", track_info)
-        return track_info
+        self.track_info = TrackInfo(
+            id=track_info["SNG_ID"],
+            token=track_info["TRACK_TOKEN"],
+            duration=track_info["DURATION"],
+            artist=track_info["ART_NAME"],
+            title=track_info["SNG_TITLE"],
+            album=track_info["ALB_TITLE"],
+            picture=track_info["ALB_PICTURE"],
+        )
 
-    def _get_url(self) -> str:
+    def refresh(self):
+        """Refresh track info."""
+        logger.debug("Refreshing track info…")
+        self._set_track_info()
+
+    def _get_url(self, quality: StreamQuality) -> str:
         """Get URL of the track to stream."""
-        logger.debug(f"Getting track url with quality {self.quality}…")
-        url = self.deezer.get_track_url(self.token, self.quality.value)
-        logger.debug(f"Track url: {url}")
+        logger.debug(f"Getting track url with quality {quality}…")
+        url = self.deezer.get_track_url(self.token, quality.value)
         return url
-
-    def _allocate_content(self) -> None:
-        """Allocate memory where we will read/write track bytes."""
-        self.content = bytearray(self.filesize)
-        self._content_mv = memoryview(self.content)
 
     def _generate_blowfish_key(self) -> bytes:
         """Generate the blowfish key for Deezer downloads.
 
         Taken from: https://github.com/nathom/streamrip/
         """
-        md5_hash = hashlib.md5(self.track_id.encode()).hexdigest()  # noqa: S324
+        md5_hash = hashlib.md5(str(self.track_id).encode()).hexdigest()  # noqa: S324
         # good luck :)
         return "".join(
             chr(functools.reduce(lambda x, y: x ^ y, map(ord, t)))
@@ -317,125 +276,117 @@ class Track:
             b"\x00\x01\x02\x03\x04\x05\x06\x07",
         ).decrypt(chunk)
 
+    def _get_track_info_attribute(self, field: str) -> Any | None:
+        """Get self.track_info attribute if defined."""
+        return getattr(self.track_info, field, None)
+
     @property
-    def token(self) -> str:
+    def token(self) -> str | None:
         """Get track token."""
-        return self.track_info["TRACK_TOKEN"]
+        return self._get_track_info_attribute("token")
 
     @property
-    def duration(self) -> int:
+    def duration(self) -> int | None:
         """Get track duration (in seconds)."""
-        return int(self.track_info["DURATION"])
+        return self._get_track_info_attribute("duration")
 
     @property
-    def filesize(self) -> int:
-        """Get file size (in bits)."""
-        return int(self.track_info[f"FILESIZE_{self.quality}"])
-
-    @property
-    def artist(self) -> str:
+    def artist(self) -> str | None:
         """Get track artist."""
-        return self.track_info["ART_NAME"]
+        return self._get_track_info_attribute("artist")
 
     @property
-    def title(self) -> str:
+    def title(self) -> str | None:
         """Get track title."""
-        return self.track_info["SNG_TITLE"]
+        return self._get_track_info_attribute("title")
 
     @property
-    def album(self) -> str:
+    def album(self) -> str | None:
         """Get track album."""
-        return self.track_info["ALB_TITLE"]
+        return self._get_track_info_attribute("album")
+
+    @property
+    def picture(self) -> str | None:
+        """Get track picture."""
+        return self._get_track_info_attribute("picture")
+
+    def _cover(self, size: AlbumCoverSize) -> HttpUrl | None:
+        """Get track album cover URL given requested size."""
+        return (
+            HttpUrl(
+                "https://e-cdns-images.dzcdn.net/images/cover/"
+                f"{self.picture}/"
+                f"{get_album_cover_filename(size)}"
+            )
+            if self.picture
+            else None
+        )
+
+    @property
+    def cover_small(self) -> HttpUrl | None:
+        """Get small album cover URL."""
+        return self._cover(AlbumCoverSize.SMALL)
+
+    @property
+    def cover_medium(self) -> HttpUrl | None:
+        """Get medium album cover URL."""
+        return self._cover(AlbumCoverSize.MEDIUM)
+
+    @property
+    def cover_big(self) -> HttpUrl | None:
+        """Get big album cover URL."""
+        return self._cover(AlbumCoverSize.BIG)
+
+    @property
+    def cover_xl(self) -> HttpUrl | None:
+        """Get XL album cover URL."""
+        return self._cover(AlbumCoverSize.XL)
 
     @property
     def full_title(self) -> str:
         """Get track full title (artist/title/album)."""
         return f"{self.artist} - {self.title} [{self.album}]"
 
-    def fetch(self):
+    def stream(self, quality: StreamQuality = StreamQuality.MP3_128) -> Iterator[bytes]:
         """Fetch track in-memory.
 
-        buffer_size (int): the buffer size (defaults to 5 seconds for a 128kbs file)
+        quality (StreamQuality): audio file to stream quality
         """
-        logger.debug(f"Start fetching track with {self.buffer_size=}")
+        logger.debug(
+            "Start streaming track: "
+            f"▶️ {self.full_title} (ID: {self.track_id} Q: {quality})"
+        )
         chunk_sep = 2048
         chunk_size = 3 * chunk_sep
-        self.fetched = 0
+        self.streamed = 0
         self.status = TrackStatus.IDLE
-        self._allocate_content()
 
-        with self.session.get(self.url, stream=True) as r:
+        url = self._get_url(quality)
+        with self.session.get(url, stream=True) as r:
             r.raise_for_status()
             filesize = int(r.headers.get("Content-Length", 0))
-            logger.debug(f"Track size: {filesize} ({self.filesize})")
-            self.status = TrackStatus.FETCHING
+            logger.debug(f"Track size: {filesize}")
+            self.status = TrackStatus.STREAMING
 
             for chunk in r.iter_content(chunk_size):
                 if len(chunk) > chunk_sep:
                     dchunk = self._decrypt(chunk[:chunk_sep]) + chunk[chunk_sep:]
                 else:
                     dchunk = chunk
-                self._content_mv[self.fetched : self.fetched + chunk_size] = dchunk
-                self.fetched += chunk_size
-
-                if (
-                    self.fetched >= self.buffer_size
-                    and self.status < TrackStatus.PLAYABLE
-                ):
-                    logger.debug("Buffering ok")
-                    self.status = TrackStatus.PLAYABLE
+                self.streamed += chunk_size
+                yield dchunk
 
         # We are done here
-        self.status = TrackStatus.FETCHED
-        logger.debug("Track fetched")
+        self.status = TrackStatus.STREAMED
+        logger.debug(f"Track fully streamed {self.streamed}")
 
-    def cast(self, socket, chunk_size: int = 1024):
-        """Cast the track via UDP using given socket."""
-        multicast_group = tuple(self.deezer.multicast_group)
-        logger.debug(
-            (
-                f"Casting from position {self.streamed} with {chunk_size=} "
-                f"using socket {socket} "
-                f"({multicast_group=})"
-            )
+    # Pydantic will raise an error for us
+    @no_type_check
+    def serialize(self) -> TrackShort:
+        """Serialize current track."""
+        return TrackShort(
+            id=self.track_id,
+            title=self.title,
+            album=self.album,
+            artist=self.artist,
         )
-
-        if self.status < TrackStatus.FETCHING:
-            logger.debug("Will start fetching content in a new thead…")
-            thread = Thread(target=self.fetch)
-            thread.start()
-
-        # Wait for the track to be playable
-        while self.status < TrackStatus.PLAYABLE:
-            sleep(0.01)
-
-        # Sleep time while playing
-        wait = 1.0 / (self.bitrate / chunk_size)
-        logger.debug(f"Wait time: {wait}s ({self.bitrate=})")
-
-        slow_connection: bool = False
-        for start in range(self.streamed, self.filesize, chunk_size):
-            # Track has been paused, wait for resume
-            while self.paused:
-                sleep(0.001)
-
-            # We have buffering issues
-            while (self.fetched - start) < self.buffer_size and start < (
-                self.filesize - self.buffer_size
-            ):
-                if not slow_connection:
-                    logger.warning(
-                        "Slow connection, filling the buffer "
-                        f"{self.fetched - self.streamed} < {self.buffer_size}"
-                    )
-                    logger.debug(
-                        f"{start=} | {self.filesize=} | {self.fetched=} | "
-                        f"{self.streamed=} | {chunk_size=}"
-                    )
-                slow_connection = True
-                sleep(0.05)
-            slow_connection = False
-
-            socket.sendto(self._content_mv[start : start + chunk_size], multicast_group)
-            self.streamed += chunk_size
-            sleep(wait)

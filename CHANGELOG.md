@@ -8,9 +8,17 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Changed
+### Added
 
-- Refactor settings management to improve testability
+- Switch to a HTTP client-server architecture using FastAPI
+- Switch to Pydantic models
+- Switch to pydantic-settings for configuration management
+- Implement an API Client
+- Stream tracks over HTTP to VLC
+
+### Deleted
+
+- Remove dynaconf settings management
 
 ## [0.2.0] - 2025-04-18
 
@@ -28,5 +36,6 @@ and this project adheres to
 - Implement a draft CLI using VLC
 
 [unreleased]: https://github.com/jmaupetit/onzr/compare/v0.2.0...main
+
 [0.2.0] https://github.com/jmaupetit/onzr/compare/v0.1.0...v0.2.0
 [0.1.0] https://github.com/jmaupetit/onzr/compare/13ca0d7...v0.1.0

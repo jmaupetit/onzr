@@ -12,30 +12,40 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: "poetry"
-      - name: Install dependencies
-        run: poetry install
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install the project
+        run: make build
 
   lint:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: "poetry"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
       - name: Lint with Black
         run: make lint-black-check
       - name: Lint with Ruff
@@ -46,15 +56,22 @@ jobs:
   test:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - name: Install VLC
+        run: sudo apt install -y vlc-bin vlc-plugin-base
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: "poetry"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
       - name: Setup the project
         run: make bootstrap
       - name: Test with pytest
