@@ -6,24 +6,19 @@ SHELL := /bin/bash
 
 default: help
 
-# -- Files
-.secrets.toml:
-	ln -s src/onzr/.secrets.toml.dist .secrets.toml
-
-settings.toml:
-	ln -s src/onzr/settings.toml.dist settings.toml
-
 # -- Build
 bootstrap: ## bootstrap the project for development
 bootstrap: \
-	.secrets.toml \
-	settings.toml \
 	build
 .PHONY: bootstrap
 
 build: ## install project
-	poetry install
+	uv sync --locked --all-extras --dev
 .PHONY: build
+
+run: ## run onzr server in development mode
+	uv run uvicorn onzr.server:app --host localhost --port 9473 --reload --log-config logging-config.yaml
+.PHONY: run
 
 # -- Quality
 lint: ## lint all sources
@@ -35,31 +30,31 @@ lint: \
 
 lint-black: ## lint python sources with black
 	@echo 'lint:black started…'
-	poetry run black src/onzr tests
+	uv run black src/onzr tests
 .PHONY: lint-black
 
 lint-black-check: ## check python sources with black
 	@echo 'lint:black check started…'
-	poetry run black --check src/onzr tests
+	uv run black --check src/onzr tests
 .PHONY: lint-black-check
 
 lint-ruff: ## lint python sources with ruff
 	@echo 'lint:ruff started…'
-	poetry run ruff check src/onzr tests
+	uv run ruff check src/onzr tests
 .PHONY: lint-ruff
 
 lint-ruff-fix: ## lint and fix python sources with ruff
 	@echo 'lint:ruff-fix started…'
-	poetry run ruff check --fix src/onzr tests
+	uv run ruff check --fix src/onzr tests
 .PHONY: lint-ruff-fix
 
 lint-mypy: ## lint python sources with mypy
 	@echo 'lint:mypy started…'
-	poetry run mypy src/onzr tests
+	uv run mypy src/onzr tests
 .PHONY: lint-mypy
 
 test: ## run tests
-	poetry run pytest
+	uv run pytest
 .PHONY: test
 
 # -- Misc

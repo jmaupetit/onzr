@@ -1,41 +1,58 @@
-[tool.poetry]
+[project]
 name = "onzr"
-version = "0.2.0"
+version = "0.3.0-alpha"
 description = "The one-hour-late Deezer CLI."
-authors = ["Julien Maupetit <julien@maupetit.net>"]
-license = "MIT"
+authors = [{ name = "Julien Maupetit", email = "julien@maupetit.net" }]
+requires-python = ">3.10,<4.0.0"
 readme = "README.md"
-repository = "https://github.com/jmaupetit/onzr"
-keywords = ["deezer", "cli", "tui", "audio", "mp3", "flac"]
+license = "MIT"
+keywords = [
+    "deezer",
+    "cli",
+    "tui",
+    "audio",
+    "mp3",
+    "flac",
+]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Topic :: Multimedia :: Sound/Audio :: Players",
-  "Topic :: Terminals",
+    "Development Status :: 3 - Alpha",
+    "Topic :: Multimedia :: Sound/Audio :: Players",
+    "Topic :: Terminals",
+]
+dependencies = [
+    "deezer-py>=1.3.7,<2",
+    "fastapi>=0.115.12,<0.116",
+    "pycryptodomex>=3.21.0,<4",
+    "pydantic-settings>=2.9.1,<3",
+    "python-vlc>=3.0.21203,<4",
+    "typer>=0.15.2,<0.16",
+    "uvicorn[standard]>=0.34.2,<0.35",
 ]
 
+[project.urls]
+Repository = "https://github.com/jmaupetit/onzr"
 
-[tool.poetry.dependencies]
-deezer-py = "^1.3.7"
-dynaconf = "^3.2.10"
-pycryptodomex = "^3.21.0"
-pynput = "^1.8.1"
-python = ">3.9,<4.0.0"
-python-vlc = "^3.0.21203"
-typer = "^0.15.2"
-
-[tool.poetry.group.dev.dependencies]
-black = "^25.1.0"
-mypy = "^1.15.0"
-pytest = "^8.3.5"
-pytest-coverage = "^0.0"
-ruff = "^0.9.7"
-types-pynput = "^1.8.1.20250318"
-types-requests = "^2.32.0.20250306"
-
-[tool.poetry.scripts]
+[project.scripts]
 onzr = "onzr.cli:cli"
 
-# Third party packages configuration
+[dependency-groups]
+dev = [
+    "black>=25.1.0,<26",
+    "httpx>=0.28.1",
+    "mypy>=1.15.0,<2",
+    "polyfactory>=2.22.2",
+    "pytest>=8.3.5,<9",
+    "pytest-coverage>=0.0,<0.1",
+    "pytest-responses>=0.5.1",
+    "ruff>=0.9.7,<0.10",
+    "types-pyyaml>=6.0.12.20250516,<7",
+    "types-requests>=2.32.0.20250306,<3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.coverage.run]
 omit = []
 
@@ -50,7 +67,7 @@ testpaths = [
 ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 # Exclude a variety of commonly ignored directories.
 exclude = []
 
@@ -89,7 +106,3 @@ exclude = []
 [[tool.mypy.overrides]]
 module = ["deezer.*", "dynaconf.*", "vlc.*"]
 ignore_missing_imports = true
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
