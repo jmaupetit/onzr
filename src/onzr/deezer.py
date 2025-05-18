@@ -251,13 +251,11 @@ class Track:
         self,
         client: DeezerClient,
         track_id: str,
-        quality: StreamQuality = StreamQuality.MP3_128,
     ) -> None:
         """Instantiate a new track."""
         self.deezer = client
         self.track_id = track_id
         self.session = requests.Session()
-        self.quality = quality
 
         # Fetch track info in a separated thread to make instantiation non-blocking
         self.track_info: dict = {}
@@ -274,10 +272,10 @@ class Track:
         logger.debug("Track info: %s", track_info)
         self.track_info = track_info
 
-    def _get_url(self) -> str:
+    def _get_url(self, quality: StreamQuality) -> str:
         """Get URL of the track to stream."""
-        logger.debug(f"Getting track url with quality {self.quality}…")
-        url = self.deezer.get_track_url(self.token, self.quality.value)
+        logger.debug(f"Getting track url with quality {quality}…")
+        url = self.deezer.get_track_url(self.token, quality.value)
         return url
 
     def _generate_blowfish_key(self) -> bytes:
@@ -335,7 +333,7 @@ class Track:
         """Get track full title (artist/title/album)."""
         return f"{self.artist} - {self.title} [{self.album}]"
 
-    def stream(self):
+    def stream(self, quality: StreamQuality = StreamQuality.MP3_128):
         """Fetch track in-memory.
 
         buffer_size (int): the buffer size (defaults to 5 seconds for a 128kbs file)
@@ -346,7 +344,7 @@ class Track:
         self.streamed = 0
         self.status = TrackStatus.IDLE
 
-        url = self._get_url()
+        url = self._get_url(quality)
         with self.session.get(url, stream=True) as r:
             r.raise_for_status()
             filesize = int(r.headers.get("Content-Length", 0))

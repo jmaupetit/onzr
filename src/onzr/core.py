@@ -66,6 +66,7 @@ class Queue:
         vlc_instance = self.playlist.get_instance()
         for t in tracks:
             media = vlc_instance.media_new(
+                # FIXME: URL should be configurable
                 f"http://localhost:9473/queue/{t.track_id}/stream"
             )
             self.playlist.add_media(media)

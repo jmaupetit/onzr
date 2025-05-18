@@ -30,10 +30,10 @@ player.set_media_list(medialist)
 queue: Queue = Queue(playlist=medialist)
 
 # FIXME: should be configurable
-# quality = StreamQuality.FLAC
-# media_type = "audio/flac"
-quality = StreamQuality.MP3_128
-media_type = "audio/mpeg"
+quality = StreamQuality.FLAC
+media_type = "audio/flac"
+# quality = StreamQuality.MP3_128
+# media_type = "audio/mpeg"
 
 logger.info("Starting Onzr server…")
 
@@ -41,7 +41,7 @@ logger.info("Starting Onzr server…")
 async def queue_tracks(request):
     """Add tracks to queue given its identifier."""
     track_ids = await request.json()
-    tracks = [Track(deezer, id_, quality) for id_ in track_ids]
+    tracks = [Track(deezer, id_) for id_ in track_ids]
     queue.add(tracks=tracks)
     return JSONResponse({"status": "added"})
 
@@ -76,7 +76,7 @@ async def stream_track(request):
     rank = queue.index_for_id(track_id)
     queue.playing = rank
     track = queue[rank]
-    return StreamingResponse(track.stream(), media_type=media_type)
+    return StreamingResponse(track.stream(quality), media_type=media_type)
 
 
 async def play(request):
