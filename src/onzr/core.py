@@ -46,20 +46,28 @@ class Queue:
         """Get the current track."""
         return self.tracks[self.playing]
 
+    def index_for_id(self, track_id) -> int:
+        """Get track queue index given its id.
+
+        If the same track is queued mutiple times only the first occurence index
+        is returned.
+        """
+        return [t.track_id for t in self.tracks].index(track_id)
+
     def add(self, track: Track | None = None, tracks: List[Track] | None = None):
         """Add one or more tracks to queue."""
         if track is None and tracks is None:
             raise TypeError("Argument missing, you should either add a track or tracks")
 
-        start = len(self)
         tracks = tracks or [track]
         self.tracks.extend(tracks)  # type: ignore[list-item]
 
         # Add track streaming url to the playlist
-        end = len(self)
         vlc_instance = self.playlist.get_instance()
-        for rank in range(start, end):
-            media = vlc_instance.media_new(f"http://localhost:9473/queue/{rank}/stream")
+        for t in tracks:
+            media = vlc_instance.media_new(
+                f"http://localhost:9473/queue/{t.track_id}/stream"
+            )
             self.playlist.add_media(media)
 
     def clear(self):

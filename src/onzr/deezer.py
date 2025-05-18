@@ -240,10 +240,8 @@ class TrackStatus(IntEnum):
     """Track statuses."""
 
     IDLE = 1
-    FETCHING = 2
-    PLAYABLE = 3
-    FETCHED = 4
-    STREAMING = 5
+    STREAMING = 2
+    STREAMED = 3
 
 
 class Track:
@@ -254,42 +252,33 @@ class Track:
         client: DeezerClient,
         track_id: str,
         quality: StreamQuality = StreamQuality.MP3_128,
-        buffer: float = 0.5,  # 500ms
     ) -> None:
         """Instantiate a new track."""
         self.deezer = client
         self.track_id = track_id
         self.session = requests.Session()
         self.quality = quality
-        self.track_info: dict = self._get_track_info()
+
+        # Fetch track info in a separated thread to make instantiation non-blocking
+        self.track_info: dict = {}
+        thread = Thread(target=self._set_track_info)
+        thread.start()
+
         self.key: bytes = self._generate_blowfish_key()
         self.status: TrackStatus = TrackStatus.IDLE
-        # Content and related memory view will be allocated later (right before fetching
-        # the track to decrease memory footprint while adding tracks to queue).
-        self.content: bytearray = bytearray()
-        self._content_mv: memoryview = memoryview(self.content)
-        self.fetched: int = 0
         self.streamed: int = 0
-        self.paused: bool = False
-        self.bitrate = self.filesize / self.duration
-        self.buffer_size: int = int(self.bitrate * buffer)
 
-    def _get_track_info(self) -> dict:
+    def _set_track_info(self):
         """Get track info."""
         track_info = self.deezer.gw.get_track(self.track_id)
         logger.debug("Track info: %s", track_info)
-        return track_info
+        self.track_info = track_info
 
     def _get_url(self) -> str:
         """Get URL of the track to stream."""
         logger.debug(f"Getting track url with quality {self.quality}…")
         url = self.deezer.get_track_url(self.token, self.quality.value)
         return url
-
-    def _allocate_content(self) -> None:
-        """Allocate memory where we will read/write track bytes."""
-        self.content = bytearray(self.filesize)
-        self._content_mv = memoryview(self.content)
 
     def _generate_blowfish_key(self) -> bytes:
         """Generate the blowfish key for Deezer downloads.
@@ -327,11 +316,6 @@ class Track:
         return int(self.track_info["DURATION"])
 
     @property
-    def filesize(self) -> int:
-        """Get file size (in bits)."""
-        return int(self.track_info[f"FILESIZE_{self.quality}"])
-
-    @property
     def artist(self) -> str:
         """Get track artist."""
         return self.track_info["ART_NAME"]
@@ -351,120 +335,32 @@ class Track:
         """Get track full title (artist/title/album)."""
         return f"{self.artist} - {self.title} [{self.album}]"
 
-    def fetch(self):
-        """Fetch track in-memory.
-
-        buffer_size (int): the buffer size (defaults to 5 seconds for a 128kbs file)
-        """
-        logger.debug(f"Start fetching track with {self.buffer_size=}")
-        chunk_sep = 2048
-        chunk_size = 3 * chunk_sep
-        self.fetched = 0
-        self.status = TrackStatus.IDLE
-        self._allocate_content()
-
-        with self.session.get(self._get_url(), stream=True) as r:
-            r.raise_for_status()
-            filesize = int(r.headers.get("Content-Length", 0))
-            logger.debug(f"Track size: {filesize} ({self.filesize})")
-            self.status = TrackStatus.FETCHING
-
-            for chunk in r.iter_content(chunk_size):
-                if len(chunk) > chunk_sep:
-                    dchunk = self._decrypt(chunk[:chunk_sep]) + chunk[chunk_sep:]
-                else:
-                    dchunk = chunk
-                self._content_mv[self.fetched : self.fetched + chunk_size] = dchunk
-                self.fetched += chunk_size
-
-                if (
-                    self.fetched >= self.buffer_size
-                    and self.status < TrackStatus.PLAYABLE
-                ):
-                    logger.debug("Buffering ok")
-                    self.status = TrackStatus.PLAYABLE
-
-        # We are done here
-        self.status = TrackStatus.FETCHED
-        logger.debug("Track fetched")
-
-    def cast(self, socket, chunk_size: int = 1024):
-        """Cast the track via UDP using given socket."""
-        multicast_group = tuple(self.deezer.multicast_group)
-        logger.debug(
-            (
-                f"Casting from position {self.streamed} with {chunk_size=} "
-                f"using socket {socket} "
-                f"({multicast_group=})"
-            )
-        )
-
-        if self.status < TrackStatus.FETCHING:
-            logger.debug("Will start fetching content in a new thead…")
-            thread = Thread(target=self.fetch)
-            thread.start()
-
-        # Wait for the track to be playable
-        while self.status < TrackStatus.PLAYABLE:
-            sleep(0.01)
-
-        # Sleep time while playing
-        wait = 1.0 / (self.bitrate / chunk_size)
-        logger.debug(f"Wait time: {wait}s ({self.bitrate=})")
-
-        slow_connection: bool = False
-        for start in range(self.streamed, self.filesize, chunk_size):
-            # Track has been paused, wait for resume
-            while self.paused:
-                sleep(0.001)
-
-            # We have buffering issues
-            while (self.fetched - start) < self.buffer_size and start < (
-                self.filesize - self.buffer_size
-            ):
-                if not slow_connection:
-                    logger.warning(
-                        "Slow connection, filling the buffer "
-                        f"{self.fetched - self.streamed} < {self.buffer_size}"
-                    )
-                    logger.debug(
-                        f"{start=} | {self.filesize=} | {self.fetched=} | "
-                        f"{self.streamed=} | {chunk_size=}"
-                    )
-                slow_connection = True
-                sleep(0.05)
-            slow_connection = False
-
-            socket.sendto(self._content_mv[start : start + chunk_size], multicast_group)
-            self.streamed += chunk_size
-            sleep(wait)
-
     def stream(self):
         """Fetch track in-memory.
 
         buffer_size (int): the buffer size (defaults to 5 seconds for a 128kbs file)
         """
-        logger.debug(f"Start fetching track with {self.buffer_size=}")
+        logger.debug(f"Start streaming track: {self.track_id} ▶️  {self.full_title}")
         chunk_sep = 2048
         chunk_size = 3 * chunk_sep
-        self.fetched = 0
+        self.streamed = 0
         self.status = TrackStatus.IDLE
 
         url = self._get_url()
         with self.session.get(url, stream=True) as r:
             r.raise_for_status()
             filesize = int(r.headers.get("Content-Length", 0))
-            logger.debug(f"Track size: {filesize} ({self.filesize})")
-            self.status = TrackStatus.FETCHING
+            logger.debug(f"Track size: {filesize}")
+            self.status = TrackStatus.STREAMING
 
             for chunk in r.iter_content(chunk_size):
                 if len(chunk) > chunk_sep:
                     dchunk = self._decrypt(chunk[:chunk_sep]) + chunk[chunk_sep:]
                 else:
                     dchunk = chunk
-                self.fetched += chunk_size
+                self.streamed += chunk_size
                 yield dchunk
 
         # We are done here
-        self.status = TrackStatus.FETCHED
+        self.status = TrackStatus.STREAMED
         logger.debug("Track streamed")

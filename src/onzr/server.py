@@ -63,6 +63,7 @@ async def queue_list(request):
                 "artist": t.artist,
                 "album": t.album,
                 "title": t.title,
+                "id": t.track_id,
             }
             for p, t in enumerate(queue.tracks)
         ]
@@ -71,10 +72,10 @@ async def queue_list(request):
 
 async def stream_track(request):
     """Stream Deezer track given its identifer."""
-    rank = int(request.path_params["rank"])
+    track_id = request.path_params["track_id"]
+    rank = queue.index_for_id(track_id)
     queue.playing = rank
     track = queue[rank]
-    print(f"Now playing: {track.full_title}")
     return StreamingResponse(track.stream(), media_type=media_type)
 
 
@@ -116,7 +117,7 @@ async def state(request):
 app = Starlette(
     debug=True,
     routes=[
-        Route("/queue/{rank}/stream", stream_track),
+        Route("/queue/{track_id}/stream", stream_track),
         Route("/queue/clear", queue_clear, methods=["POST"]),
         Route("/queue/", queue_tracks, methods=["POST"]),
         Route("/queue/", queue_list, methods=["GET"]),
