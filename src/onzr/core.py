@@ -6,6 +6,8 @@ from typing import List
 
 from vlc import MediaList
 
+from onzr.config import get_settings
+
 from .deezer import Track
 
 logger = logging.getLogger(__name__)
@@ -58,11 +60,9 @@ class Queue:
 
         # Add track streaming url to the playlist
         vlc_instance = self.playlist.get_instance()
+        settings = get_settings()
         for t in tracks:
-            media = vlc_instance.media_new(
-                # FIXME: URL should be configurable
-                f"http://localhost:9473/queue/{t.track_id}/stream"
-            )
+            media = vlc_instance.media_new(settings.TRACK_STREAM_URL.format(t.track_id))
             self.playlist.add_media(media)
 
     def clear(self):

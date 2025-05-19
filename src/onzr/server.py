@@ -1,15 +1,16 @@
 """Onzr: http server."""
 
 import logging
+from enum import IntEnum
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, StreamingResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
 from vlc import Instance
 
 from .config import get_settings
 from .core import Queue
-from .deezer import DeezerClient, StreamQuality, Track
+from .deezer import DeezerClient, Track
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,6 @@ player = vlc_instance.media_list_player_new()
 player.set_media_list(medialist)
 
 queue: Queue = Queue(playlist=medialist)
-
-# FIXME: should be configurable
-quality = StreamQuality.FLAC
-media_type = "audio/flac"
-# quality = StreamQuality.MP3_128
-# media_type = "audio/mpeg"
 
 logger.info("Starting Onzr server…")
 
@@ -73,11 +68,12 @@ async def queue_list(request):
 
 async def stream_track(request):
     """Stream Deezer track given its identifer."""
+    quality = settings.QUALITY
     track_id = request.path_params["track_id"]
     rank = queue.index_for_id(track_id)
     queue.playing = rank
     track = queue[rank]
-    return StreamingResponse(track.stream(quality), media_type=media_type)
+    return StreamingResponse(track.stream(quality), media_type=quality.media_type)
 
 
 async def now_playing(request):
@@ -124,18 +120,23 @@ async def state(request):
 
 
 app = Starlette(
-    debug=True,
+    debug=settings.DEBUG,
     routes=[
-        Route("/queue/{track_id}/stream", stream_track),
-        Route("/queue/clear", queue_clear, methods=["POST"]),
-        Route("/queue/", queue_tracks, methods=["POST"]),
-        Route("/queue/", queue_list, methods=["GET"]),
-        Route("/now", now_playing, methods=["GET"]),
-        Route("/play", play, methods=["POST"]),
-        Route("/pause", pause, methods=["POST"]),
-        Route("/next", next, methods=["POST"]),
-        Route("/previous", previous, methods=["POST"]),
-        Route("/stop", stop, methods=["POST"]),
-        Route("/state", state),
+        Mount(
+            settings.API_ROOT_URL,
+            routes=[
+                Route(settings.TRACK_STREAM_ENDPOINT, stream_track),
+                Route("/queue/clear", queue_clear, methods=["POST"]),
+                Route("/queue/", queue_tracks, methods=["POST"]),
+                Route("/queue/", queue_list, methods=["GET"]),
+                Route("/now", now_playing, methods=["GET"]),
+                Route("/play", play, methods=["POST"]),
+                Route("/pause", pause, methods=["POST"]),
+                Route("/next", next, methods=["POST"]),
+                Route("/previous", previous, methods=["POST"]),
+                Route("/stop", stop, methods=["POST"]),
+                Route("/state", state),
+            ],
+        )
     ],
 )

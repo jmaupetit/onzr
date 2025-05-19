@@ -376,8 +376,12 @@ def serve(
     log_level: str = "info",
 ):
     """Run onzr http server."""
+    settings = get_settings()
     config = uvicorn.Config(
-        "onzr.server:app", host=host, port=port, log_level=log_level
+        "onzr.server:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        log_level=log_level,
     )
     server = uvicorn.Server(config)
     server.run()

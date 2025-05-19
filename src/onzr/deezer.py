@@ -22,6 +22,13 @@ class StreamQuality(StrEnum):
     MP3_320 = "MP3_320"
     FLAC = "FLAC"
 
+    @property
+    def media_type(self) -> str:
+        """Get media type corresponding to selected quality."""
+        if self == StreamQuality.FLAC:
+            return "audio/flac"
+        return "audio/mpeg"
+
 
 @dataclass
 class IsDataclassProtocol(Protocol):
