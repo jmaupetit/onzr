@@ -5,7 +5,6 @@ from datetime import date
 from enum import IntEnum
 from pathlib import Path
 from random import shuffle
-from threading import Thread
 from typing import List, cast
 
 import click
@@ -13,15 +12,25 @@ import requests
 import typer
 import uvicorn
 from dynaconf import loaders
-from pynput import keyboard
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.prompt import Prompt
 from rich.table import Table
 
-from .config import SECRETS_FILE, SETTINGS_FILE, get_onzr_dir, get_settings
-from .core import Onzr
-from .deezer import AlbumShort, ArtistShort, Collection, StreamQuality, TrackShort
+from .config import (
+    SECRETS_FILE,
+    SETTINGS_FILE,
+    check_settings,
+    get_onzr_dir,
+    get_settings,
+)
+from .deezer import (
+    AlbumShort,
+    ArtistShort,
+    Collection,
+    DeezerClient,
+    TrackShort,
+)
 
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
@@ -47,11 +56,19 @@ class ExitCodes(IntEnum):
     NOT_FOUND = 30
 
 
-def start(fast: bool = False, quiet: bool = False) -> Onzr:
-    """Start onzr."""
+def get_deezer_client(quiet: bool = False) -> DeezerClient:
+    """Get Deezer client for simple API queries."""
+    settings = get_settings()
+    check_settings(settings)
+
     if not quiet:
         console.print("🚀 login in to Deezer…", style="cyan")
-    return Onzr(fast=fast)
+
+    return DeezerClient(
+        arl=settings.arl,
+        blowfish=settings.DEEZER_BLOWFISH_SECRET,
+        fast=True,
+    )
 
 
 def print_collection_ids(collection: Collection):
@@ -167,11 +184,11 @@ def search(  # noqa: PLR0913
     """Search track, artist and/or album."""
     if ids:
         quiet = True
-    onzr = start(fast=True, quiet=quiet)
+    deezer = get_deezer_client(quiet=quiet)
+
     if not quiet:
         console.print("🔍 start searching…")
-
-    results = onzr.deezer.search(artist, album, track, strict)
+    results = deezer.search(artist, album, track, strict)
 
     if not results:
         console.print("No match found.")
@@ -210,8 +227,8 @@ def artist(  # noqa: PLR0913
         artist_id = click.get_text_stream("stdin").read().strip()
         logger.debug(f"{artist_id=}")
 
-    onzr = start(fast=True, quiet=quiet)
-    collection = onzr.deezer.artist(
+    deezer = get_deezer_client(quiet=quiet)
+    collection = deezer.artist(
         artist_id, radio=radio, top=top, albums=albums, limit=limit
     )
 
@@ -237,8 +254,8 @@ def album(
         album_id = click.get_text_stream("stdin").read().strip()
         logger.debug(f"{album_id=}")
 
-    onzr = start(fast=True, quiet=quiet)
-    collection = onzr.deezer.album(album_id)
+    deezer = get_deezer_client(quiet=quiet)
+    collection = deezer.album(album_id)
 
     if ids:
         print_collection_ids(collection)
@@ -259,19 +276,19 @@ def mix(
     if ids:
         quiet = True
 
-    onzr = start(fast=True, quiet=quiet)
+    deezer = get_deezer_client(quiet=quiet)
     tracks: List[TrackShort] = []
 
     if not quiet:
         console.print("🍪 cooking the mix…")
 
     for artist_ in artist:
-        result = onzr.deezer.search(artist_, strict=True)
+        result = deezer.search(artist_, strict=True)
         # We expect the search engine to be relevant 🤞
         artist_id = result[0].id
         tracks += cast(
             List[TrackShort],
-            onzr.deezer.artist(artist_id, radio=deep, top=True, limit=limit),
+            deezer.artist(artist_id, radio=deep, top=True, limit=limit),
         )
     shuffle(tracks)
 
@@ -280,40 +297,6 @@ def mix(
         return
 
     print_collection_table(tracks, title="Onzr Mix tracks")
-
-
-# @cli.command()
-# def play(
-#     track_ids: List[str],
-#     quality: StreamQuality = StreamQuality.MP3_128,
-#     shuffle: bool = False,
-# ):
-#     """Play one (or more) tracks."""
-#     onzr = start()
-#     console.print("🚀 starting the player…")
-#     if track_ids == ["-"]:
-#         logger.debug("Reading track ids from stdin…")
-#         track_ids = click.get_text_stream("stdin").read().split()
-#         logger.debug(f"{track_ids=}")
-#     onzr.add(track_ids, quality)
-#     if shuffle:
-#         onzr.shuffle()
-#
-#     # Start playing in a new thread
-#     thread = Thread(target=onzr.play)
-#     thread.start()
-#
-#     # Controls
-#     def on_press(key: keyboard.Key):
-#         """Player control actions."""
-#         match key:
-#             case keyboard.Key.media_play_pause:
-#                 onzr.pause()
-#
-#     with keyboard.Listener(on_press=on_press) as listener:  # type: ignore[arg-type]
-#         listener.join()
-#
-#     raise typer.Exit()
 
 
 @cli.command()
@@ -345,6 +328,14 @@ def clear():
     """Empty queue."""
     url = "http://localhost:9473/queue/clear"
     response = requests.post(url, timeout=5)
+    console.print(response.json())
+
+
+@cli.command()
+def now():
+    """Get info about now playing track."""
+    url = "http://localhost:9473/now"
+    response = requests.get(url, timeout=5)
     console.print(response.json())
 
 

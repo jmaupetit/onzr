@@ -41,7 +41,7 @@ logger.info("Starting Onzr server…")
 async def queue_tracks(request):
     """Add tracks to queue given its identifier."""
     track_ids = await request.json()
-    tracks = [Track(deezer, id_) for id_ in track_ids]
+    tracks = [Track(deezer, id_, background=True) for id_ in track_ids]
     queue.add(tracks=tracks)
     return JSONResponse({"status": "added"})
 
@@ -57,14 +57,7 @@ async def queue_list(request):
     """List queue tracks."""
     return JSONResponse(
         [
-            {
-                "current": p == queue.playing,
-                "position": p,
-                "artist": t.artist,
-                "album": t.album,
-                "title": t.title,
-                "id": t.track_id,
-            }
+            {"current": p == queue.playing, "position": p, "track": t.as_dict()}
             for p, t in enumerate(queue.tracks)
         ]
     )
@@ -77,6 +70,14 @@ async def stream_track(request):
     queue.playing = rank
     track = queue[rank]
     return StreamingResponse(track.stream(quality), media_type=media_type)
+
+
+async def now_playing(request):
+    """Get info about current track."""
+    track = queue.current
+    if track is None:
+        return JSONResponse({"playing": None})
+    return JSONResponse(track.as_dict())
 
 
 async def play(request):
@@ -121,6 +122,7 @@ app = Starlette(
         Route("/queue/clear", queue_clear, methods=["POST"]),
         Route("/queue/", queue_tracks, methods=["POST"]),
         Route("/queue/", queue_list, methods=["GET"]),
+        Route("/now", now_playing, methods=["GET"]),
         Route("/play", play, methods=["POST"]),
         Route("/pause", pause, methods=["POST"]),
         Route("/next", next, methods=["POST"]),

@@ -6,7 +6,6 @@ import logging
 from dataclasses import asdict, dataclass
 from enum import IntEnum, StrEnum
 from threading import Thread
-from time import sleep
 from typing import Generator, List, Optional, Protocol
 
 import deezer
@@ -92,7 +91,6 @@ class DeezerClient(deezer.Deezer):
         self,
         arl: str,
         blowfish: str,
-        multicast_group: str,
         fast: bool = False,
     ) -> None:
         """Instantiate the Deezer API client.
@@ -104,7 +102,6 @@ class DeezerClient(deezer.Deezer):
 
         self.arl = arl
         self.blowfish = blowfish
-        self.multicast_group = multicast_group
         if fast:
             self._fast_login()
         else:
@@ -251,16 +248,20 @@ class Track:
         self,
         client: DeezerClient,
         track_id: str,
+        background: bool = False,
     ) -> None:
         """Instantiate a new track."""
         self.deezer = client
         self.track_id = track_id
         self.session = requests.Session()
 
-        # Fetch track info in a separated thread to make instantiation non-blocking
         self.track_info: dict = {}
-        thread = Thread(target=self._set_track_info)
-        thread.start()
+        # Fetch track info in a separated thread to make instantiation non-blocking
+        if background:
+            thread = Thread(target=self._set_track_info)
+            thread.start()
+        else:
+            self._set_track_info()
 
         self.key: bytes = self._generate_blowfish_key()
         self.status: TrackStatus = TrackStatus.IDLE
@@ -332,6 +333,15 @@ class Track:
     def full_title(self) -> str:
         """Get track full title (artist/title/album)."""
         return f"{self.artist} - {self.title} [{self.album}]"
+
+    def as_dict(self):
+        """Return dict representation of a Track."""
+        return {
+            "id": self.track_id,
+            "artist": self.artist,
+            "album": self.album,
+            "title": self.title,
+        }
 
     def stream(self, quality: StreamQuality = StreamQuality.MP3_128):
         """Fetch track in-memory.
