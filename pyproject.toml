@@ -23,7 +23,7 @@ python = ">3.9,<4.0.0"
 python-vlc = "^3.0.21203"
 starlette = "^0.46.2"
 typer = "^0.15.2"
-uvicorn = "^0.34.2"
+uvicorn = {extras = ["standard"], version = "^0.34.2"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"

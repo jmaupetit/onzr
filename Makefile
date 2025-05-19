@@ -26,7 +26,7 @@ build: ## install project
 .PHONY: build
 
 run: ## run onzr server in development mode
-	poetry run uvicorn onzr.server:app --host localhost --port 9473 --reload --log-level debug
+	poetry run uvicorn onzr.server:app --host localhost --port 9473 --reload --log-config logging-config.yaml
 .PHONY: run
 
 # -- Quality
