@@ -378,4 +378,4 @@ class Track:
 
         # We are done here
         self.status = TrackStatus.STREAMED
-        logger.debug("Track streamed")
+        logger.debug(f"Track fully streamed {self.streamed}")

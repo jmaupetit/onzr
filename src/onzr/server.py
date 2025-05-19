@@ -31,19 +31,10 @@ queue: Queue = Queue(playlist=medialist)
 logger.info("Starting Onzr server…")
 
 
-class OnzrStatus(IntEnum):
-    """Onzr player status."""
-
-    IDLE = 1
-    PLAYING = 2
-    PAUSED = 3
-    STOPPED = 4
-
-
 async def queue_tracks(request):
     """Add tracks to queue given their identifiers."""
     track_ids = await request.json()
-    tracks = [Track(deezer, id_, background=False) for id_ in track_ids]
+    tracks = [Track(deezer, id_, background=True) for id_ in track_ids]
     queue.add(tracks=tracks)
     return JSONResponse({"status": "added"})
 
@@ -80,7 +71,18 @@ async def now_playing(request):
     track = queue.current
     if track is None:
         return JSONResponse({"playing": None})
-    return JSONResponse(track.as_dict())
+    media_player = player.get_media_player()
+    return JSONResponse(
+        {
+            "player": {
+                "state": str(media_player.get_state()),
+                "length": media_player.get_length(),
+                "time": media_player.get_time(),
+                "position": media_player.get_position(),
+            },
+            "track": track.as_dict(),
+        }
+    )
 
 
 async def play(request):
@@ -114,7 +116,7 @@ async def previous(request):
 
 
 async def state(request):
-    """Stop playing."""
+    """Player state."""
     return JSONResponse({"state": str(player.get_state())})
 
 
