@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 deezer: DeezerClient = DeezerClient(
-    arl=settings.arl,
-    blowfish=settings.DEEZER_BLOWFISH_SECRET,
+    arl=settings.ARL, blowfish=settings.DEEZER_BLOWFISH_SECRET, fast=False
 )
 
 
@@ -42,9 +41,9 @@ class OnzrStatus(IntEnum):
 
 
 async def queue_tracks(request):
-    """Add tracks to queue given its identifier."""
+    """Add tracks to queue given their identifiers."""
     track_ids = await request.json()
-    tracks = [Track(deezer, id_, background=True) for id_ in track_ids]
+    tracks = [Track(deezer, id_, background=False) for id_ in track_ids]
     queue.add(tracks=tracks)
     return JSONResponse({"status": "added"})
 
@@ -96,6 +95,12 @@ async def pause(request):
     return JSONResponse({"player": "paused"})
 
 
+async def stop(request):
+    """Stop playing."""
+    player.stop()
+    return JSONResponse({"player": "stop"})
+
+
 async def next(request):
     """Play next track in queue."""
     player.next()
@@ -106,12 +111,6 @@ async def previous(request):
     """Play previous track in queue."""
     player.previous()
     return JSONResponse({"player": "previous"})
-
-
-async def stop(request):
-    """Stop playing."""
-    player.stop()
-    return JSONResponse({"player": "stop"})
 
 
 async def state(request):
@@ -132,9 +131,9 @@ app = Starlette(
                 Route("/now", now_playing, methods=["GET"]),
                 Route("/play", play, methods=["POST"]),
                 Route("/pause", pause, methods=["POST"]),
+                Route("/stop", stop, methods=["POST"]),
                 Route("/next", next, methods=["POST"]),
                 Route("/previous", previous, methods=["POST"]),
-                Route("/stop", stop, methods=["POST"]),
                 Route("/state", state),
             ],
         )

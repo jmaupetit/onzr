@@ -17,6 +17,8 @@ from rich.logging import RichHandler
 from rich.prompt import Prompt
 from rich.table import Table
 
+from onzr.client import OnzrClient
+
 from .config import (
     SECRETS_FILE,
     SETTINGS_FILE,
@@ -307,66 +309,66 @@ def add(track_ids: List[str]):
 
     console.print("➕ adding tracks to queue…")
 
-    url = "http://localhost:9473/queue/"
-    response = requests.post(url, json=track_ids, timeout=5)
+    client = OnzrClient()
+    response = client.queue_tracks(track_ids)
 
-    console.print(response.json())
+    console.print(response)
+
+
+def _client_control(name: str):
+    """A generic wrapper that executes a client method."""
+    client = OnzrClient()
+    method = getattr(client, name)
+    response = method()
+    console.print(response)
 
 
 @cli.command()
 def queue():
     """List queue tracks."""
-    url = "http://localhost:9473/queue/"
-    response = requests.get(url, timeout=5)
-    console.print(response.json())
+    _client_control("queue_list")
 
 
 @cli.command()
 def clear():
     """Empty queue."""
-    url = "http://localhost:9473/queue/clear"
-    response = requests.post(url, timeout=5)
-    console.print(response.json())
+    _client_control("queue_clear")
 
 
 @cli.command()
 def now():
     """Get info about now playing track."""
-    url = "http://localhost:9473/now"
-    response = requests.get(url, timeout=5)
-    console.print(response.json())
+    _client_control("now_playing")
 
 
 @cli.command()
 def play():
     """Play queue."""
-    url = "http://localhost:9473/play"
-    response = requests.post(url, timeout=5)
-    console.print(response.json())
+    _client_control("play")
 
 
 @cli.command()
 def pause():
     """Pause/resume playing."""
-    url = "http://localhost:9473/pause"
-    response = requests.post(url, timeout=5)
-    console.print(response.json())
+    _client_control("pause")
 
 
 @cli.command()
 def stop():
     """Stop playing queue."""
-    url = "http://localhost:9473/stop"
-    response = requests.post(url, timeout=5)
-    console.print(response.json())
+    _client_control("stop")
 
 
 @cli.command()
 def next():
     """Play next track in queue."""
-    url = "http://localhost:9473/next"
-    response = requests.post(url, timeout=5)
-    console.print(response.json())
+    _client_control("next")
+
+
+@cli.command()
+def previous():
+    """Play previous track in queue."""
+    _client_control("previous")
 
 
 @cli.command()

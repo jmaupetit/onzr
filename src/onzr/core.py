@@ -62,7 +62,9 @@ class Queue:
         vlc_instance = self.playlist.get_instance()
         settings = get_settings()
         for t in tracks:
-            media = vlc_instance.media_new(settings.TRACK_STREAM_URL.format(t.track_id))
+            media = vlc_instance.media_new(
+                settings.TRACK_STREAM_URL.format(track_id=t.track_id)
+            )
             self.playlist.add_media(media)
 
     def clear(self):
