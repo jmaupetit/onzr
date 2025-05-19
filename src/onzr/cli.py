@@ -20,7 +20,6 @@ from rich.table import Table
 from .config import (
     SECRETS_FILE,
     SETTINGS_FILE,
-    check_settings,
     get_onzr_dir,
     get_settings,
 )
@@ -59,7 +58,6 @@ class ExitCodes(IntEnum):
 def get_deezer_client(quiet: bool = False) -> DeezerClient:
     """Get Deezer client for simple API queries."""
     settings = get_settings()
-    check_settings(settings)
 
     if not quiet:
         console.print("🚀 login in to Deezer…", style="cyan")

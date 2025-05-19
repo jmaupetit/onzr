@@ -18,7 +18,6 @@ settings = get_settings()
 deezer: DeezerClient = DeezerClient(
     arl=settings.arl,
     blowfish=settings.DEEZER_BLOWFISH_SECRET,
-    multicast_group=settings.MULTICAST_GROUP,
 )
 
 
@@ -36,6 +35,15 @@ media_type = "audio/flac"
 # media_type = "audio/mpeg"
 
 logger.info("Starting Onzr server…")
+
+
+class OnzrStatus(IntEnum):
+    """Onzr player status."""
+
+    IDLE = 1
+    PLAYING = 2
+    PAUSED = 3
+    STOPPED = 4
 
 
 async def queue_tracks(request):

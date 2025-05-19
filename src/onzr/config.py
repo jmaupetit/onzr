@@ -3,9 +3,10 @@
 import logging
 from pathlib import Path
 
-from dynaconf import Dynaconf
+from dynaconf import Dynaconf, ValidationError, Validator
 from typer import get_app_dir
 
+from .deezer import StreamQuality
 from .exceptions import OnzrConfigurationError
 
 logger = logging.getLogger(__name__)
@@ -23,25 +24,22 @@ def get_onzr_dir() -> Path:
 def get_settings() -> Dynaconf:
     """Get Dynaconf settiings."""
     logger.debug("Getting settings…")
-    return Dynaconf(
+    settings = Dynaconf(
         envvar_prefix=APP_NAME.upper(),
         root_path=get_onzr_dir(),
         settings_files=[SECRETS_FILE.name, SETTINGS_FILE.name],
+        validators=[
+            Validator("ARL", must_exist=True),
+            Validator("DEEZER_BLOWFISH_SECRET", must_exist=True),
+            Validator("QUALITY", must_exist=True, cast=StreamQuality)
+        ],
     )
 
-
-def check_settings(settings: Dynaconf):
-    """Check settings are properly set."""
-    # Settings or secret files does not exist
+    # Check settings
     try:
-        settings.get("arl")
-    except OSError as err:
-        raise OnzrConfigurationError(
-            "Onzr is not configured. You should run the 'onzr init' command first."
-        ) from err
-
-    # ARL is not set
-    if settings.get("arl", None) is None:
-        raise OnzrConfigurationError(
-            "Onzr is not properly configured. You should set the ARL secret."
-        )
+        settings.validators.validate_all()
+    except ValidationError as err:
+        mess = "Onzr is not properly configured:\n"
+        mess += "\n".join([f"- {e[1]}" for e in err.details])
+        raise OnzrConfigurationError(mess) from err
+    return settings
