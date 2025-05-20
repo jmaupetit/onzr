@@ -1,6 +1,7 @@
 """Onzr: command line interface."""
 
 import logging
+import time
 from datetime import date
 from enum import IntEnum
 from pathlib import Path
@@ -8,12 +9,16 @@ from random import shuffle
 from typing import List, cast
 
 import click
-import requests
+from rich.text import Text
 import typer
 import uvicorn
 from dynaconf import loaders
 from rich.console import Console
+from rich.layout import Layout
+from rich.live import Live
 from rich.logging import RichHandler
+from rich.panel import Panel
+from rich.progress import Progress
 from rich.prompt import Prompt
 from rich.table import Table
 
@@ -336,9 +341,87 @@ def clear():
 
 
 @cli.command()
-def now():
+def now(follow: bool = False):
     """Get info about now playing track."""
-    _client_control("now_playing")
+    client = OnzrClient()
+
+    def display():
+        """Now playing layout."""
+        now_playing = client.now_playing()
+        queue = client.queue_list()
+        queued = len(queue)
+
+        track = now_playing["track"]
+        player = now_playing["player"]
+        current = list(filter(lambda x: x["current"] is True, queue))[0]
+        playing = current["position"]
+
+        track_infos = (
+            f"[#9B6BDF]{track['title']}\n"
+            f"[#75D7EC]{track['artist']} - "
+            f"[#E356A7]{track['album']}"
+        )
+        player_infos = (
+            f"{player['state']}\n"
+            f"{player['time']} / {player['length']}"
+            f" ({player['position'] * 100:3.0f}%)"
+        )
+        queue_infos = "Empty"
+        if playing < queued:
+            queue_infos = "\n".join(
+                [
+                    (
+                        f"[white bold]{t['position']:-3d}[/] "
+                        f"[#9B6BDF]{t['track']['title']}[white] - "
+                        f"[#75D7EC]{t['track']['artist']} "
+                        f"[#E356A7][{t['track']['album']}]"
+                    )
+                    for t in queue[playing + 1 :]
+                ]
+            )
+        layout = Layout()
+        layout.split_row(
+            Layout(name="left"),
+            Layout(
+                Panel(
+                    queue_infos,
+                    title="Next in queue",
+                    title_align="left",
+                    style="#75D7EC",
+                ),
+                name="right",
+            ),
+        )
+        layout["left"].split_column(
+            Layout(
+                Panel(
+                    track_infos,
+                    title=f"[bold] Now playing ({current['position']} / {len(queue)})",
+                    title_align="left",
+                    style="#E356A7",
+                    padding=1,
+                )
+            ),
+            Layout(
+                Panel(
+                    player_infos,
+                    title="Player",
+                    title_align="left",
+                    style="#9B6BDF",
+                    padding=1,
+                )
+            ),
+        )
+        return layout
+
+    if not follow:
+        console.print(display())
+        return
+
+    with Live(display(), refresh_per_second=4) as live:
+        while True:
+            time.sleep(1)
+            live.update(display())
 
 
 @cli.command()

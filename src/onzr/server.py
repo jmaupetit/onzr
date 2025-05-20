@@ -88,12 +88,14 @@ async def now_playing(request):
 async def play(request):
     """Start playing current queue."""
     player.play()
+    # Get track that will be played info
     return JSONResponse({"player": "play"})
 
 
 async def pause(request):
     """Pause/resume playing."""
     player.pause()
+    # Get curent track info
     return JSONResponse({"player": "paused"})
 
 
@@ -106,12 +108,14 @@ async def stop(request):
 async def next(request):
     """Play next track in queue."""
     player.next()
+    # Get next track info
     return JSONResponse({"player": "next"})
 
 
 async def previous(request):
     """Play previous track in queue."""
     player.previous()
+    # Get previous track info
     return JSONResponse({"player": "previous"})
 
 

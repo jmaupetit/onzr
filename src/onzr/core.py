@@ -42,6 +42,14 @@ class Queue:
             return None
         return self.tracks[self.playing]
 
+    @property
+    def next(self) -> Track | None:
+        """Get the next track (if any)."""
+        rank = self.playing or 0 + 1
+        if rank >= len(self):
+            return None
+        return self.tracks[rank]
+
     def index_for_id(self, track_id) -> int:
         """Get track queue index given its id.
 
