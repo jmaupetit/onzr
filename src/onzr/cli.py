@@ -7,18 +7,19 @@ from enum import IntEnum
 from pathlib import Path
 from random import shuffle
 from typing import List, cast
+from typing_extensions import Annotated
 
 import click
 from rich.text import Text
 import typer
 import uvicorn
 from dynaconf import loaders
-from rich.console import Console
+from rich.console import Console, Group
 from rich.layout import Layout
 from rich.live import Live
 from rich.logging import RichHandler
 from rich.panel import Panel
-from rich.progress import Progress
+from rich.progress_bar import ProgressBar
 from rich.prompt import Prompt
 from rich.table import Table
 
@@ -341,7 +342,7 @@ def clear():
 
 
 @cli.command()
-def now(follow: bool = False):
+def now(follow: Annotated[bool, typer.Option("--follow", "-f")] = False):
     """Get info about now playing track."""
     client = OnzrClient()
 
@@ -364,17 +365,17 @@ def now(follow: bool = False):
         player_infos = (
             f"{player['state']}\n"
             f"{player['time']} / {player['length']}"
-            f" ({player['position'] * 100:3.0f}%)"
+            f" ({player['position'] * 100:3.0f}%)\n"
         )
         queue_infos = "Empty"
-        if playing < queued:
+        if playing < queued and playing != queued:
             queue_infos = "\n".join(
                 [
                     (
-                        f"[white bold]{t['position']:-3d}[/] "
+                        f"[white][[bold]{t['position']:-2d}[/]] "
                         f"[#9B6BDF]{t['track']['title']}[white] - "
                         f"[#75D7EC]{t['track']['artist']} "
-                        f"[#E356A7][{t['track']['album']}]"
+                        f"[#E356A7]({t['track']['album']})"
                     )
                     for t in queue[playing + 1 :]
                 ]
@@ -396,7 +397,7 @@ def now(follow: bool = False):
             Layout(
                 Panel(
                     track_infos,
-                    title=f"[bold] Now playing ({current['position']} / {len(queue)})",
+                    title=f"[bold] Now playing ({playing} / {len(queue)})",
                     title_align="left",
                     style="#E356A7",
                     padding=1,
@@ -404,7 +405,15 @@ def now(follow: bool = False):
             ),
             Layout(
                 Panel(
-                    player_infos,
+                    Group(
+                        player_infos,
+                        ProgressBar(
+                            total=player["length"],
+                            completed=player["time"],
+                            complete_style="#E356A7",
+                            finished_style="#75D7EC",
+                        ),
+                    ),
                     title="Player",
                     title_align="left",
                     style="#9B6BDF",
@@ -420,7 +429,7 @@ def now(follow: bool = False):
 
     with Live(display(), refresh_per_second=4) as live:
         while True:
-            time.sleep(1)
+            time.sleep(0.2)
             live.update(display())
 
 
