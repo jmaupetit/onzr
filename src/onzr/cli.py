@@ -120,14 +120,19 @@ def print_collection_table(collection: Collection, title="Collection"):
 
     # Sort albums by release date
     if isinstance(collection[0], AlbumShort):
+        albums_with_release_date = set(
+            filter(lambda x: x.release_date is not None, collection)
+        )
+        albums_without_release_date = set(collection) - albums_with_release_date
         collection = cast(
             Collection,
             sorted(
-                collection,
+                albums_with_release_date,
                 key=lambda i: date.fromisoformat(i.release_date),
                 reverse=True,
             ),
         )
+        collection.extend(albums_without_release_date)
 
     for item in collection:
         table.add_row(*item.to_list())

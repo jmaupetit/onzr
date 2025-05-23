@@ -78,6 +78,10 @@ class AlbumShort(ToListMixin):
     release_date: Optional[str] = None
     artist: Optional[ArtistShort] = None
 
+    def __hash__(self):
+        """Make AlbumShort hashable."""
+        return hash(self.id)
+
 
 @dataclass
 class TrackShort(ToListMixin):
