@@ -31,7 +31,7 @@ def get_settings() -> Dynaconf:
         validators=[
             Validator("ARL", must_exist=True),
             Validator("DEEZER_BLOWFISH_SECRET", must_exist=True),
-            Validator("QUALITY", must_exist=True, cast=StreamQuality)
+            Validator("QUALITY", must_exist=True, cast=StreamQuality),
         ],
     )
 

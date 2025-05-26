@@ -7,10 +7,8 @@ from enum import IntEnum
 from pathlib import Path
 from random import shuffle
 from typing import List, cast
-from typing_extensions import Annotated
 
 import click
-from rich.text import Text
 import typer
 import uvicorn
 from dynaconf import loaders
@@ -22,9 +20,9 @@ from rich.panel import Panel
 from rich.progress_bar import ProgressBar
 from rich.prompt import Prompt
 from rich.table import Table
+from typing_extensions import Annotated
 
-from onzr.client import OnzrClient
-
+from .client import OnzrClient
 from .config import (
     SECRETS_FILE,
     SETTINGS_FILE,

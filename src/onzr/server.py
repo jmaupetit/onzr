@@ -1,7 +1,6 @@
 """Onzr: http server."""
 
 import logging
-from enum import IntEnum
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, StreamingResponse

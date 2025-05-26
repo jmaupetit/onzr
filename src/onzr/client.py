@@ -1,6 +1,7 @@
 """Onzr: http client."""
 
 from typing import List
+
 import requests
 
 from .config import get_settings

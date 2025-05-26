@@ -11,6 +11,7 @@ from typing import Generator, List, Optional, Protocol
 import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
+from term_image.image import BaseImage, from_url
 
 logger = logging.getLogger(__name__)
 
@@ -252,6 +253,28 @@ class TrackStatus(IntEnum):
     STREAMED = 3
 
 
+class AlbumCoverSize(IntEnum):
+    """Album cover sizes."""
+
+    SMALL = 0
+    MEDIUM = 1
+    BIG = 2
+    XL = 3
+
+
+def get_album_cover_filename(size: AlbumCoverSize) -> str:
+    """Get album cover filename given its size."""
+    match size:
+        case AlbumCoverSize.SMALL:
+            return "56x56-000000-80-0-0.jpg"
+        case AlbumCoverSize.MEDIUM:
+            return "250x250-000000-80-0-0.jpg"
+        case AlbumCoverSize.BIG:
+            return "500x500-000000-80-0-0.jpg"
+        case AlbumCoverSize.XL:
+            return "1000x1000-000000-80-0-0.jpg"
+
+
 class Track:
     """A Deezer track."""
 
@@ -340,6 +363,39 @@ class Track:
         """Get track album."""
         return self.track_info["ALB_TITLE"]
 
+    def _cover(self, size: AlbumCoverSize) -> str:
+        """Get track album cover URL given requested size."""
+        return (
+            "https://e-cdns-images.dzcdn.net/images/cover/"
+            f"{self.track_info['ALB_PICTURE']}/"
+            f"{get_album_cover_filename(size)}"
+        )
+
+    @property
+    def cover_small(self) -> str:
+        """Get small album cover URL."""
+        return self._cover(AlbumCoverSize.SMALL)
+
+    @property
+    def cover_medium(self) -> str:
+        """Get medium album cover URL."""
+        return self._cover(AlbumCoverSize.MEDIUM)
+
+    @property
+    def cover_big(self) -> str:
+        """Get big album cover URL."""
+        return self._cover(AlbumCoverSize.BIG)
+
+    @property
+    def cover_xl(self) -> str:
+        """Get XL album cover URL."""
+        return self._cover(AlbumCoverSize.XL)
+
+    @property
+    def term_cover(self) -> BaseImage:
+        """Get a terminal-compatible Album cover."""
+        return from_url(self.cover_small)
+
     @property
     def full_title(self) -> str:
         """Get track full title (artist/title/album)."""
@@ -352,6 +408,7 @@ class Track:
             "artist": self.artist,
             "album": self.album,
             "title": self.title,
+            # "cover": str(self.term_cover),
         }
 
     def stream(self, quality: StreamQuality = StreamQuality.MP3_128):
