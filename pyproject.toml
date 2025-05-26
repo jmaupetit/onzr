@@ -25,6 +25,7 @@ typer = "^0.15.2"
 uvicorn = {extras = ["standard"], version = "^0.34.2"}
 term-image = "^0.7.2"
 textual-image = "^0.8.2"
+fastapi = "^0.115.12"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"

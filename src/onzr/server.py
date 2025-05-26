@@ -1,10 +1,11 @@
 """Onzr: http server."""
 
 import logging
+from typing import Annotated, List
 
-from starlette.applications import Starlette
-from starlette.responses import JSONResponse, StreamingResponse
-from starlette.routing import Mount, Route
+from fastapi import FastAPI, Path
+from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel
 from vlc import Instance
 
 from .config import get_settings
@@ -14,6 +15,8 @@ from .deezer import DeezerClient, Track
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
+
+app = FastAPI(title="Onzr", root_path=settings.API_ROOT_URL, debug=settings.DEBUG)
 
 deezer: DeezerClient = DeezerClient(
     arl=settings.ARL, blowfish=settings.DEEZER_BLOWFISH_SECRET, fast=False
@@ -30,22 +33,24 @@ queue: Queue = Queue(playlist=medialist)
 logger.info("Starting Onzr server…")
 
 
-async def queue_tracks(request):
+@app.post("/queue/")
+async def queue_tracks(track_ids: List[int]):
     """Add tracks to queue given their identifiers."""
-    track_ids = await request.json()
-    tracks = [Track(deezer, id_, background=True) for id_ in track_ids]
+    tracks = [Track(deezer, str(id_), background=True) for id_ in track_ids]
     queue.add(tracks=tracks)
     return JSONResponse({"status": "added"})
 
 
-async def queue_clear(request):
+@app.delete("/queue/")
+async def queue_clear():
     """Clear tracks queue."""
     player.stop()
     queue.clear()
     return JSONResponse({"queue": "empty"})
 
 
-async def queue_list(request):
+@app.get("/queue/")
+async def queue_list():
     """List queue tracks."""
     return JSONResponse(
         [
@@ -55,17 +60,20 @@ async def queue_list(request):
     )
 
 
-async def stream_track(request):
+@app.get(settings.TRACK_STREAM_ENDPOINT)
+async def stream_track(
+    track_id: Annotated[int, Path(title="Deezer track identifier")],
+) -> StreamingResponse:
     """Stream Deezer track given its identifer."""
     quality = settings.QUALITY
-    track_id = request.path_params["track_id"]
-    rank = queue.index_for_id(track_id)
+    rank = queue.index_for_id(str(track_id))
     queue.playing = rank
     track = queue[rank]
     return StreamingResponse(track.stream(quality), media_type=quality.media_type)
 
 
-async def now_playing(request):
+@app.get("/now")
+async def now_playing():
     """Get info about current track."""
     track = queue.current
     if track is None:
@@ -84,63 +92,69 @@ async def now_playing(request):
     )
 
 
-async def play(request):
+@app.post("/play")
+async def play():
     """Start playing current queue."""
     player.play()
     # Get track that will be played info
     return JSONResponse({"player": "play"})
 
 
-async def pause(request):
+@app.post("/pause")
+async def pause():
     """Pause/resume playing."""
     player.pause()
     # Get curent track info
     return JSONResponse({"player": "paused"})
 
 
-async def stop(request):
+@app.post("/stop")
+async def stop():
     """Stop playing."""
     player.stop()
     return JSONResponse({"player": "stop"})
 
 
-async def next(request):
+@app.post("/next")
+async def next():
     """Play next track in queue."""
     player.next()
     # Get next track info
     return JSONResponse({"player": "next"})
 
 
-async def previous(request):
+@app.post("/previous")
+async def previous():
     """Play previous track in queue."""
     player.previous()
     # Get previous track info
     return JSONResponse({"player": "previous"})
 
 
-async def state(request):
+@app.get("/state")
+async def state():
     """Player state."""
     return JSONResponse({"state": str(player.get_state())})
 
 
-app = Starlette(
-    debug=settings.DEBUG,
-    routes=[
-        Mount(
-            settings.API_ROOT_URL,
-            routes=[
-                Route(settings.TRACK_STREAM_ENDPOINT, stream_track),
-                Route("/queue/clear", queue_clear, methods=["POST"]),
-                Route("/queue/", queue_tracks, methods=["POST"]),
-                Route("/queue/", queue_list, methods=["GET"]),
-                Route("/now", now_playing, methods=["GET"]),
-                Route("/play", play, methods=["POST"]),
-                Route("/pause", pause, methods=["POST"]),
-                Route("/stop", stop, methods=["POST"]),
-                Route("/next", next, methods=["POST"]),
-                Route("/previous", previous, methods=["POST"]),
-                Route("/state", state),
-            ],
-        )
-    ],
-)
+# app = Starlette(
+#     debug=settings.DEBUG,
+#     routes=[
+#         Mount(
+#             settings.API_ROOT_URL,
+#             routes=[
+#                 Route(settings.TRACK_STREAM_ENDPOINT, stream_track),
+#                 Route("/queue/clear", queue_clear, methods=["POST"]),
+#                 Route("/queue/", queue_tracks, methods=["POST"]),
+#                 Route("/queue/", queue_list, methods=["GET"]),
+#                 Route("/now", now_playing, methods=["GET"]),
+#                 Route("/play", play, methods=["POST"]),
+#                 Route("/pause", pause, methods=["POST"]),
+#                 Route("/stop", stop, methods=["POST"]),
+#                 Route("/next", next, methods=["POST"]),
+#                 Route("/previous", previous, methods=["POST"]),
+#                 Route("/state", state),
+#             ],
+#         )
+#     ],
+# )

@@ -29,7 +29,7 @@ class OnzrClient:
 
     def queue_clear(self) -> dict:
         """Clear tracks queue."""
-        response = self.session.post(f"{self.base_url}/queue/clear")
+        response = self.session.delete(f"{self.base_url}/queue/")
         return response.json()
 
     def queue_list(self) -> dict:
