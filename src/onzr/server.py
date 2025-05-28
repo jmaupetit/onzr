@@ -6,7 +6,7 @@ from typing import Annotated, List
 from fastapi import FastAPI, Path
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
-from vlc import Instance
+from vlc import Instance, State
 
 from .config import get_settings
 from .core import Queue
@@ -31,6 +31,21 @@ player.set_media_list(medialist)
 queue: Queue = Queue(playlist=medialist)
 
 logger.info("Starting Onzr server…")
+
+
+class OnzrState(BaseModel):
+    """Onzr server state."""
+
+    # Does not support VLC Enums
+    player: str
+    # queue: Queue
+
+
+class PlayerControl(BaseModel):
+    """Player controls."""
+
+    action: str
+    state: str
 
 
 @app.post("/queue/")
@@ -95,68 +110,41 @@ async def now_playing():
 
 
 @app.post("/play")
-async def play():
+async def play() -> PlayerControl:
     """Start playing current queue."""
     player.play()
-    # Get track that will be played info
-    return JSONResponse({"player": "play"})
+    return PlayerControl(action="play", state=str(player.get_state()))
 
 
 @app.post("/pause")
-async def pause():
+async def pause() -> PlayerControl:
     """Pause/resume playing."""
     player.pause()
-    # Get curent track info
-    return JSONResponse({"player": "paused"})
+    return PlayerControl(action="pause", state=str(player.get_state()))
 
 
 @app.post("/stop")
-async def stop():
+async def stop() -> PlayerControl:
     """Stop playing."""
     player.stop()
-    return JSONResponse({"player": "stop"})
+    return PlayerControl(action="stop", state=str(player.get_state()))
 
 
 @app.post("/next")
-async def next():
+async def next() -> PlayerControl:
     """Play next track in queue."""
     player.next()
-    # Get next track info
-    return JSONResponse({"player": "next"})
+    return PlayerControl(action="next", state=str(player.get_state()))
 
 
 @app.post("/previous")
-async def previous():
+async def previous() -> PlayerControl:
     """Play previous track in queue."""
     player.previous()
-    # Get previous track info
-    return JSONResponse({"player": "previous"})
+    return PlayerControl(action="previous", state=str(player.get_state()))
 
 
 @app.get("/state")
 async def state():
     """Player state."""
     return JSONResponse({"state": str(player.get_state())})
-
-
-# app = Starlette(
-#     debug=settings.DEBUG,
-#     routes=[
-#         Mount(
-#             settings.API_ROOT_URL,
-#             routes=[
-#                 Route(settings.TRACK_STREAM_ENDPOINT, stream_track),
-#                 Route("/queue/clear", queue_clear, methods=["POST"]),
-#                 Route("/queue/", queue_tracks, methods=["POST"]),
-#                 Route("/queue/", queue_list, methods=["GET"]),
-#                 Route("/now", now_playing, methods=["GET"]),
-#                 Route("/play", play, methods=["POST"]),
-#                 Route("/pause", pause, methods=["POST"]),
-#                 Route("/stop", stop, methods=["POST"]),
-#                 Route("/next", next, methods=["POST"]),
-#                 Route("/previous", previous, methods=["POST"]),
-#                 Route("/state", state),
-#             ],
-#         )
-#     ],
-# )
