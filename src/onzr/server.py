@@ -69,6 +69,8 @@ async def stream_track(
     rank = queue.index_for_id(str(track_id))
     queue.playing = rank
     track = queue[rank]
+    # Refresh track token to avoid having an expired one
+    track.refresh()
     return StreamingResponse(track.stream(quality), media_type=quality.media_type)
 
 

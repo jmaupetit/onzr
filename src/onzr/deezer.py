@@ -307,6 +307,11 @@ class Track:
         logger.debug("Track info: %s", track_info)
         self.track_info = track_info
 
+    def refresh(self):
+        """Refresh track info."""
+        logger.debug("Refreshing track info…")
+        self._set_track_info()
+
     def _get_url(self, quality: StreamQuality) -> str:
         """Get URL of the track to stream."""
         logger.debug(f"Getting track url with quality {quality}…")
