@@ -482,3 +482,12 @@ def serve(
     )
     server = uvicorn.Server(config)
     server.run()
+
+
+@cli.command()
+def state():
+    """Get server state."""
+    client = OnzrClient()
+    response = client.state()
+
+    console.print(response)

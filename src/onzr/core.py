@@ -4,11 +4,13 @@ import logging
 import random
 from typing import List
 
+from pydantic import BaseModel
 from vlc import MediaList
 
 from onzr.config import get_settings
 
 from .deezer import Track
+from .models import QueueState
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,11 @@ class Queue:
         if rank >= len(self):
             return None
         return self.tracks[rank]
+
+    @property
+    def state(self) -> QueueState:
+        """Get queue state."""
+        return QueueState(playing=self.playing, queued=len(self))
 
     def index_for_id(self, track_id) -> int:
         """Get track queue index given its id.

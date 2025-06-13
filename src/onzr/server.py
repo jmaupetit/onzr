@@ -5,12 +5,12 @@ from typing import Annotated, List
 
 from fastapi import FastAPI, Path
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel
-from vlc import Instance, State
+from vlc import Instance
 
 from .config import get_settings
 from .core import Queue
 from .deezer import DeezerClient, Track
+from .models import PlayerControl, ServerState
 
 logger = logging.getLogger(__name__)
 
@@ -33,19 +33,9 @@ queue: Queue = Queue(playlist=medialist)
 logger.info("Starting Onzr server…")
 
 
-class OnzrState(BaseModel):
-    """Onzr server state."""
-
-    # Does not support VLC Enums
-    player: str
-    # queue: Queue
-
-
-class PlayerControl(BaseModel):
-    """Player controls."""
-
-    action: str
-    state: str
+def get_server_state(player, queue) -> ServerState:
+    """Get server state."""
+    return ServerState(player=str(player.get_state()), queue=queue.state)
 
 
 @app.post("/queue/")
@@ -113,38 +103,38 @@ async def now_playing():
 async def play() -> PlayerControl:
     """Start playing current queue."""
     player.play()
-    return PlayerControl(action="play", state=str(player.get_state()))
+    return PlayerControl(action="play", state=get_server_state(player, queue))
 
 
 @app.post("/pause")
 async def pause() -> PlayerControl:
     """Pause/resume playing."""
     player.pause()
-    return PlayerControl(action="pause", state=str(player.get_state()))
+    return PlayerControl(action="pause", state=get_server_state(player, queue))
 
 
 @app.post("/stop")
 async def stop() -> PlayerControl:
     """Stop playing."""
     player.stop()
-    return PlayerControl(action="stop", state=str(player.get_state()))
+    return PlayerControl(action="stop", state=get_server_state(player, queue))
 
 
 @app.post("/next")
 async def next() -> PlayerControl:
     """Play next track in queue."""
     player.next()
-    return PlayerControl(action="next", state=str(player.get_state()))
+    return PlayerControl(action="next", state=get_server_state(player, queue))
 
 
 @app.post("/previous")
 async def previous() -> PlayerControl:
     """Play previous track in queue."""
     player.previous()
-    return PlayerControl(action="previous", state=str(player.get_state()))
+    return PlayerControl(action="previous", state=get_server_state(player, queue))
 
 
 @app.get("/state")
-async def state():
-    """Player state."""
-    return JSONResponse({"state": str(player.get_state())})
+async def state() -> ServerState:
+    """Server state."""
+    return get_server_state(player, queue)

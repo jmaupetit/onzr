@@ -5,6 +5,7 @@ from typing import List
 import requests
 
 from .config import get_settings
+from .models import PlayerControl, ServerState
 
 
 class OnzrClient:
@@ -43,28 +44,33 @@ class OnzrClient:
         response = self.session.get(f"{self.base_url}/now")
         return response.json()
 
+    def state(self) -> ServerState:
+        """Get server status."""
+        response = self.session.get(f"{self.base_url}/state")
+        return ServerState.model_validate_json(response.text)
+
     # Controls
     def play(self) -> dict:
         """Start playing current queue."""
         response = self.session.post(f"{self.base_url}/play")
-        return response.json()
+        return PlayerControl.model_validate_json(response.text)
 
     def pause(self) -> dict:
         """Pause/resume playing."""
         response = self.session.post(f"{self.base_url}/pause")
-        return response.json()
+        return PlayerControl.model_validate_json(response.text)
 
     def stop(self) -> dict:
         """Stop playing."""
         response = self.session.post(f"{self.base_url}/stop")
-        return response.json()
+        return PlayerControl.model_validate_json(response.text)
 
     def next(self) -> dict:
         """Play next track in queue."""
         response = self.session.post(f"{self.base_url}/next")
-        return response.json()
+        return PlayerControl.model_validate_json(response.text)
 
     def previous(self) -> dict:
         """Play previous track in queue."""
         response = self.session.post(f"{self.base_url}/previous")
-        return response.json()
+        return PlayerControl.model_validate_json(response.text)
