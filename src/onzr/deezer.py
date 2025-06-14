@@ -13,6 +13,8 @@ import requests
 from Cryptodome.Cipher import Blowfish
 from term_image.image import BaseImage, from_url
 
+from .models import TrackInfo, TrackShort
+
 logger = logging.getLogger(__name__)
 
 
@@ -289,7 +291,7 @@ class Track:
         self.track_id = track_id
         self.session = requests.Session()
 
-        self.track_info: dict = {}
+        self.track_info: TrackInfo = None
         # Fetch track info in a separated thread to make instantiation non-blocking
         if background:
             thread = Thread(target=self._set_track_info)
@@ -305,7 +307,15 @@ class Track:
         """Get track info."""
         track_info = self.deezer.gw.get_track(self.track_id)
         logger.debug("Track info: %s", track_info)
-        self.track_info = track_info
+        self.track_info = TrackInfo(
+            id=track_info["SNG_ID"],
+            token=track_info["TRACK_TOKEN"],
+            duration=track_info["DURATION"],
+            artist=track_info["ART_NAME"],
+            title=track_info["SNG_TITLE"],
+            album=track_info["ALB_TITLE"],
+            picture=track_info["ALB_PICTURE"],
+        )
 
     def refresh(self):
         """Refresh track info."""
@@ -346,33 +356,33 @@ class Track:
     @property
     def token(self) -> str:
         """Get track token."""
-        return self.track_info["TRACK_TOKEN"]
+        return self.track_info.token
 
     @property
     def duration(self) -> int:
         """Get track duration (in seconds)."""
-        return int(self.track_info["DURATION"])
+        return self.track_info.duration
 
     @property
     def artist(self) -> str:
         """Get track artist."""
-        return self.track_info["ART_NAME"]
+        return self.track_info.artist
 
     @property
     def title(self) -> str:
         """Get track title."""
-        return self.track_info["SNG_TITLE"]
+        return self.track_info.title
 
     @property
     def album(self) -> str:
         """Get track album."""
-        return self.track_info["ALB_TITLE"]
+        return self.track_info.album
 
     def _cover(self, size: AlbumCoverSize) -> str:
         """Get track album cover URL given requested size."""
         return (
             "https://e-cdns-images.dzcdn.net/images/cover/"
-            f"{self.track_info['ALB_PICTURE']}/"
+            f"{self.track_info.picture}/"
             f"{get_album_cover_filename(size)}"
         )
 
@@ -405,16 +415,6 @@ class Track:
     def full_title(self) -> str:
         """Get track full title (artist/title/album)."""
         return f"{self.artist} - {self.title} [{self.album}]"
-
-    def as_dict(self):
-        """Return dict representation of a Track."""
-        return {
-            "id": self.track_id,
-            "artist": self.artist,
-            "album": self.album,
-            "title": self.title,
-            # "cover": str(self.term_cover),
-        }
 
     def stream(self, quality: StreamQuality = StreamQuality.MP3_128):
         """Fetch track in-memory.

@@ -10,7 +10,7 @@ from vlc import Instance
 from .config import get_settings
 from .core import Queue
 from .deezer import DeezerClient, Track
-from .models import PlayerControl, ServerState
+from .models import PlayerControl, ServerMessage, ServerState, QueuedTracks
 
 logger = logging.getLogger(__name__)
 
@@ -39,30 +39,25 @@ def get_server_state(player, queue) -> ServerState:
 
 
 @app.post("/queue/")
-async def queue_tracks(track_ids: List[int]):
+async def queue_add(track_ids: List[int]) -> ServerMessage:
     """Add tracks to queue given their identifiers."""
     tracks = [Track(deezer, str(id_), background=True) for id_ in track_ids]
     queue.add(tracks=tracks)
-    return JSONResponse({"status": "added"})
+    return ServerMessage(message=f"Added {len(tracks)} tracks to queue")
 
 
 @app.delete("/queue/")
-async def queue_clear():
+async def queue_clear() -> ServerState:
     """Clear tracks queue."""
     player.stop()
     queue.clear()
-    return JSONResponse({"queue": "empty"})
+    return get_server_state(player, queue)
 
 
 @app.get("/queue/")
-async def queue_list():
+async def queue_list() -> QueuedTracks:
     """List queue tracks."""
-    return JSONResponse(
-        [
-            {"current": p == queue.playing, "position": p, "track": t.as_dict()}
-            for p, t in enumerate(queue.tracks)
-        ]
-    )
+    return queue.serialize()
 
 
 @app.get(settings.TRACK_STREAM_ENDPOINT)

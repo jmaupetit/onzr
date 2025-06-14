@@ -319,7 +319,7 @@ def add(track_ids: List[str]):
     console.print("➕ adding tracks to queue…")
 
     client = OnzrClient()
-    response = client.queue_tracks(track_ids)
+    response = client.queue_add(track_ids)
 
     console.print(response)
 

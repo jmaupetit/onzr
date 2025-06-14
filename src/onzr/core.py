@@ -4,13 +4,12 @@ import logging
 import random
 from typing import List
 
-from pydantic import BaseModel
 from vlc import MediaList
 
 from onzr.config import get_settings
 
 from .deezer import Track
-from .models import QueueState
+from .models import QueueState, QueuedTrack, QueuedTracks, TrackShort
 
 logger = logging.getLogger(__name__)
 
@@ -92,3 +91,17 @@ class Queue:
     def shuffle(self):
         """Shuffle current track list."""
         random.shuffle(self.tracks)
+
+    def serialize(self) -> QueuedTracks:
+        """Serialize queue."""
+        return QueuedTracks(
+            playing=self.playing,
+            tracks=[
+                QueuedTrack(
+                    current=self.playing == p,
+                    position=p,
+                    track=TrackShort(**t.track_info.model_dump()),
+                )
+                for p, t in enumerate(self.tracks)
+            ],
+        )

@@ -5,7 +5,7 @@ from typing import List
 import requests
 
 from .config import get_settings
-from .models import PlayerControl, ServerState
+from .models import PlayerControl, QueuedTracks, ServerMessage, ServerState
 
 
 class OnzrClient:
@@ -23,20 +23,20 @@ class OnzrClient:
         self.base_url = settings.SERVER_BASE_URL
 
     # Queue
-    def queue_tracks(self, track_ids: List[str]) -> dict:
+    def queue_add(self, track_ids: List[str]) -> dict:
         """Add tracks to queue given their identifiers."""
         response = self.session.post(f"{self.base_url}/queue/", json=track_ids)
-        return response.json()
+        return ServerMessage.model_validate_json(response.text)
 
     def queue_clear(self) -> dict:
         """Clear tracks queue."""
         response = self.session.delete(f"{self.base_url}/queue/")
-        return response.json()
+        return ServerState.model_validate_json(response.text)
 
     def queue_list(self) -> dict:
         """List queue tracks."""
         response = self.session.get(f"{self.base_url}/queue/")
-        return response.json()
+        return QueuedTracks.model_validate_json(response.text)
 
     # Status
     def now_playing(self) -> dict:
