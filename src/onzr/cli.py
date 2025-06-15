@@ -353,34 +353,31 @@ def now(follow: Annotated[bool, typer.Option("--follow", "-f")] = False):
         """Now playing layout."""
         now_playing = client.now_playing()
         queue = client.queue_list()
-        queued = len(queue)
+        playing = queue.playing
+        queued = len(queue.tracks)
 
-        track = now_playing["track"]
-        player = now_playing["player"]
-        current = list(filter(lambda x: x["current"] is True, queue))[0]
-        playing = current["position"]
+        track = now_playing.track
+        player = now_playing.player
 
         track_infos = (
-            f"[#9B6BDF]{track['title']}\n"
-            f"[#75D7EC]{track['artist']} - "
-            f"[#E356A7]{track['album']}"
+            f"[#9B6BDF]{track.title}\n[#75D7EC]{track.artist} - [#E356A7]{track.album}"
         )
         player_infos = (
-            f"{player['state']}\n"
-            f"{player['time']} / {player['length']}"
-            f" ({player['position'] * 100:3.0f}%)\n"
+            f"{player.state}\n"
+            f"{player.time} / {player.length}"
+            f" ({player.position * 100:3.0f}%)\n"
         )
         queue_infos = "Empty"
         if playing < queued and playing != queued:
             queue_infos = "\n".join(
                 [
                     (
-                        f"[white][[bold]{t['position']:-2d}[/]] "
-                        f"[#9B6BDF]{t['track']['title']}[white] - "
-                        f"[#75D7EC]{t['track']['artist']} "
-                        f"[#E356A7]({t['track']['album']})"
+                        f"[white][[bold]{t.position + 1:-2d}[/]] "
+                        f"[#9B6BDF]{t.track.title}[white] - "
+                        f"[#75D7EC]{t.track.artist} "
+                        f"[#E356A7]({t.track.album})"
                     )
-                    for t in queue[playing + 1 :]
+                    for t in queue.tracks[playing + 1 :]
                 ]
             )
         layout = Layout()
@@ -400,7 +397,7 @@ def now(follow: Annotated[bool, typer.Option("--follow", "-f")] = False):
             Layout(
                 Panel(
                     track_infos,
-                    title=f"[bold] Now playing ({playing} / {len(queue)})",
+                    title=f"[bold] Now playing ({playing + 1} / {queued})",
                     title_align="left",
                     style="#E356A7",
                     padding=1,
@@ -411,8 +408,8 @@ def now(follow: Annotated[bool, typer.Option("--follow", "-f")] = False):
                     Group(
                         player_infos,
                         ProgressBar(
-                            total=player["length"],
-                            completed=player["time"],
+                            total=player.length,
+                            completed=player.time,
                             complete_style="#E356A7",
                             finished_style="#75D7EC",
                         ),

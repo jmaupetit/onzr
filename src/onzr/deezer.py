@@ -13,7 +13,7 @@ import requests
 from Cryptodome.Cipher import Blowfish
 from term_image.image import BaseImage, from_url
 
-from .models import TrackInfo, TrackShort
+from .models import TrackInfo, TrackShort as TrackShortModel
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,7 @@ class ToListMixin(IsDataclassProtocol):
         return out
 
 
+# FIXME: remove all dataclasses to switch to pydantic models
 @dataclass
 class ArtistShort(ToListMixin):
     """A small model to represent an artist."""
@@ -445,3 +446,13 @@ class Track:
         # We are done here
         self.status = TrackStatus.STREAMED
         logger.debug(f"Track fully streamed {self.streamed}")
+
+    def serialize(self) -> TrackShort:
+        """Serialize current track."""
+        # FIXME: remove model alias when old legacy *Short dataclasses have been removed
+        return TrackShortModel(
+            id=self.track_id,
+            title=self.title,
+            album=self.album,
+            artist=self.artist,
+        )

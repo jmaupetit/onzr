@@ -97,11 +97,7 @@ class Queue:
         return QueuedTracks(
             playing=self.playing,
             tracks=[
-                QueuedTrack(
-                    current=self.playing == p,
-                    position=p,
-                    track=TrackShort(**t.track_info.model_dump()),
-                )
+                QueuedTrack(current=self.playing == p, position=p, track=t.serialize())
                 for p, t in enumerate(self.tracks)
             ],
         )

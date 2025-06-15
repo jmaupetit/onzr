@@ -4,13 +4,21 @@ import logging
 from typing import Annotated, List
 
 from fastapi import FastAPI, Path
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from vlc import Instance
 
 from .config import get_settings
 from .core import Queue
 from .deezer import DeezerClient, Track
-from .models import PlayerControl, ServerMessage, ServerState, QueuedTracks
+from .models import (
+    PlayerControl,
+    PlayerState,
+    PlayingState,
+    QueuedTracks,
+    ServerMessage,
+    ServerState,
+    TrackShort,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -75,22 +83,18 @@ async def stream_track(
 
 
 @app.get("/now")
-async def now_playing():
+async def now_playing() -> PlayingState:
     """Get info about current track."""
     track = queue.current
-    if track is None:
-        return JSONResponse({"playing": None})
     media_player = player.get_media_player()
-    return JSONResponse(
-        {
-            "player": {
-                "state": str(media_player.get_state()),
-                "length": media_player.get_length(),
-                "time": media_player.get_time(),
-                "position": media_player.get_position(),
-            },
-            "track": track.as_dict(),
-        }
+    return PlayingState(
+        player=PlayerState(
+            state=str(media_player.get_state()),
+            length=media_player.get_length(),
+            time=media_player.get_time(),
+            position=media_player.get_position(),
+        ),
+        track=track.serialize() if track else None,
     )
 
 

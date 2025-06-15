@@ -5,7 +5,13 @@ from typing import List
 import requests
 
 from .config import get_settings
-from .models import PlayerControl, QueuedTracks, ServerMessage, ServerState
+from .models import (
+    PlayerControl,
+    PlayingState,
+    QueuedTracks,
+    ServerMessage,
+    ServerState,
+)
 
 
 class OnzrClient:
@@ -23,26 +29,26 @@ class OnzrClient:
         self.base_url = settings.SERVER_BASE_URL
 
     # Queue
-    def queue_add(self, track_ids: List[str]) -> dict:
+    def queue_add(self, track_ids: List[str]) -> ServerMessage:
         """Add tracks to queue given their identifiers."""
         response = self.session.post(f"{self.base_url}/queue/", json=track_ids)
         return ServerMessage.model_validate_json(response.text)
 
-    def queue_clear(self) -> dict:
+    def queue_clear(self) -> ServerState:
         """Clear tracks queue."""
         response = self.session.delete(f"{self.base_url}/queue/")
         return ServerState.model_validate_json(response.text)
 
-    def queue_list(self) -> dict:
+    def queue_list(self) -> QueuedTracks:
         """List queue tracks."""
         response = self.session.get(f"{self.base_url}/queue/")
         return QueuedTracks.model_validate_json(response.text)
 
     # Status
-    def now_playing(self) -> dict:
+    def now_playing(self) -> PlayingState:
         """Get info about current track."""
         response = self.session.get(f"{self.base_url}/now")
-        return response.json()
+        return PlayingState.model_validate_json(response.text)
 
     def state(self) -> ServerState:
         """Get server status."""

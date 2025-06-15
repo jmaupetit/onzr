@@ -44,9 +44,9 @@ class AlbumShort(BaseModel):
     """A small model to represent an artist."""
 
     id: str
-    name: str
+    title: str
     release_date: Optional[str] = None
-    artist: Optional[ArtistShort] = None
+    artist: Optional[str] = None
 
 
 class TrackShort(BaseModel):
@@ -54,19 +54,20 @@ class TrackShort(BaseModel):
 
     id: str
     title: str
-    album: AlbumShort
+    album: str
+    artist: str
 
 
 class TrackInfo(BaseModel):
     """Used track data."""
 
     id: int
-    token: str
-    duration: int
-    artist: str
     title: str
     album: str
+    artist: str
     picture: str
+    token: str
+    duration: int
 
 
 Collection = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
@@ -85,3 +86,19 @@ class QueuedTracks(BaseModel):
 
     playing: int | None
     tracks: List[QueuedTrack]
+
+
+class PlayerState(BaseModel):
+    """Detailled player state."""
+
+    state: str
+    length: int = 0
+    time: int = 0
+    position: float = 0.0
+
+
+class PlayingState(BaseModel):
+    """Playing player state."""
+
+    player: PlayerState
+    track: Optional[TrackShort] = None
