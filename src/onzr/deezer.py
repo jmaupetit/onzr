@@ -3,7 +3,6 @@
 import functools
 import hashlib
 import logging
-import pprint
 from enum import IntEnum, StrEnum
 from threading import Thread
 from typing import Generator, List
@@ -11,7 +10,6 @@ from typing import Generator, List
 import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
-from term_image.image import BaseImage, from_url
 
 from .models import ArtistShort, AlbumShort, Collection, TrackInfo, TrackShort
 
@@ -330,11 +328,6 @@ class Track:
     def cover_xl(self) -> str:
         """Get XL album cover URL."""
         return self._cover(AlbumCoverSize.XL)
-
-    @property
-    def term_cover(self) -> BaseImage:
-        """Get a terminal-compatible Album cover."""
-        return from_url(self.cover_small)
 
     @property
     def full_title(self) -> str:

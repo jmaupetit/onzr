@@ -69,7 +69,7 @@ def get_deezer_client(quiet: bool = False) -> DeezerClient:
         console.print("🚀 login in to Deezer…", style="cyan")
 
     return DeezerClient(
-        arl=settings.arl,
+        arl=settings.ARL,
         blowfish=settings.DEEZER_BLOWFISH_SECRET,
         fast=True,
     )
