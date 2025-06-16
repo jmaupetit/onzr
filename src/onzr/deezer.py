@@ -92,7 +92,7 @@ class DeezerClient(deezer.Deezer):
             logger.debug(f"{album=}")
             yield AlbumShort(
                 id=album.get("id"),
-                name=album.get("title"),
+                title=album.get("title"),
                 release_date=album.get("release_date"),
                 artist=artist.name,
             )
