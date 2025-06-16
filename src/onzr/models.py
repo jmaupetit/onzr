@@ -36,23 +36,27 @@ class ServerMessage(BaseModel):
 class ArtistShort(BaseModel):
     """A small model to represent an artist."""
 
-    id: str
+    id: int
     name: str
 
 
 class AlbumShort(BaseModel):
     """A small model to represent an artist."""
 
-    id: str
+    id: int
     title: str
-    release_date: Optional[str] = None
     artist: Optional[str] = None
+    release_date: Optional[str] = None
+
+    def __hash__(self):
+        """Make AlbumShort hashable."""
+        return hash(self.id)
 
 
 class TrackShort(BaseModel):
     """A small model to represent an artist."""
 
-    id: str
+    id: int
     title: str
     album: str
     artist: str

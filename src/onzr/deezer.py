@@ -3,17 +3,17 @@
 import functools
 import hashlib
 import logging
-from dataclasses import asdict, dataclass
+import pprint
 from enum import IntEnum, StrEnum
 from threading import Thread
-from typing import Generator, List, Optional, Protocol
+from typing import Generator, List
 
 import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
 from term_image.image import BaseImage, from_url
 
-from .models import TrackInfo, TrackShort as TrackShortModel
+from .models import ArtistShort, AlbumShort, Collection, TrackInfo, TrackShort
 
 logger = logging.getLogger(__name__)
 
@@ -31,72 +31,6 @@ class StreamQuality(StrEnum):
         if self == StreamQuality.FLAC:
             return "audio/flac"
         return "audio/mpeg"
-
-
-@dataclass
-class IsDataclassProtocol(Protocol):
-    """A protocol to type check dataclass mixins."""
-
-
-class ToListMixin(IsDataclassProtocol):
-    """A dataclass mixin that converts all fields values to a list."""
-
-    def _dataclass_to_list(self, target=None) -> List[str | List]:
-        """Convert all field values to a list."""
-        if target is None:
-            target = asdict(self)
-        return [
-            v if not isinstance(v, dict) else self._dataclass_to_list(v)
-            for v in target.values()
-        ]
-
-    def to_list(self, target: List[str | List] | None = None) -> List[str]:
-        """Convert nested dataclasses to values list."""
-        if target is None:
-            target = self._dataclass_to_list()
-        out = []
-        for i in target:
-            if isinstance(i, list):
-                out += self.to_list(i)
-            # Ignore None
-            elif i:
-                out.append(i)
-        return out
-
-
-# FIXME: remove all dataclasses to switch to pydantic models
-@dataclass
-class ArtistShort(ToListMixin):
-    """A small model to represent an artist."""
-
-    id: str
-    name: str
-
-
-@dataclass
-class AlbumShort(ToListMixin):
-    """A small model to represent an artist."""
-
-    id: str
-    name: str
-    release_date: Optional[str] = None
-    artist: Optional[ArtistShort] = None
-
-    def __hash__(self):
-        """Make AlbumShort hashable."""
-        return hash(self.id)
-
-
-@dataclass
-class TrackShort(ToListMixin):
-    """A small model to represent an artist."""
-
-    id: str
-    title: str
-    album: AlbumShort
-
-
-Collection = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
 
 
 class DeezerClient(deezer.Deezer):
@@ -144,17 +78,10 @@ class DeezerClient(deezer.Deezer):
         """API results to TrackShort."""
         for track in data:
             yield TrackShort(
-                id=str(track.get("id")),
+                id=track.get("id"),
                 title=track.get("title"),
-                album=AlbumShort(
-                    id=str(track.get("album").get("id")),
-                    name=track.get("album").get("title"),
-                    release_date=track.get("album").get("release_date"),
-                    artist=ArtistShort(
-                        id=str(track.get("artist").get("id")),
-                        name=track.get("artist").get("name"),
-                    ),
-                ),
+                album=track.get("album").get("title"),
+                artist=track.get("artist").get("name"),
             )
 
     def _to_albums(
@@ -164,10 +91,10 @@ class DeezerClient(deezer.Deezer):
         for album in data:
             logger.debug(f"{album=}")
             yield AlbumShort(
-                id=str(album.get("id")),
+                id=album.get("id"),
                 name=album.get("title"),
                 release_date=album.get("release_date"),
-                artist=artist,
+                artist=artist.name,
             )
 
     def artist(
@@ -222,7 +149,7 @@ class DeezerClient(deezer.Deezer):
             response = self.api.search_artist(artist)
             results = [
                 ArtistShort(
-                    id=str(a.get("id")),
+                    id=a.get("id"),
                     name=a.get("name"),
                 )
                 for a in response["data"]
@@ -231,13 +158,10 @@ class DeezerClient(deezer.Deezer):
             response = self.api.search_album(album)
             results = [
                 AlbumShort(
-                    id=str(a.get("id")),
-                    name=a.get("title"),
+                    id=a.get("id"),
+                    title=a.get("title"),
                     release_date=a.get("release_date"),
-                    artist=ArtistShort(
-                        id=str(a.get("artist").get("id")),
-                        name=str(a.get("artist").get("name")),
-                    ),
+                    artist=a.get("artist").get("name"),
                 )
                 for a in response["data"]
             ]
@@ -449,8 +373,7 @@ class Track:
 
     def serialize(self) -> TrackShort:
         """Serialize current track."""
-        # FIXME: remove model alias when old legacy *Short dataclasses have been removed
-        return TrackShortModel(
+        return TrackShort(
             id=self.track_id,
             title=self.title,
             album=self.album,

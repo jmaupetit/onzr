@@ -29,11 +29,11 @@ from .config import (
     get_onzr_dir,
     get_settings,
 )
-from .deezer import (
+from .deezer import DeezerClient
+from .models import (
     AlbumShort,
     ArtistShort,
     Collection,
-    DeezerClient,
     TrackShort,
 )
 
@@ -99,22 +99,18 @@ def print_collection_table(collection: Collection, title="Collection"):
         else False
     )
     show_track = True if isinstance(sample, TrackShort) else False
-    show_release = (
-        True if isinstance(sample, AlbumShort) and sample.release_date else False
-    )
+    show_release = True if isinstance(sample, AlbumShort) else False
     logger.debug(f"{show_artist=} - {show_album=} - {show_track=}")
 
+    table.add_column("ID", justify="right")
     if show_track:
-        table.add_column("ID", justify="right")
         table.add_column("Track", style="#9B6BDF")
     if show_album:
-        table.add_column("ID", justify="right")
         table.add_column("Album", style="#E356A7")
+    if show_artist:
+        table.add_column("Artist", style="#75D7EC")
     if show_release:
         table.add_column("Released")
-    if show_artist:
-        table.add_column("ID", justify="right")
-        table.add_column("Artist", style="#75D7EC")
 
     # Sort albums by release date
     if isinstance(collection[0], AlbumShort):
@@ -133,7 +129,7 @@ def print_collection_table(collection: Collection, title="Collection"):
         collection.extend(albums_without_release_date)
 
     for item in collection:
-        table.add_row(*item.to_list())
+        table.add_row(*map(str, item.model_dump().values()))
 
     console.print(table)
 
