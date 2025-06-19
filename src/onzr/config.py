@@ -38,14 +38,14 @@ class Settings(BaseSettings):
     API_ROOT_URL: str = "/api/v1"
     TRACK_STREAM_ENDPOINT: str = "/queue/{track_id}/stream"
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    @computed_field
     def SERVER_BASE_URL(self) -> HttpUrl:
         """Onzr server base URL."""
         return HttpUrl(f"{self.SCHEMA}://{self.HOST}:{self.PORT}{self.API_ROOT_URL}")
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    @computed_field
     def TRACK_STREAM_URL(self) -> str:
         """Onzr server track stream URL."""
         return f"{self.SERVER_BASE_URL}{self.TRACK_STREAM_ENDPOINT}"

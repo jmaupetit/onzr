@@ -73,7 +73,7 @@ async def stream_track(
 ) -> StreamingResponse:
     """Stream Deezer track given its identifer."""
     quality = settings.QUALITY
-    rank = queue.index_for_id(str(track_id))
+    rank = queue.index_for_id(track_id)
     queue.playing = rank
     track = queue[rank]
     # Refresh track token to avoid having an expired one
