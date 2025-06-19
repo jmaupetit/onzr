@@ -56,27 +56,27 @@ class OnzrClient:
         return ServerState.model_validate_json(response.text)
 
     # Controls
-    def play(self) -> dict:
+    def play(self) -> PlayerControl:
         """Start playing current queue."""
         response = self.session.post(f"{self.base_url}/play")
         return PlayerControl.model_validate_json(response.text)
 
-    def pause(self) -> dict:
+    def pause(self) -> PlayerControl:
         """Pause/resume playing."""
         response = self.session.post(f"{self.base_url}/pause")
         return PlayerControl.model_validate_json(response.text)
 
-    def stop(self) -> dict:
+    def stop(self) -> PlayerControl:
         """Stop playing."""
         response = self.session.post(f"{self.base_url}/stop")
         return PlayerControl.model_validate_json(response.text)
 
-    def next(self) -> dict:
+    def next(self) -> PlayerControl:
         """Play next track in queue."""
         response = self.session.post(f"{self.base_url}/next")
         return PlayerControl.model_validate_json(response.text)
 
-    def previous(self) -> dict:
+    def previous(self) -> PlayerControl:
         """Play previous track in queue."""
         response = self.session.post(f"{self.base_url}/previous")
         return PlayerControl.model_validate_json(response.text)

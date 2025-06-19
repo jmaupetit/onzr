@@ -114,20 +114,18 @@ def print_collection_table(collection: Collection, title="Collection"):
         table.add_column("Released")
 
     # Sort albums by release date
-    if isinstance(collection[0], AlbumShort):
+    # FIXME: mypy does not get that we are dealing with a List[AlbumShort] collection
+    if isinstance(sample, AlbumShort):
         albums_with_release_date = set(
-            filter(lambda x: x.release_date is not None, collection)
+            filter(lambda x: x.release_date is not None, collection)  # type: ignore[attr-defined]
         )
-        albums_without_release_date = set(collection) - albums_with_release_date
-        collection = cast(
-            Collection,
-            sorted(
-                albums_with_release_date,
-                key=lambda i: date.fromisoformat(i.release_date),
-                reverse=True,
-            ),
-        )
-        collection.extend(albums_without_release_date)
+        albums_without_release_date = list(set(collection) - albums_with_release_date)
+        collection = sorted(
+            albums_with_release_date,
+            key=lambda i: date.fromisoformat(i.release_date),  # type: ignore[attr-defined]
+            reverse=True,
+        )  # type: ignore[assignment]
+        collection.extend(albums_without_release_date)  # type: ignore[arg-type]
 
     for item in collection:
         table.add_row(*map(str, item.model_dump().values()))
@@ -231,7 +229,7 @@ def artist(  # noqa: PLR0913
 
     deezer = get_deezer_client(quiet=quiet)
     collection = deezer.artist(
-        artist_id, radio=radio, top=top, albums=albums, limit=limit
+        int(artist_id), radio=radio, top=top, albums=albums, limit=limit
     )
 
     if ids:
@@ -257,7 +255,7 @@ def album(
         logger.debug(f"{album_id=}")
 
     deezer = get_deezer_client(quiet=quiet)
-    collection = deezer.album(album_id)
+    collection = deezer.album(int(album_id))
 
     if ids:
         print_collection_ids(collection)

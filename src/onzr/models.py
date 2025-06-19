@@ -1,6 +1,6 @@
 """Onzr: Pydantic models."""
 
-from typing import List, Optional
+from typing import List, Optional, TypeAlias
 
 from pydantic import BaseModel
 
@@ -74,7 +74,7 @@ class TrackInfo(BaseModel):
     duration: int
 
 
-Collection = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
+Collection: TypeAlias = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
 
 
 class QueuedTrack(BaseModel):

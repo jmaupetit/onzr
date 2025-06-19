@@ -5,7 +5,7 @@ import hashlib
 import logging
 from enum import IntEnum, StrEnum
 from threading import Thread
-from typing import Generator, List
+from typing import Any, Generator, List, Optional, no_type_check
 
 import deezer
 import requests
@@ -97,7 +97,7 @@ class DeezerClient(deezer.Deezer):
 
     def artist(
         self,
-        artist_id: str,
+        artist_id: int,
         radio: bool = False,
         top: bool = True,
         albums: bool = False,
@@ -105,7 +105,7 @@ class DeezerClient(deezer.Deezer):
     ) -> List[TrackShort] | List[AlbumShort]:
         """Get artist tracks."""
         response = self.api.get_artist(artist_id)
-        artist = ArtistShort(id=str(response.get("id")), name=response.get("name"))
+        artist = ArtistShort(id=response.get("id"), name=response.get("name"))
         logger.debug(f"{artist=}")
 
         if radio:
@@ -122,7 +122,7 @@ class DeezerClient(deezer.Deezer):
                 "Either radio, top or albums should be True to get artist details"
             )
 
-    def album(self, album_id: str) -> List[TrackShort]:
+    def album(self, album_id: int) -> List[TrackShort]:
         """Get album tracks."""
         response = self.api.get_album(album_id)
         logger.debug(f"{response=}")
@@ -206,7 +206,7 @@ class Track:
     def __init__(
         self,
         client: DeezerClient,
-        track_id: str,
+        track_id: int,
         background: bool = False,
     ) -> None:
         """Instantiate a new track."""
@@ -214,7 +214,7 @@ class Track:
         self.track_id = track_id
         self.session = requests.Session()
 
-        self.track_info: TrackInfo = None
+        self.track_info: Optional[TrackInfo] = None
         # Fetch track info in a separated thread to make instantiation non-blocking
         if background:
             thread = Thread(target=self._set_track_info)
@@ -256,7 +256,7 @@ class Track:
 
         Taken from: https://github.com/nathom/streamrip/
         """
-        md5_hash = hashlib.md5(self.track_id.encode()).hexdigest()  # noqa: S324
+        md5_hash = hashlib.md5(str(self.track_id).encode()).hexdigest()  # noqa: S324
         # good luck :)
         return "".join(
             chr(functools.reduce(lambda x, y: x ^ y, map(ord, t)))
@@ -276,56 +276,65 @@ class Track:
             b"\x00\x01\x02\x03\x04\x05\x06\x07",
         ).decrypt(chunk)
 
+    def _get_track_info_attribute(self, field: str) -> Any | None:
+        """Get self.track_info attribute if defined."""
+        return getattr(self.track_info, field, None)
+
     @property
-    def token(self) -> str:
+    def token(self) -> str | None:
         """Get track token."""
-        return self.track_info.token
+        return self._get_track_info_attribute("token")
 
     @property
-    def duration(self) -> int:
+    def duration(self) -> int | None:
         """Get track duration (in seconds)."""
-        return self.track_info.duration
+        return self._get_track_info_attribute("duration")
 
     @property
-    def artist(self) -> str:
+    def artist(self) -> str | None:
         """Get track artist."""
-        return self.track_info.artist
+        return self._get_track_info_attribute("artist")
 
     @property
-    def title(self) -> str:
+    def title(self) -> str | None:
         """Get track title."""
-        return self.track_info.title
+        return self._get_track_info_attribute("title")
 
     @property
-    def album(self) -> str:
+    def album(self) -> str | None:
         """Get track album."""
-        return self.track_info.album
+        return self._get_track_info_attribute("album")
 
-    def _cover(self, size: AlbumCoverSize) -> str:
+    def _cover(self, size: AlbumCoverSize) -> str | None:
         """Get track album cover URL given requested size."""
+        picture = self._get_track_info_attribute("picture")
         return (
-            "https://e-cdns-images.dzcdn.net/images/cover/"
-            f"{self.track_info.picture}/"
-            f"{get_album_cover_filename(size)}"
+            (
+                "https://e-cdns-images.dzcdn.net/images/cover/"
+                f"{picture}/"
+                f"{get_album_cover_filename(size)}"
+            )
+            if picture
+            else None
         )
 
     @property
-    def cover_small(self) -> str:
+    def cover_small(self) -> str | None:
         """Get small album cover URL."""
         return self._cover(AlbumCoverSize.SMALL)
 
     @property
-    def cover_medium(self) -> str:
+    def cover_medium(self) -> str | None:
         """Get medium album cover URL."""
         return self._cover(AlbumCoverSize.MEDIUM)
 
     @property
-    def cover_big(self) -> str:
+    def cover_big(self) -> str | None:
         """Get big album cover URL."""
         return self._cover(AlbumCoverSize.BIG)
 
     @property
-    def cover_xl(self) -> str:
+    def cover_xl(self) -> str | None:
         """Get XL album cover URL."""
         return self._cover(AlbumCoverSize.XL)
 
@@ -364,6 +373,8 @@ class Track:
         self.status = TrackStatus.STREAMED
         logger.debug(f"Track fully streamed {self.streamed}")
 
+    # Pydantic will raise an error for us
+    @no_type_check
     def serialize(self) -> TrackShort:
         """Serialize current track."""
         return TrackShort(

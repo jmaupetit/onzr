@@ -48,7 +48,7 @@ def get_server_state(player, queue) -> ServerState:
 @app.post("/queue/")
 async def queue_add(track_ids: List[int]) -> ServerMessage:
     """Add tracks to queue given their identifiers."""
-    tracks = [Track(deezer, str(id_), background=True) for id_ in track_ids]
+    tracks = [Track(deezer, id_, background=True) for id_ in track_ids]
     queue.add(tracks=tracks)
     return ServerMessage(message=f"Added {len(tracks)} tracks to queue")
 

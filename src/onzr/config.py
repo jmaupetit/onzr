@@ -62,14 +62,14 @@ class Settings(BaseSettings):
     API_ROOT_URL: str = "/api/v1"
     TRACK_STREAM_ENDPOINT: str = "/queue/{track_id}/stream"
 
-    @computed_field
     @property
+    @computed_field
     def SERVER_BASE_URL(self) -> HttpUrl:
         """Onzr server base URL."""
         return HttpUrl(f"{self.SCHEMA}://{self.HOST}:{self.PORT}{self.API_ROOT_URL}")
 
-    @computed_field
     @property
+    @computed_field
     def TRACK_STREAM_URL(self) -> str:
         """Onzr server track stream URL."""
         return f"{self.SERVER_BASE_URL}{self.TRACK_STREAM_ENDPOINT}"
@@ -99,4 +99,6 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     """Get settings."""
-    return Settings()
+    # ARL and DEEZER_BLOWFISH_SECRET are missing in instantiation since
+    # those should be loaded using the YAML configuration
+    return Settings()  # type: ignore[call-arg]

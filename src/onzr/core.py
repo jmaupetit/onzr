@@ -64,13 +64,9 @@ class Queue:
         """
         return [t.track_id for t in self.tracks].index(track_id)
 
-    def add(self, track: Track | None = None, tracks: List[Track] | None = None):
+    def add(self, tracks: List[Track]):
         """Add one or more tracks to queue."""
-        if track is None and tracks is None:
-            raise TypeError("Argument missing, you should either add a track or tracks")
-
-        tracks = tracks or [track]
-        self.tracks.extend(tracks)  # type: ignore[list-item]
+        self.tracks.extend(tracks)
 
         # Add track streaming url to the playlist
         vlc_instance = self.playlist.get_instance()
