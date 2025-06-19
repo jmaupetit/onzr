@@ -9,7 +9,7 @@ from vlc import MediaList
 from onzr.config import get_settings
 
 from .deezer import Track
-from .models import QueueState, QueuedTrack, QueuedTracks, TrackShort
+from .models import QueuedTrack, QueuedTracks, QueueState
 
 logger = logging.getLogger(__name__)
 

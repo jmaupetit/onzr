@@ -11,7 +11,7 @@ from typing import List, cast
 import click
 import typer
 import uvicorn
-from dynaconf import loaders
+import yaml
 from rich.console import Console, Group
 from rich.layout import Layout
 from rich.live import Live
@@ -22,9 +22,10 @@ from rich.prompt import Prompt
 from rich.table import Table
 from typing_extensions import Annotated
 
+from onzr.exceptions import OnzrConfigurationError
+
 from .client import OnzrClient
 from .config import (
-    SECRETS_FILE,
     SETTINGS_FILE,
     get_onzr_dir,
     get_settings,
@@ -135,7 +136,7 @@ def print_collection_table(collection: Collection, title="Collection"):
 
 
 @cli.command()
-def init(reset: bool = False):
+def init():
     """Intialize onzr player."""
     console.print("⚙️ Initializing onzr…")
 
@@ -148,31 +149,27 @@ def init(reset: bool = False):
 
     # Copy original dist
     logger.debug("Will copy distributed configurations…")
-    for setting_file in [SECRETS_FILE, SETTINGS_FILE]:
-        src = module_dir / setting_file.with_suffix(".toml.dist")
-        dest = app_dir / setting_file
-        logger.debug(f"{src=} -> {dest=}")
+    src = module_dir / SETTINGS_FILE.with_suffix(".yaml.dist")
+    dest = app_dir / SETTINGS_FILE
+    logger.debug(f"{src=} -> {dest=}")
 
-        if dest.exists():
-            logger.info(f"Setting file '{setting_file}' already exists.")
-            continue
-        dest.write_text(src.read_text())
-        logger.debug(f"Copied setting file: {setting_file}")
+    if dest.exists():
+        raise OnzrConfigurationError(f"Configuration file '{dest}' already exists!")
 
-    # Set ARL value
-    settings = get_settings()
-    try:
-        arl = settings.ARL
-    except AttributeError:
-        arl = None
+    logger.info(f"Will create base setting file '{dest}'")
+    dest.write_text(src.read_text())
+    logger.debug(f"Copied base setting file to: {dest}")
 
-    if arl is None or reset:
-        logger.debug("ARL value will be (re)set.")
-        arl = Prompt.ask("Paste your ARL 📋")
-        secrets_file = app_dir / SECRETS_FILE
+    # Open base configuration
+    with src.open() as f:
+        user_settings = yaml.safe_load(f)
 
-        logger.info(f"Writing secrets configuration: {secrets_file}")
-        loaders.write(str(secrets_file), {"ARL": arl}, merge=True)
+    logger.debug("ARL value will be (re)set.")
+    user_settings["ARL"] = Prompt.ask("Paste your ARL 📋")
+
+    logger.info(f"Writing settings configuration to: {dest}")
+    with dest.open(mode="w") as f:
+        yaml.dump(user_settings, f)
 
     console.print("🎉 Everything looks ok from here. You can start playing 💫")
 

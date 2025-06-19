@@ -17,7 +17,6 @@ from .models import (
     QueuedTracks,
     ServerMessage,
     ServerState,
-    TrackShort,
 )
 
 logger = logging.getLogger(__name__)

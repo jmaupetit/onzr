@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from dynaconf import loaders
+import yaml
 from typer.testing import CliRunner
 
 import onzr
@@ -22,20 +22,23 @@ def onzr_dir(monkeypatch):
 
 
 @pytest.fixture
-def settings_files(onzr_dir):
-    """Configured onzr settings files."""
-    yield [(onzr_dir / s) for s in [config.SETTINGS_FILE, config.SECRETS_FILE]]
+def settings_file(onzr_dir):
+    """Configured onzr settings file."""
+    yield onzr_dir / config.SETTINGS_FILE
 
 
 @pytest.fixture
-def configured_app(onzr_dir, settings_files):
+def configured_app(onzr_dir, settings_file):
     """Configured onzr app."""
     module_dir = Path(onzr.__file__).parent
-    for setting_file in settings_files:
-        src = module_dir / setting_file.with_suffix(".toml.dist").name
-        dest = onzr_dir / setting_file
-        dest.write_text(src.read_text())
-    loaders.write(str(onzr_dir / config.SECRETS_FILE), {"ARL": "fake-arl"}, merge=True)
+    src = module_dir / settings_file.with_suffix(".yaml.dist").name
+    dest = onzr_dir / settings_file
+
+    with src.open() as f:
+        test_config = yaml.safe_load(f)
+    test_config["ARL"] = "fake-arl"
+    with dest.open(mode="w") as f:
+        yaml.dump(test_config, f)
 
 
 @pytest.fixture

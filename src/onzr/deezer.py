@@ -11,7 +11,7 @@ import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
 
-from .models import ArtistShort, AlbumShort, Collection, TrackInfo, TrackShort
+from .models import AlbumShort, ArtistShort, Collection, TrackInfo, TrackShort
 
 logger = logging.getLogger(__name__)
 

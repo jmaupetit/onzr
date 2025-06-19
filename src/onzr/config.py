@@ -3,25 +3,22 @@
 import logging
 from pathlib import Path
 
-# from dynaconf import Dynaconf, ValidationError, Validator
 from pydantic import computed_field
 from pydantic.networks import HttpUrl
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
-    TomlConfigSettingsSource,
+    YamlConfigSettingsSource,
 )
 from typer import get_app_dir
 
 from .deezer import StreamQuality
-from .exceptions import OnzrConfigurationError
 
 logger = logging.getLogger(__name__)
 
 APP_NAME: str = "onzr"
-SECRETS_FILE: Path = Path(".secrets.toml")
-SETTINGS_FILE: Path = Path("settings.toml")
+SETTINGS_FILE: Path = Path("settings.yaml")
 
 
 def get_onzr_dir() -> Path:
@@ -79,12 +76,12 @@ class Settings(BaseSettings):
 
     # Deezer
     QUALITY: StreamQuality = StreamQuality.MP3_128
-    DEEZER_BLOWFISH_SECRET: str = "g4el58wc0zvf9na1"
+    DEEZER_BLOWFISH_SECRET: str
     ARL: str
 
     model_config = SettingsConfigDict(
         env_prefix=APP_NAME.upper(),
-        toml_file=get_onzr_dir() / SETTINGS_FILE,
+        yaml_file=get_onzr_dir() / SETTINGS_FILE,
     )
 
     @classmethod
@@ -97,8 +94,9 @@ class Settings(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         """Add Toml configuration support."""
-        return (TomlConfigSettingsSource(settings_cls),)
+        return (YamlConfigSettingsSource(settings_cls),)
 
 
 def get_settings() -> Settings:
+    """Get settings."""
     return Settings()
