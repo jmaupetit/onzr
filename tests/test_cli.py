@@ -10,27 +10,29 @@ import pytest
 
 import onzr
 from onzr.cli import ExitCodes, cli
-from onzr.deezer import AlbumShort, ArtistShort, Collection, DeezerClient, TrackShort
+from onzr.deezer import DeezerClient
+from onzr.exceptions import OnzrConfigurationError
+from onzr.models import AlbumShort, ArtistShort, Collection, TrackShort
 
 # Test fixtures
-artist_1 = ArtistShort(id="1", name="foo")
-artist_2 = ArtistShort(id="2", name="bar")
+artist_1 = ArtistShort(id=1, name="foo")
+artist_2 = ArtistShort(id=2, name="bar")
 artists_collection: Collection = [artist_1, artist_2]
 album_1 = AlbumShort(
-    id="11",
-    name="foo",
+    id=11,
+    title="foo",
+    artist="foo",
     release_date=datetime.date(2025, 1, 1).isoformat(),
-    artist=artist_1,
 )
 album_2 = AlbumShort(
-    id="12",
-    name="bar",
+    id=12,
+    title="bar",
+    artist="bar",
     release_date=datetime.date(1925, 10, 1).isoformat(),
-    artist=artist_2,
 )
 albums_collection: Collection = [album_1, album_2]
-track_1 = TrackShort(id="21", title="foo", album=album_1)
-track_2 = TrackShort(id="22", title="bar", album=album_2)
+track_1 = TrackShort(id=21, title="foo", album="foo", artist="foo")
+track_2 = TrackShort(id=22, title="bar", album="bar", artist="foo")
 tracks_collection: Collection = [track_1, track_2]
 
 # System exit codes
@@ -44,105 +46,58 @@ def test_command_help(runner):
     assert result.exit_code == ExitCodes.OK
 
 
-def test_init_command_without_input(runner, settings_files):
+def test_init_command_without_input(runner, settings_file):
     """Test the `onzr init` command without ARL input."""
-    for setting_file in settings_files:
-        assert setting_file.exists() is False
+    assert settings_file.exists() is False
 
     # No ARL setting is provided
     result = runner.invoke(cli, ["init"])
     assert result.exit_code == SYSTEM_EXIT_1
 
     # Base configuration exists but without ARL setting
-    for setting_file in settings_files:
-        assert setting_file.exists() is True
+    assert settings_file.exists() is True
 
     # Dist file and its initial copy hould be identical
-    for dest in settings_files:
-        dist = Path(onzr.__file__).parent / Path(f"{dest.name}.dist")
-        assert dist.exists()
-        assert dist.read_text() == dest.read_text()
+    dist = Path(onzr.__file__).parent / Path(f"{settings_file.name}.dist")
+    assert dist.exists()
+    assert dist.read_text() == settings_file.read_text()
 
 
-def test_init_command(runner, settings_files):
+def test_init_command(runner, settings_file):
     """Test the `onzr init` command."""
-    for setting_file in settings_files:
-        assert setting_file.exists() is False
+    assert settings_file.exists() is False
 
     result = runner.invoke(cli, ["init"], input="fake-arl")
     assert result.exit_code == ExitCodes.OK
 
-    # All settings files should exist now
-    for setting_file in settings_files:
-        assert setting_file.exists() is True
+    # Settings file should exist now
+    assert settings_file.exists() is True
 
-    # SETTINGS_FILE should be identical
-    SETTINGS_FILE = settings_files[0]
-    settings_dist = Path(onzr.__file__).parent / Path(f"{SETTINGS_FILE.name}.dist")
+    # SETTINGS_FILE should be updated compared to the distributed template
+    settings_dist = Path(onzr.__file__).parent / Path(f"{settings_file.name}.dist")
     assert settings_dist.exists()
-    assert settings_dist.read_text() == SETTINGS_FILE.read_text()
-
-    # SECRETS_FILE should be different
-    SECRETS_FILE = settings_files[1]
-    secrets_dist = Path(onzr.__file__).parent / Path(f"{SECRETS_FILE.name}.dist")
-    assert secrets_dist.exists()
-    secrets = SECRETS_FILE.read_text()
-    assert secrets_dist.read_text() != secrets
-    assert re.search("^ARL = .*", secrets)
+    settings_file_content = settings_file.read_text()
+    assert settings_dist.read_text() != settings_file_content
+    assert re.search("^ARL: .*", settings_file_content)
 
 
-def test_init_command_does_not_overwrite_settings(runner, settings_files):
+def test_init_command_does_not_overwrite_settings(runner, settings_file):
     """Test the `onzr init` command does not overwrite existing settings."""
-    for setting_file in settings_files:
-        assert setting_file.exists() is False
+    assert settings_file.exists() is False
 
     # Get most recent modification time
     result = runner.invoke(cli, ["init"], input="fake-arl")
-    original_stats = [stat(sf) for sf in settings_files]
+    original_stat = stat(settings_file)
 
     # Re-run the `init` command without reset mode shouldn't touch settings
     result = runner.invoke(cli, ["init"], input="fake-arl")
-    assert result.exit_code == ExitCodes.OK
-    new_stats = [stat(sf) for sf in settings_files]
-
-    assert all(o == n for o, n in zip(original_stats, new_stats, strict=True))
-
-
-def test_init_command_reset(runner, settings_files):
-    """Test the `onzr init` command using the --reset flag."""
-    for setting_file in settings_files:
-        assert setting_file.exists() is False
-
-    result = runner.invoke(cli, ["init"], input="fake-arl")
-    assert result.exit_code == ExitCodes.OK
-
-    # All settings files should exist now
-    for setting_file in settings_files:
-        assert setting_file.exists() is True
-
-    # Get most recent modification time
-    SETTINGS_FILE = settings_files[0]
-    SECRETS_FILE = settings_files[1]
-    original_settings_stats = SETTINGS_FILE.stat()
-    original_secrets_stats = SECRETS_FILE.stat()
-
-    # Re-run the `init` command with the reset mode should update secrets
-    result = runner.invoke(cli, ["init", "--reset"], input="new-fake-arl")
-    assert result.exit_code == ExitCodes.OK
-
-    # SETTINGS_FILE should be identical
-    settings_dist = Path(onzr.__file__).parent / Path(f"{SETTINGS_FILE.name}.dist")
-    assert settings_dist.exists()
-    assert settings_dist.read_text() == SETTINGS_FILE.read_text()
-    assert original_settings_stats == SETTINGS_FILE.stat()
-
-    # SECRETS_FILE should be different
-    secrets_dist = Path(onzr.__file__).parent / Path(f"{SECRETS_FILE.name}.dist")
-    assert secrets_dist.exists()
-    secrets = SECRETS_FILE.read_text()
-    assert secrets_dist.read_text() != secrets
-    assert original_secrets_stats != SECRETS_FILE.stat()
-    assert re.search(r'^ARL = "new-fake-arl"', secrets)
+    assert result.exception is not None
+    assert isinstance(result.exception, OnzrConfigurationError)
+    assert (
+        result.exception.args[0]
+        == f"Configuration file '{settings_file}' already exists!"
+    )
+    assert original_stat == stat(settings_file)
 
 
 def test_search_command_with_no_argument(runner, configured_app):
@@ -283,8 +238,8 @@ def test_mix_command(runner, configured_app, monkeypatch):
 
     monkeypatch.setattr(DeezerClient, "search", search)
 
-    track_3 = TrackShort(id="31", title="lol", album=album_1)
-    track_4 = TrackShort(id="32", title="doe", album=album_2)
+    track_3 = TrackShort(id="31", title="lol", album="foo", artist="foo")
+    track_4 = TrackShort(id="32", title="doe", album="bar", artist="bar")
     deep_collection: Collection = [track_3, track_4]
 
     def artist(*args, **kwargs):
