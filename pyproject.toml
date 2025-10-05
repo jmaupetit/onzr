@@ -1,6 +1,6 @@
 [project]
 name = "onzr"
-version = "0.3.0-alpha"
+version = "0.3.0"
 description = "The one-hour-late Deezer CLI."
 authors = [{ name = "Julien Maupetit", email = "julien@maupetit.net" }]
 requires-python = ">3.10,<4.0.0"

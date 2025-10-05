@@ -477,7 +477,7 @@ wheels = [
 
 [[package]]
 name = "onzr"
-version = "0.3.0a0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "deezer-py" },
