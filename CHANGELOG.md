@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-05
+
 ### Added
 
 - Switch to a HTTP client-server architecture using FastAPI
@@ -15,6 +17,17 @@ and this project adheres to
 - Switch to pydantic-settings for configuration management
 - Implement an API Client
 - Stream tracks over HTTP to VLC
+- CLI: Add the `add` command
+- CLI: Add the `queue` command
+- CLI: Add the `clear` command
+- CLI: Add the `now` command
+- CLI: Add the `pause` command
+- CLI: Add the `next` command
+- CLI: Add the `previous` command
+- CLI: Add the `serve` command
+- CLI: Add the `state` command
+- CLI: Add the `version` command
+- CLI: Add the `--rank` option for the `play` command
 
 ### Deleted
 
@@ -35,7 +48,8 @@ and this project adheres to
 
 - Implement a draft CLI using VLC
 
-[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.2.0...main
+[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.3.0...main
 
+[0.3.0] https://github.com/jmaupetit/onzr/compare/v0.2.0...v0.3.0
 [0.2.0] https://github.com/jmaupetit/onzr/compare/v0.1.0...v0.2.0
 [0.1.0] https://github.com/jmaupetit/onzr/compare/13ca0d7...v0.1.0
