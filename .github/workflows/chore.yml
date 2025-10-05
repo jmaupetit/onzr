@@ -6,6 +6,9 @@ on:
   pull_request:
     branches-ignore: ["main"]
 
+permissions:
+  contents: read
+
 jobs:
   fixup-commits:
     runs-on: ubuntu-latest
