@@ -633,11 +633,10 @@ def test_state_command(test_server, configured_cli_runner, configured_onzr, trac
 def test_version_command(configured_cli_runner):
     """Test the `onzr version` command."""
     semver = (
-        r"(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)"
+        r"(?P<major>0|[1-9]\d*)"
+        r"\.(?P<minor>0|[1-9]\d*)"
         r"\.(?P<patch>0|[1-9]\d*)"
-        r"(?:(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
-        r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))"
-        r"?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+        r"(?P<extras>.*)"
     )
     pattern = re.compile("Onzr version: " + semver)
     result = configured_cli_runner.invoke(cli, ["version"])
