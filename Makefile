@@ -6,15 +6,29 @@ SHELL := /bin/bash
 
 default: help
 
+docs/openapi.json:
+	uv run onzr openapi > docs/openapi.json
+
 # -- Build
 bootstrap: ## bootstrap the project for development
 bootstrap: \
-	build
+  docs/openapi.json \
+  build
 .PHONY: bootstrap
 
 build: ## install project
 	uv sync --locked --all-extras --dev
 .PHONY: build
+
+docs-serve: ## run documentation server 
+	# Force OpenAPI schema generation
+	uv run onzr openapi > docs/openapi.json
+	uv run mkdocs serve
+.PHONY: docs-serve
+
+docs-publish: ## publish documentation
+	uv run mkdocs gh-deploy --force
+.PHONY: docs-publish
 
 run: ## run onzr server in development mode
 	uv run uvicorn onzr.server:app --host localhost --port 9473 --reload --log-config logging-config.yaml
@@ -23,8 +37,8 @@ run: ## run onzr server in development mode
 # -- Quality
 lint: ## lint all sources
 lint: \
-	lint-black \
-	lint-ruff \
+  lint-black \
+  lint-ruff \
   lint-mypy
 .PHONY: lint
 

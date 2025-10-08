@@ -1,0 +1,69 @@
+site_name: Onzr
+site_url: https://jmaupetit.github.io/onzr/
+repo_url: https://github.com/jmaupetit/onzr 
+repo_name: jmaupetit/onzr
+
+nav:
+  - Introduction: "index.md"
+  - Tutorial: "tutorial.md"
+  - Command Line Interface: "commands.md"
+  - Configuration: "configuration.md"
+  - HTTP API: "api.md"
+  - Contribute:
+      - Code of conduct: "code_of_conduct.md"
+      - Guidelines: "guidelines.md"
+      - Playing with the code: "contribute.md"
+
+theme:
+  name: material
+  icon:
+    logo: material/play-network
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      primary: "deep purple"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      primary: "deep purple"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      primary: "deep purple"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - toc.integrate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.keys
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+
+plugins:
+  - search
+  - neoteroi.mkdocsoad:
+      use_pymdownx: true
