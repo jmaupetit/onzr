@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExitCodes(IntEnum):
-    """data7 exit codes."""
+    """Onzr exit codes."""
 
     OK = 0
     INCOMPLETE_CONFIGURATION = 10
@@ -509,3 +509,8 @@ def state():
 def version():
     """Get program version."""
     console.print(f"Onzr version: {import_lib_version('onzr')}")
+
+
+# Get a provisioned Click instance to automatically generate CLI commands documentation
+# using the mkdocs-click module
+cli_click = typer.main.get_command(cli)
