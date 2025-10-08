@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- CLI: Add the `openapi` command
+
 ## [0.3.0] - 2025-10-05
 
 ### Added

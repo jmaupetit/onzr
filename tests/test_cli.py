@@ -2,6 +2,7 @@
 
 import copy
 import datetime
+import json
 import logging
 import re
 from os import stat
@@ -642,3 +643,12 @@ def test_version_command(configured_cli_runner):
     result = configured_cli_runner.invoke(cli, ["version"])
     assert result.exit_code == ExitCodes.OK
     assert pattern.match(result.stdout)
+
+
+def test_command_openapi(test_server, configured_cli_runner):
+    """Test the `onzr openapi` command."""
+    result = configured_cli_runner.invoke(cli, ["openapi"])
+    assert result.exit_code == ExitCodes.OK
+
+    schema = json.loads(result.stdout)
+    assert "openapi" in schema

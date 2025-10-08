@@ -1,6 +1,8 @@
 """Onzr: command line interface."""
 
+import json
 import logging
+import sys
 import time
 from datetime import date
 from enum import IntEnum
@@ -57,7 +59,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExitCodes(IntEnum):
-    """data7 exit codes."""
+    """Onzr exit codes."""
 
     OK = 0
     INCOMPLETE_CONFIGURATION = 10
@@ -509,3 +511,11 @@ def state():
 def version():
     """Get program version."""
     console.print(f"Onzr version: {import_lib_version('onzr')}")
+
+
+@cli.command()
+def openapi():
+    """Get Onzr HTTP API OpenAPI schema."""
+    from onzr.server import app
+
+    sys.stdout.write(f"{json.dumps(app.openapi())}\n")
