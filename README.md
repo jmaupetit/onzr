@@ -1,9 +1,14 @@
-# Onzr
+# Onzr, the one-hour-late Deezer 💜 CLI.
 
-The one-hour-late Deezer 💜 CLI.
+> Pronounced onze (11) heure (hour) 🤡
 
-> ⚠️ This project is a work in progress. It works in its core parts, but will
-> not meet standard requirements for a decent player.
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jmaupetit/onzr/quality.yml)
+![PyPI - Version](https://img.shields.io/pypi/v/onzr)
+
+!!! warning
+
+    This project is still at an early stage. It works in its core parts, but
+    will not meet standard requirements for a decent player.
 
 ## Requirements
 
