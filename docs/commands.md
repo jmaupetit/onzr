@@ -1,53 +1,47 @@
 # Command Line Interface (CLI)
 
-<!-- termynal -->
-
 ```
 $ onzr --help
 
+
  Usage: onzr [OPTIONS] COMMAND [ARGS]...
 
-╭─ Options ──────────────────────────────────────────────────────────────────────╮
-│ --install-completion          Install completion for the current shell.        │
-│ --show-completion             Show completion for the current shell, to copy   │
-│                               it or customize the installation.                │
-│ --help                        Show this message and exit.                      │
-╰────────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ─────────────────────────────────────────────────────────────────────╮
-│ init       Intialize onzr player.                                              │
-│ search     Search track, artist and/or album.                                  │
-│ artist     Get artist popular track ids.                                       │
-│ album      Get album track ids.                                                │
-│ mix        Create a playlist from multiple artists.                            │
-│ add        Add one (or more) tracks to the queue.                              │
-│ queue      List queue tracks.                                                  │
-│ clear      Empty queue.                                                        │
-│ now        Get info about now playing track.                                   │
-│ play       Play queue.                                                         │
-│ pause      Pause/resume playing.                                               │
-│ stop       Stop playing queue.                                                 │
-│ next       Play next track in queue.                                           │
-│ previous   Play previous track in queue.                                       │
-│ serve      Run onzr http server.                                               │
-│ state      Get server state.                                                   │
-│ version    Get program version.                                                │
-╰────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.      │
+│ --show-completion             Show completion for the current shell, to copy │
+│                               it or customize the installation.              │
+│ --help                        Show this message and exit.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ init       Intialize onzr player.                                            │
+│ search     Search track, artist and/or album.                                │
+│ artist     Get artist popular track ids.                                     │
+│ album      Get album track ids.                                              │
+│ mix        Create a playlist from multiple artists.                          │
+│ add        Add one (or more) tracks to the queue.                            │
+│ queue      List queue tracks.                                                │
+│ clear      Empty queue.                                                      │
+│ now        Get info about now playing track.                                 │
+│ play       Play queue.                                                       │
+│ pause      Pause/resume playing.                                             │
+│ stop       Stop playing queue.                                               │
+│ next       Play next track in queue.                                         │
+│ previous   Play previous track in queue.                                     │
+│ serve      Run onzr http server.                                             │
+│ state      Get server state.                                                 │
+│ version    Get program version.                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
 Remember that Onzr is a CLI (Command Line Interface) and that we love UNIX. That
 being said, you won't be surprised to pipe Onzr commands to achieve what you
 want.
 
-<!-- termynal -->
-
 ```sh
-$ onzr search --artist "Lady Gaga" --ids | \
+onzr search --artist "Lady Gaga" --ids | \
     head -n 1 | \
     onzr artist --top --limit 20 --ids - | \
     onzr add -
-
-➕ adding tracks to queue…
-Added 20 tracks to queue
 ```
 
 > In this example, we will be adding Lady Gaga's top 20 most listened tracks to
@@ -94,15 +88,36 @@ onzr search --artist "Lady Gaga"
 The command output looks like:
 
 ```
-              Search results
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        ID ┃ Artist                     ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│     75491 │ Lady Gaga                  │
-│      6182 │ Lady                       │
-│   7735426 │ Bradley Cooper             │
-│       ... │ ...                        │
-└───────────┴────────────────────────────┘
+                          Search results
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        ID ┃ Artist                                             ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│     75491 │ Lady Gaga                                          │
+│   7735426 │ Bradley Cooper                                     │
+│       145 │ Beyoncé                                            │
+│     12815 │ Pitty                                              │
+│     75798 │ Adele                                              │
+│       290 │ Madonna                                            │
+│   8425674 │ Lady Wray                                          │
+│   8706544 │ Dua Lipa                                           │
+│    144227 │ Katy Perry                                         │
+│    429675 │ Bruno Mars                                         │
+│      3469 │ Sia                                                │
+│       483 │ Britney Spears                                     │
+│  64927672 │ Teddy Swims                                        │
+│     69925 │ P!nk                                               │
+│  53187832 │ Lady Gaga & Bradley Cooper                         │
+│  73789052 │ Chaax                                              │
+│ 170247847 │ Turquoise M                                        │
+│   4182755 │ Made famous by Lady Gaga                           │
+│       933 │ Rednex                                             │
+│   4195939 │ Lady Gaga's Karaoke Band, Made famous by Lady Gaga │
+│  12245134 │ Lady Lava                                          │
+│ 304731571 │ JJ                                                 │
+│   7570760 │ Lady Parts                                         │
+│   1201251 │ Lady Gaga's Karaoke Band                           │
+│  64308902 │ Brö                                                │
+└───────────┴────────────────────────────────────────────────────┘
 ```
 
 Use the `--ids` flag to only print identifiers to the standard output if your
@@ -121,21 +136,28 @@ onzr search --artist "Lady Gaga" --ids | \
 Your search result piped to the artist command display the artist top tracks:
 
 ```
-                                               Artist collection
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃         ID ┃ Track                       ┃ Album                                                 ┃ Artist    ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
-│ 3537990861 │ The Dead Dance              │ The Dead Dance                                        │ Lady Gaga │
-│ 2947516331 │ Die With A Smile            │ Die With A Smile                                      │ Lady Gaga │
-│ 3214169391 │ Abracadabra                 │ Abracadabra                                           │ Lady Gaga │
-│  561856742 │ Shallow                     │ A Star Is Born Soundtrack                             │ Lady Gaga │
-│    2603558 │ Poker Face                  │ The Fame                                              │ Lady Gaga │
-│  561856792 │ Always Remember Us This Way │ A Star Is Born Soundtrack                             │ Lady Gaga │
-│    4709947 │ Just Dance                  │ The Fame Monster (International Deluxe)               │ Lady Gaga │
-│    4709944 │ Telephone                   │ The Fame Monster (International Deluxe)               │ Lady Gaga │
-│   11747937 │ Bloody Mary                 │ Born This Way (International Special Edition Version) │ Lady Gaga │
-│    4709938 │ Alejandro                   │ The Fame Monster (International Deluxe)               │ Lady Gaga │
-└────────────┴─────────────────────────────┴───────────────────────────────────────────────────────┴───────────┘
+                               Artist collection
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃         ID ┃ Track                    ┃ Album                    ┃ Artist    ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ 3537990861 │ The Dead Dance           │ The Dead Dance           │ Lady Gaga │
+│ 2947516331 │ Die With A Smile         │ Die With A Smile         │ Lady Gaga │
+│ 3214169391 │ Abracadabra              │ Abracadabra              │ Lady Gaga │
+│  561856742 │ Shallow                  │ A Star Is Born           │ Lady Gaga │
+│            │                          │ Soundtrack               │           │
+│    2603558 │ Poker Face               │ The Fame                 │ Lady Gaga │
+│  561856792 │ Always Remember Us This  │ A Star Is Born           │ Lady Gaga │
+│            │ Way                      │ Soundtrack               │           │
+│    4709947 │ Just Dance               │ The Fame Monster         │ Lady Gaga │
+│            │                          │ (International Deluxe)   │           │
+│    4709944 │ Telephone                │ The Fame Monster         │ Lady Gaga │
+│            │                          │ (International Deluxe)   │           │
+│   11747937 │ Bloody Mary              │ Born This Way            │ Lady Gaga │
+│            │                          │ (International Special   │           │
+│            │                          │ Edition Version)         │           │
+│    4709938 │ Alejandro                │ The Fame Monster         │ Lady Gaga │
+│            │                          │ (International Deluxe)   │           │
+└────────────┴──────────────────────────┴──────────────────────────┴───────────┘
 ```
 
 > 💡 The `--strict` flag decrease fuzzyness in search results.
@@ -161,27 +183,34 @@ onzr search --artist "Eric Clapton" --ids | \
 And there it is! Eric Clapton's top tracks:
 
 ```
-                                                 Artist collection
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
-┃         ID ┃ Track                                    ┃ Album                                    ┃ Artist       ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
-│    1140658 │ It's Probably Me                         │ Fields Of Gold - The Best Of Sting 1984  │ Sting        │
-│            │                                          │ - 1994                                   │              │
-│ 1933842237 │ Tears in Heaven (Acoustic Live)          │ Unplugged (Live)                         │ Eric Clapton │
-│    1175620 │ Cocaine                                  │ The Cream Of Clapton                     │ Eric Clapton │
-│    4654895 │ Tears in Heaven                          │ Rush (Music from the Motion Picture      │ Eric Clapton │
-│            │                                          │ Soundtrack)                              │              │
-│ 1940201287 │ Layla (Acoustic; Live at MTV Unplugged,  │ Clapton Chronicles: The Best of Eric     │ Eric Clapton │
-│            │ Bray Film Studios, Windsor, England, UK, │ Clapton                                  │              │
-│            │ 1/16/1992; 1999 Remaster)                │                                          │              │
-│    1175626 │ Wonderful Tonight                        │ The Cream Of Clapton                     │ Eric Clapton │
-│ 1933842267 │ Layla (Acoustic Live)                    │ Unplugged (Live)                         │ Eric Clapton │
-│     920186 │ I Shot The Sheriff                       │ 461 Ocean Boulevard                      │ Eric Clapton │
-│ 1940201257 │ Change the World                         │ Clapton Chronicles: The Best of Eric     │ Eric Clapton │
-│            │                                          │ Clapton                                  │              │
-│ 2253499407 │ Ten Long Years                           │ Riding With The King (20th Anniversary   │ Eric Clapton │
-│            │                                          │ Deluxe Edition)                          │              │
-└────────────┴──────────────────────────────────────────┴──────────────────────────────────────────┴──────────────┘
+                               Artist collection
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃         ID ┃ Track                  ┃ Album                   ┃ Artist       ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│    1140658 │ It's Probably Me       │ Fields Of Gold - The    │ Sting        │
+│            │                        │ Best Of Sting 1984 -    │              │
+│            │                        │ 1994                    │              │
+│ 1933842237 │ Tears in Heaven        │ Unplugged (Live)        │ Eric Clapton │
+│            │ (Acoustic Live)        │                         │              │
+│    1175620 │ Cocaine                │ The Cream Of Clapton    │ Eric Clapton │
+│    4654895 │ Tears in Heaven        │ Rush (Music from the    │ Eric Clapton │
+│            │                        │ Motion Picture          │              │
+│            │                        │ Soundtrack)             │              │
+│ 1940201287 │ Layla (Acoustic; Live  │ Clapton Chronicles: The │ Eric Clapton │
+│            │ at MTV Unplugged, Bray │ Best of Eric Clapton    │              │
+│            │ Film Studios, Windsor, │                         │              │
+│            │ England, UK,           │                         │              │
+│            │ 1/16/1992; 1999        │                         │              │
+│            │ Remaster)              │                         │              │
+│    1175626 │ Wonderful Tonight      │ The Cream Of Clapton    │ Eric Clapton │
+│ 1933842267 │ Layla (Acoustic Live)  │ Unplugged (Live)        │ Eric Clapton │
+│     920186 │ I Shot The Sheriff     │ 461 Ocean Boulevard     │ Eric Clapton │
+│ 1940201257 │ Change the World       │ Clapton Chronicles: The │ Eric Clapton │
+│            │                        │ Best of Eric Clapton    │              │
+│ 2253499407 │ Ten Long Years         │ Riding With The King    │ Eric Clapton │
+│            │                        │ (20th Anniversary       │              │
+│            │                        │ Deluxe Edition)         │              │
+└────────────┴────────────────────────┴─────────────────────────┴──────────────┘
 ```
 
 Do you prefer a radio inspired by Eric Clapton?
@@ -193,24 +222,35 @@ onzr artist --radio 192
 Enjoy:
 
 ```
-                                                 Artist collection
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃         ID ┃ Track                           ┃ Album                           ┃ Artist                         ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 2986824131 │ Always On My Mind               │ Meanwhile                       │ Eric Clapton                   │
-│  584213822 │ Floating Away                   │ Down The Road Wherever (Deluxe) │ Mark Knopfler                  │
-│ 1933843337 │ Rollin' & Tumblin' (Acoustic    │ Unplugged (Deluxe Edition)      │ Eric Clapton                   │
-│            │ Live)                           │ (Live)                          │                                │
-│    1571367 │ Teardrops In My Tequila         │ #8                              │ J.J. Cale                      │
-│ 1927349767 │ River of Tears                  │ Pilgrim                         │ Eric Clapton                   │
-│     848664 │ Mary Had a Little Lamb          │ The Essential Stevie Ray        │ Stevie Ray Vaughan & Double    │
-│            │                                 │ Vaughan And Double Trouble      │ Trouble                        │
-│    2288683 │ Darling Pretty                  │ Golden Heart                    │ Mark Knopfler                  │
-│   14640574 │ If I Were a Carpenter (2006     │ Fate of Nations                 │ Robert Plant                   │
-│            │ Remaster)                       │                                 │                                │
-│    2236733 │ News                            │ Communiqué                      │ Dire Straits                   │
-│  389044621 │ Blood Of Eden (Live)            │ Live Blood                      │ Peter Gabriel                  │
-└────────────┴─────────────────────────────────┴─────────────────────────────────┴────────────────────────────────┘
+                               Artist collection
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓
+┃         ID ┃ Track               ┃ Album               ┃ Artist              ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩
+│ 1927365327 │ Don't Cry Sister    │ The Road to         │ Eric Clapton        │
+│            │                     │ Escondido           │                     │
+│     927766 │ Can't Find My Way   │ Blind Faith         │ Blind Faith         │
+│            │ Home                │                     │                     │
+│ 1927349807 │ Circus              │ Pilgrim             │ Eric Clapton        │
+│ 2472547801 │ Sweet Sounds Of     │ Sweet Sounds Of     │ The Rolling Stones  │
+│            │ Heaven (Edit)       │ Heaven              │                     │
+│ 1933843257 │ Nobody Knows You    │ Unplugged (Deluxe   │ Eric Clapton        │
+│            │ When You're Down    │ Edition) (Live)     │                     │
+│            │ and Out (Acoustic   │                     │                     │
+│            │ Live)               │                     │                     │
+│  542186022 │ Jealous Guy         │ Imagine (The        │ John Lennon         │
+│            │ (Ultimate Mix)      │ Ultimate            │                     │
+│            │                     │ Collection)         │                     │
+│  410006472 │ Faces of Stone      │ Live At Pompeii     │ David Gilmour       │
+│            │ (Live At Pompeii    │                     │                     │
+│            │ 2016)               │                     │                     │
+│    4124703 │ Fool To Cry         │ Black And Blue      │ The Rolling Stones  │
+│            │ (Remastered 2009)   │ (Remastered 2009)   │                     │
+│    4125588 │ I Got The Blues     │ Sticky Fingers      │ The Rolling Stones  │
+│            │ (2009 Mix)          │ (Remastered)        │                     │
+│ 1550811232 │ Peace Train         │ Teaser And The      │ Yusuf / Cat Stevens │
+│            │ (Remastered 2021)   │ Firecat (Remastered │                     │
+│            │                     │ 2021)               │                     │
+└────────────┴─────────────────────┴─────────────────────┴─────────────────────┘
 ```
 
 You can also explore artist's albums using the `--albums` option:
@@ -224,31 +264,32 @@ onzr search --artist Radiohead --ids | \
 There you go, here is Radiohead's discography:
 
 ```
-                                  Artist collection
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┓
-┃        ID ┃ Album                                         ┃ Artist    ┃ Released   ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━┩
-│ 792320571 │ Hail to the Thief (Live Recordings 2003-2009) │ Radiohead │ 2025-08-13 │
-│ 265569082 │ KID A MNESIA                                  │ Radiohead │ 2021-11-05 │
-│  43197211 │ OK Computer OKNOTOK 1997 2017                 │ Radiohead │ 2017-06-23 │
-│  14880561 │ In Rainbows (Disk 2)                          │ Radiohead │ 2016-10-14 │
-│  14879823 │ A Moon Shaped Pool                            │ Radiohead │ 2016-05-09 │
-│  14880501 │ TKOL RMX 1234567                              │ Radiohead │ 2011-10-10 │
-│  14880315 │ The King Of Limbs                             │ Radiohead │ 2011-02-18 │
-│  14880659 │ In Rainbows                                   │ Radiohead │ 2007-12-28 │
-│  14879789 │ Com Lag: 2+2=5                                │ Radiohead │ 2004-03-24 │
-│  14879739 │ Hail To the Thief                             │ Radiohead │ 2003-06-09 │
-│  14879753 │ I Might Be Wrong                              │ Radiohead │ 2001-11-12 │
-│  14879749 │ Amnesiac                                      │ Radiohead │ 2001-03-12 │
-│  14880741 │ Kid A                                         │ Radiohead │ 2000-10-02 │
-│  14879797 │ Karma Police                                  │ Radiohead │ 1997-08-25 │
-│  14879699 │ OK Computer                                   │ Radiohead │ 1997-06-17 │
-│  14880317 │ The Bends                                     │ Radiohead │ 1995-03-13 │
-│  14880813 │ My Iron Lung                                  │ Radiohead │ 1994-09-26 │
-│  14880711 │ Pablo Honey                                   │ Radiohead │ 1993-02-22 │
-│ 423524437 │ Creep EP                                      │ Radiohead │ 1992-09-21 │
-│ 121893052 │ Drill EP                                      │ Radiohead │ 1992-05-05 │
-└───────────┴───────────────────────────────────────────────┴───────────┴────────────┘
+                               Artist collection
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃        ID ┃ Album                                   ┃ Artist    ┃ Released   ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━┩
+│ 792320571 │ Hail to the Thief (Live Recordings      │ Radiohead │ 2025-08-13 │
+│           │ 2003-2009)                              │           │            │
+│ 265569082 │ KID A MNESIA                            │ Radiohead │ 2021-11-05 │
+│  43197211 │ OK Computer OKNOTOK 1997 2017           │ Radiohead │ 2017-06-23 │
+│  14880561 │ In Rainbows (Disk 2)                    │ Radiohead │ 2016-10-14 │
+│  14879823 │ A Moon Shaped Pool                      │ Radiohead │ 2016-05-09 │
+│  14880501 │ TKOL RMX 1234567                        │ Radiohead │ 2011-10-10 │
+│  14880315 │ The King Of Limbs                       │ Radiohead │ 2011-02-18 │
+│  14880659 │ In Rainbows                             │ Radiohead │ 2007-12-28 │
+│  14879789 │ Com Lag: 2+2=5                          │ Radiohead │ 2004-03-24 │
+│  14879739 │ Hail To the Thief                       │ Radiohead │ 2003-06-09 │
+│  14879753 │ I Might Be Wrong                        │ Radiohead │ 2001-11-12 │
+│  14879749 │ Amnesiac                                │ Radiohead │ 2001-03-12 │
+│  14880741 │ Kid A                                   │ Radiohead │ 2000-10-02 │
+│  14879797 │ Karma Police                            │ Radiohead │ 1997-08-25 │
+│  14879699 │ OK Computer                             │ Radiohead │ 1997-06-17 │
+│  14880317 │ The Bends                               │ Radiohead │ 1995-03-13 │
+│  14880813 │ My Iron Lung                            │ Radiohead │ 1994-09-26 │
+│  14880711 │ Pablo Honey                             │ Radiohead │ 1993-02-22 │
+│ 423524437 │ Creep EP                                │ Radiohead │ 1992-09-21 │
+│ 121893052 │ Drill EP                                │ Radiohead │ 1992-05-05 │
+└───────────┴─────────────────────────────────────────┴───────────┴────────────┘
 ```
 
 ## `album`
@@ -265,21 +306,32 @@ onzr search --album "Friday night in San Francisco" --ids | \
 And there it is:
 
 ```
-                                                   Album tracks
-┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
-┃      ID ┃ Track                                                   ┃ Album                         ┃ Artist      ┃
-┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
-│ 1031231 │ Mediterranean Sundance / Rio Ancho (Live at Warfield    │ Friday Night in San Francisco │ Al Di Meola │
-│         │ Theatre, San Francisco, CA - December 5, 1980)          │                               │             │
-│ 1028083 │ Short Tales of the Black Forest (Live at Warfield       │ Friday Night in San Francisco │ Al Di Meola │
-│         │ Theatre, San Francisco, CA - December 5, 1980)          │                               │             │
-│ 1030435 │ Frevo Rasgado (Live at Warfield Theatre, San Francisco, │ Friday Night in San Francisco │ Al Di Meola │
-│         │ CA - December 5, 1980)                                  │                               │             │
-│ 1028903 │ Fantasia Suite (Live at Warfield Theatre, San           │ Friday Night in San Francisco │ Al Di Meola │
-│         │ Francisco, CA - December 5, 1980)                       │                               │             │
-│ 1028399 │ Guardian Angel (Live at Warfield Theatre, San           │ Friday Night in San Francisco │ Al Di Meola │
-│         │ Francisco, CA - December 5, 1980)                       │                               │             │
-└─────────┴─────────────────────────────────────────────────────────┴───────────────────────────────┴─────────────┘
+                                  Album tracks
+┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃      ID ┃ Track                     ┃ Album                    ┃ Artist      ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ 1031231 │ Mediterranean Sundance /  │ Friday Night in San      │ Al Di Meola │
+│         │ Rio Ancho (Live at        │ Francisco                │             │
+│         │ Warfield Theatre, San     │                          │             │
+│         │ Francisco, CA - December  │                          │             │
+│         │ 5, 1980)                  │                          │             │
+│ 1028083 │ Short Tales of the Black  │ Friday Night in San      │ Al Di Meola │
+│         │ Forest (Live at Warfield  │ Francisco                │             │
+│         │ Theatre, San Francisco,   │                          │             │
+│         │ CA - December 5, 1980)    │                          │             │
+│ 1030435 │ Frevo Rasgado (Live at    │ Friday Night in San      │ Al Di Meola │
+│         │ Warfield Theatre, San     │ Francisco                │             │
+│         │ Francisco, CA - December  │                          │             │
+│         │ 5, 1980)                  │                          │             │
+│ 1028903 │ Fantasia Suite (Live at   │ Friday Night in San      │ Al Di Meola │
+│         │ Warfield Theatre, San     │ Francisco                │             │
+│         │ Francisco, CA - December  │                          │             │
+│         │ 5, 1980)                  │                          │             │
+│ 1028399 │ Guardian Angel (Live at   │ Friday Night in San      │ Al Di Meola │
+│         │ Warfield Theatre, San     │ Francisco                │             │
+│         │ Francisco, CA - December  │                          │             │
+│         │ 5, 1980)                  │                          │             │
+└─────────┴───────────────────────────┴──────────────────────────┴─────────────┘
 ```
 
 To play the entire album, don't forget to list only track ids and pass them to
@@ -305,33 +357,45 @@ onzr mix --limit 4 Metallica Slayer Megadeth Anthrax
 There it is 💫
 
 ```
-                                                  Onzr Mix tracks
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃         ID ┃ Track                                     ┃ Album                                      ┃ Artist    ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
-│    3089054 │ Tornado Of Souls (2004 Remix)             │ Rust In Peace (2004 Remix / Expanded       │ Megadeth  │
-│            │                                           │ Edition)                                   │           │
-│  424562692 │ Master Of Puppets (Remastered)            │ Master Of Puppets (Deluxe Box Set /        │ Metallica │
-│            │                                           │ Remastered)                                │           │
-│   65690449 │ Raining Blood                             │ Reign In Blood (Expanded)                  │ Slayer    │
-│   65707342 │ Seasons In The Abyss (Album Version)      │ Seasons In The Abyss                       │ Slayer    │
-│ 3212862171 │ Caught In A Mosh                          │ Among The Living - Deluxe Edition (eAlbum  │ Anthrax   │
-│            │                                           │ w/ PDF booklet audio only)                 │           │
-│    3089034 │ Symphony Of Destruction                   │ Countdown To Extinction (Expanded Edition  │ Megadeth  │
-│            │                                           │ - Remastered)                              │           │
-│   65724647 │ South Of Heaven                           │ South Of Heaven                            │ Slayer    │
-│    1176687 │ Madhouse                                  │ Spreading The Disease                      │ Anthrax   │
-│    2428036 │ Antisocial                                │ Madhouse: The Very Best Of Anthrax         │ Anthrax   │
-│    1104106 │ Bring The Noise                           │ Attack Of The Killer B's                   │ Anthrax   │
-│ 1483825242 │ The Unforgiven (Remastered 2021)          │ Metallica (Remastered 2021)                │ Metallica │
-│   65690440 │ Angel Of Death                            │ Reign In Blood (Expanded)                  │ Slayer    │
-│    3088984 │ A Tout Le Monde (Remastered 2004)         │ Youthanasia (Expanded Edition -            │ Megadeth  │
-│            │                                           │ Remastered)                                │           │
-│ 1483825212 │ Enter Sandman (Remastered 2021)           │ Metallica (Remastered 2021)                │ Metallica │
-│ 1483825282 │ Nothing Else Matters (Remastered 2021)    │ Metallica (Remastered 2021)                │ Metallica │
-│   61382107 │ Symphony Of Destruction (Remastered 2012) │ Countdown To Extinction (Deluxe Edition -  │ Megadeth  │
-│            │                                           │ Remastered)                                │           │
-└────────────┴───────────────────────────────────────────┴────────────────────────────────────────────┴───────────┘
+                                Onzr Mix tracks
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃         ID ┃ Track                    ┃ Album                    ┃ Artist    ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
+│   65724647 │ South Of Heaven          │ South Of Heaven          │ Slayer    │
+│ 1483825282 │ Nothing Else Matters     │ Metallica (Remastered    │ Metallica │
+│            │ (Remastered 2021)        │ 2021)                    │           │
+│ 3578462431 │ Tipping Point            │ Tipping Point            │ Megadeth  │
+│ 1483825242 │ The Unforgiven           │ Metallica (Remastered    │ Metallica │
+│            │ (Remastered 2021)        │ 2021)                    │           │
+│    3089054 │ Tornado Of Souls (2004   │ Rust In Peace (2004      │ Megadeth  │
+│            │ Remix)                   │ Remix / Expanded         │           │
+│            │                          │ Edition)                 │           │
+│  424562692 │ Master Of Puppets        │ Master Of Puppets        │ Metallica │
+│            │ (Remastered)             │ (Deluxe Box Set /        │           │
+│            │                          │ Remastered)              │           │
+│   65690440 │ Angel Of Death           │ Reign In Blood           │ Slayer    │
+│            │                          │ (Expanded)               │           │
+│    3088984 │ A Tout Le Monde          │ Youthanasia (Expanded    │ Megadeth  │
+│            │ (Remastered 2004)        │ Edition - Remastered)    │           │
+│   61382107 │ Symphony Of Destruction  │ Countdown To Extinction  │ Megadeth  │
+│            │ (Remastered 2012)        │ (Deluxe Edition -        │           │
+│            │                          │ Remastered)              │           │
+│ 1483825212 │ Enter Sandman            │ Metallica (Remastered    │ Metallica │
+│            │ (Remastered 2021)        │ 2021)                    │           │
+│   65690449 │ Raining Blood            │ Reign In Blood           │ Slayer    │
+│            │                          │ (Expanded)               │           │
+│    2428039 │ Got The Time             │ Madhouse: The Very Best  │ Anthrax   │
+│            │                          │ Of Anthrax               │           │
+│    2428036 │ Antisocial               │ Madhouse: The Very Best  │ Anthrax   │
+│            │                          │ Of Anthrax               │           │
+│ 3212862171 │ Caught In A Mosh         │ Among The Living -       │ Anthrax   │
+│            │                          │ Deluxe Edition (eAlbum   │           │
+│            │                          │ w/ PDF booklet audio     │           │
+│            │                          │ only)                    │           │
+│    1176687 │ Madhouse                 │ Spreading The Disease    │ Anthrax   │
+│   65707337 │ Dead Skin Mask (Album    │ Seasons In The Abyss     │ Slayer    │
+│            │ Version)                 │                          │           │
+└────────────┴──────────────────────────┴──────────────────────────┴───────────┘
 ```
 
 > 💡 You may adapt the `--limit 10` option to have more or less tracks
@@ -346,29 +410,42 @@ onzr mix --deep --limit 4 Metallica Slayer Megadeth Anthrax
 Hello serendipity 🎉
 
 ```
-                                                  Onzr Mix tracks
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓
-┃        ID ┃ Track                                 ┃ Album                                 ┃ Artist              ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩
-│ 131294228 │ Dread and the Fugitive Mind           │ The World Needs a Hero                │ Megadeth            │
-│   2114258 │ Cyanide                               │ Death Magnetic                        │ Metallica           │
-│ 651517892 │ Native Blood                          │ Dark Roots of Earth                   │ Testament           │
-│  70877852 │ TNT                                   │ Graveyard Classics                    │ Six Feet Under      │
-│    662875 │ Mouth for War                         │ Vulgar Display of Power               │ Pantera             │
-│  65724648 │ Silent Scream (Album Version)         │ South Of Heaven                       │ Slayer              │
-│   2114578 │ Am I Evil?                            │ Garage Inc.                           │ Metallica           │
-│   1055986 │ How Will I Laugh Tomorrow (Album      │ How Will I Laugh Tomorrow When I      │ Suicidal Tendencies │
-│           │ Version)                              │ Can't Even Smile Today                │                     │
-│   2814112 │ Pull Me Under                         │ Images and Words                      │ Dream Theater       │
-│  65690439 │ Payback                               │ God Hates Us All                      │ Slayer              │
-│ 668788462 │ Evil Twin                             │ For All Kings                         │ Anthrax             │
-│ 668785432 │ Down for Life                         │ The Gathering                         │ Testament           │
-│   7754497 │ Brotherhood Of Man                    │ The World Is Yours                    │ Motörhead           │
-│   3089037 │ Sweating Bullets (Remastered 2004)    │ Countdown To Extinction (Expanded     │ Megadeth            │
-│           │                                       │ Edition - Remastered)                 │                     │
-│ 651518372 │ The Devil You Know                    │ Worship Music                         │ Anthrax             │
-│ 136332688 │ The Four Horsemen (Remastered)        │ Kill 'Em All (Remastered)             │ Metallica           │
-└───────────┴───────────────────────────────────────┴───────────────────────────────────────┴─────────────────────┘
+                                Onzr Mix tracks
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃         ID ┃ Track                 ┃ Album                 ┃ Artist          ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│    2851466 │ Amen                  │ Chaos A.D.            │ Sepultura       │
+│    3089037 │ Sweating Bullets      │ Countdown To          │ Megadeth        │
+│            │ (Remastered 2004)     │ Extinction (Expanded  │                 │
+│            │                       │ Edition - Remastered) │                 │
+│ 1084230652 │ Keep It In The Family │ Persistence Of Time   │ Anthrax         │
+│            │                       │ (30th Anniversary     │                 │
+│            │                       │ Remaster)             │                 │
+│   65707334 │ Blood Red (Album      │ Seasons In The Abyss  │ Slayer          │
+│            │ Version)              │                       │                 │
+│   65690448 │ Postmortem            │ Reign In Blood        │ Slayer          │
+│            │                       │ (Expanded)            │                 │
+│    5194654 │ Practice What You     │ Practice What You     │ Testament       │
+│            │ Preach                │ Preach                │                 │
+│     549239 │ Cruelty Brought Thee  │ Cruelty & The Beast   │ Cradle of Filth │
+│            │ Orchids               │                       │                 │
+│ 3407660541 │ King Nothing          │ Load (Remastered      │ Metallica       │
+│            │ (Remastered)          │ Deluxe Box Set)       │                 │
+│    3088984 │ A Tout Le Monde       │ Youthanasia (Expanded │ Megadeth        │
+│            │ (Remastered 2004)     │ Edition - Remastered) │                 │
+│   87938845 │ The Beautiful People  │ Antichrist Superstar  │ Marilyn Manson  │
+│  690926792 │ Catharsis             │ Volume 8: The Threat  │ Anthrax         │
+│            │                       │ is Real               │                 │
+│  575867572 │ One                   │ …And Justice for All  │ Metallica       │
+│            │                       │ (Remastered)          │                 │
+│    3088941 │ Into The Lungs Of     │ So Far, So Good...So  │ Megadeth        │
+│            │ Hell (Remastered      │ What! (Expanded       │                 │
+│            │ 2004)                 │ Edition - Remastered) │                 │
+│    2851463 │ Refuse / Resist       │ Chaos A.D.            │ Sepultura       │
+│     714426 │ Domination            │ Cowboys from Hell     │ Pantera         │
+│  627302522 │ Freezing Moon         │ De Mysteriis Dom      │ Mayhem          │
+│            │                       │ Sathanas              │                 │
+└────────────┴───────────────────────┴───────────────────────┴─────────────────┘
 ```
 
 As expected, you can pipe your mix with the `--ids` flag to the `add` command:

@@ -44,6 +44,9 @@ theme:
   features:
     - content.code.copy
     - content.tabs.link
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - toc.integrate
 
 markdown_extensions:
   - admonition
@@ -56,6 +59,3 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - tables
-
-plugins:
-  - termynal

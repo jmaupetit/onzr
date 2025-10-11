@@ -40,8 +40,6 @@ onzr --help
 Onzr is based on an HTTP client/server architecture, hence, once installed, you
 should run the server before starting to use it:
 
-<!-- termynal -->
-
 ```sh
 $ onzr serve --log-level error &
 ```
@@ -50,8 +48,6 @@ $ onzr serve --log-level error &
 > documentation for details about running Onzr server.
 
 Play your first album:
-
-<!-- termynal -->
 
 ```sh
 $ onzr search --artist "Billie Eilish" --ids | \
