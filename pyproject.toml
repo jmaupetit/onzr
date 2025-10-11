@@ -39,6 +39,7 @@ onzr = "onzr.cli:cli"
 dev = [
     "black>=25.1.0,<26",
     "httpx>=0.28.1",
+    "mkdocs-material>=9.6.21",
     "mypy>=1.15.0,<2",
     "polyfactory>=2.22.2",
     "pytest>=8.3.5,<9",
