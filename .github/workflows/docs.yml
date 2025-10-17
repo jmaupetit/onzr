@@ -21,7 +21,7 @@ jobs:
         run: uv sync --locked --all-extras --dev
       - name: Update OpenAPI schema
         run: |
-          echo -e "fakearl\n" | onzr init 
+          echo -e "fakearl\n" | uv run onzr init 
           timeout 10s uv run onzr serve &
           uv run onzr openapi > docs/openapi.json
       - name: Update documentation
