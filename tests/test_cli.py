@@ -398,10 +398,16 @@ def test_play_command(test_server, configured_cli_runner, configured_onzr, track
     assert configured_onzr.player.is_playing() == 1
     assert configured_onzr.player.get_state() == vlc.State.Opening
 
-    # Play the second track in queue
+    # Play an invalid track rank
     result = configured_cli_runner.invoke(cli, ["play", "--rank", "0"])
     assert result.exit_code == ExitCodes.INVALID_ARGUMENTS
     assert "Invalid rank" in result.stdout
+
+    # Play the first track in queue
+    result = configured_cli_runner.invoke(cli, ["play", "--rank", "1"])
+    assert result.exit_code == ExitCodes.OK
+    assert configured_onzr.player.is_playing() == 1
+    assert configured_onzr.player.get_state() == vlc.State.Opening
 
     # Play the second track in queue
     result = configured_cli_runner.invoke(cli, ["play", "--rank", "2"])

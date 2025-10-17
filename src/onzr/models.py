@@ -111,4 +111,4 @@ class PlayingState(BaseModel):
 class PlayQueryParams(BaseModel):
     """Play endpoint parameters."""
 
-    rank: Optional[Annotated[int, Field(strict=True, gt=0)]] = None
+    rank: Optional[Annotated[int, Field(strict=True, ge=0)]] = None

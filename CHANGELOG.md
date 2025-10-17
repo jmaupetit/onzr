@@ -12,6 +12,10 @@ and this project adheres to
 
 - CLI: Add the `openapi` command
 
+### Fixed
+
+- Allow to play queue from the first track (rank 0)
+
 ## [0.3.0] - 2025-10-05
 
 ### Added
