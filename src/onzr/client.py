@@ -1,8 +1,9 @@
 """Onzr: http client."""
 
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 import requests
+from annotated_types import Ge
 
 from .config import get_settings
 from .models import (
@@ -57,7 +58,7 @@ class OnzrClient:
         return ServerState.model_validate_json(response.text)
 
     # Controls
-    def play(self, rank: Optional[int] = None) -> PlayerControl:
+    def play(self, rank: Optional[Annotated[int, Ge(0)]] = None) -> PlayerControl:
         """Start playing current queue."""
         params = PlayQueryParams(rank=rank)
         response = self.session.post(
