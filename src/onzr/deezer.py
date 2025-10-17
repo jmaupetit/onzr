@@ -3,7 +3,7 @@
 import functools
 import hashlib
 import logging
-from enum import IntEnum, StrEnum
+from enum import IntEnum
 from threading import Thread
 from typing import Any, Generator, Iterator, List, Optional, no_type_check
 
@@ -12,24 +12,17 @@ import requests
 from Cryptodome.Cipher import Blowfish
 from pydantic import HttpUrl
 
-from .models import AlbumShort, ArtistShort, Collection, TrackInfo, TrackShort
+from .exceptions import DeezerTrackException
+from .models import (
+    AlbumShort,
+    ArtistShort,
+    Collection,
+    StreamQuality,
+    TrackInfo,
+    TrackShort,
+)
 
 logger = logging.getLogger(__name__)
-
-
-class StreamQuality(StrEnum):
-    """Track stream quality."""
-
-    MP3_128 = "MP3_128"
-    MP3_320 = "MP3_320"
-    FLAC = "FLAC"
-
-    @property
-    def media_type(self) -> str:
-        """Get media type corresponding to selected quality."""
-        if self == StreamQuality.FLAC:
-            return "audio/flac"
-        return "audio/mpeg"
 
 
 class DeezerClient(deezer.Deezer):
@@ -230,6 +223,11 @@ class Track:
         """Get track info."""
         track_info = self.deezer.gw.get_track(self.track_id)
         logger.debug("Track info: %s", track_info)
+        filesizes = {
+            "FILESIZE_MP3_128": StreamQuality.MP3_128,
+            "FILESIZE_MP3_320": StreamQuality.MP3_320,
+            "FILESIZE_FLAC": StreamQuality.FLAC,
+        }
         self.track_info = TrackInfo(
             id=track_info["SNG_ID"],
             token=track_info["TRACK_TOKEN"],
@@ -238,7 +236,15 @@ class Track:
             title=track_info["SNG_TITLE"],
             album=track_info["ALB_TITLE"],
             picture=track_info["ALB_PICTURE"],
+            formats=[
+                filesizes[size] for size in filesizes if int(track_info[size]) > 0
+            ],
         )
+        if not len(self.formats):
+            raise DeezerTrackException(
+                f"No available formats detected for track {self.track_id}"
+            )
+        logger.debug(f"{self.track_info}")
 
     def refresh(self):
         """Refresh track info."""
@@ -306,6 +312,21 @@ class Track:
         return self._get_track_info_attribute("album")
 
     @property
+    def formats(self) -> List[StreamQuality]:
+        """Get track formats."""
+        return self._get_track_info_attribute("formats") or []
+
+    def query_quality(self, quality: StreamQuality) -> StreamQuality:
+        """Get track quality among available formats.
+
+        All stream qualities are not available for every tracks, if queried quality
+        is not available return the best available quality among supported formats.
+        """
+        if quality in self.formats:
+            return quality
+        return self.formats[-1]
+
+    @property
     def picture(self) -> str | None:
         """Get track picture."""
         return self._get_track_info_attribute("picture")
@@ -352,10 +373,22 @@ class Track:
 
         quality (StreamQuality): audio file to stream quality
         """
+        if (best := self.query_quality(quality)) != quality:
+            logger.warning(
+                (
+                    "Required track quality %s is not available. Will try best "
+                    "available format instead: %s"
+                ),
+                quality,
+                best,
+            )
+            quality = best
+
         logger.debug(
             "Start streaming track: "
             f"▶️ {self.full_title} (ID: {self.track_id} Q: {quality})"
         )
+
         chunk_sep = 2048
         chunk_size = 3 * chunk_sep
         self.streamed = 0

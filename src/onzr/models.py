@@ -1,5 +1,6 @@
 """Onzr: Pydantic models."""
 
+from enum import StrEnum
 from typing import Annotated, List, Optional, TypeAlias
 
 from pydantic import BaseModel, Field
@@ -18,6 +19,21 @@ class ServerState(BaseModel):
     # Does not support VLC Enums
     player: str
     queue: QueueState
+
+
+class StreamQuality(StrEnum):
+    """Track stream quality."""
+
+    MP3_128 = "MP3_128"
+    MP3_320 = "MP3_320"
+    FLAC = "FLAC"
+
+    @property
+    def media_type(self) -> str:
+        """Get media type corresponding to selected quality."""
+        if self == StreamQuality.FLAC:
+            return "audio/flac"
+        return "audio/mpeg"
 
 
 class PlayerControl(BaseModel):
@@ -72,6 +88,7 @@ class TrackInfo(BaseModel):
     picture: str
     token: str
     duration: int
+    formats: List[StreamQuality]
 
 
 Collection: TypeAlias = List[ArtistShort] | List[AlbumShort] | List[TrackShort]

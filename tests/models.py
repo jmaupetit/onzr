@@ -20,6 +20,9 @@ class DeezerSong(BaseModel):
     SNG_TITLE: str
     ALB_TITLE: str
     ALB_PICTURE: str
+    FILESIZE_MP3_128: int
+    FILESIZE_MP3_320: int
+    FILESIZE_FLAC: int
 
 
 class DeezerSongResponse(BaseDeezerGWResponse):
