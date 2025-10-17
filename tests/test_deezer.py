@@ -1,8 +1,10 @@
 """Onzr deezer tests."""
 
+import pytest
 from pydantic import HttpUrl
 
 from onzr.deezer import StreamQuality, Track, TrackStatus
+from onzr.exceptions import DeezerTrackException
 from onzr.models import TrackInfo, TrackShort
 from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
 
@@ -23,6 +25,9 @@ def test_track_init(configured_onzr, responses):
     track_title = "All along the watchtower"
     track_album = "Experience"
     track_picture = "ABCDEF"
+    track_filesize_mp3_128 = 128
+    track_filesize_mp3_320 = 320
+    track_filesize_flac = 7142
 
     responses.post(
         "http://www.deezer.com/ajax/gw-light.php",
@@ -37,6 +42,9 @@ def test_track_init(configured_onzr, responses):
                 SNG_TITLE=track_title,
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
+                FILESIZE_MP3_128=track_filesize_mp3_128,
+                FILESIZE_MP3_320=track_filesize_mp3_320,
+                FILESIZE_FLAC=track_filesize_flac,
             ),
         ).model_dump(),
     )
@@ -55,6 +63,11 @@ def test_track_init(configured_onzr, responses):
         title=track_title,
         album=track_album,
         picture=track_picture,
+        formats=[
+            StreamQuality.MP3_128,
+            StreamQuality.MP3_320,
+            StreamQuality.FLAC,
+        ],
     )
     assert track.token == track_token
     assert track.duration == track_duration
@@ -82,6 +95,102 @@ def test_track_init(configured_onzr, responses):
     assert track.cover_medium is None
     assert track.cover_big is None
     assert track.cover_xl is None
+    assert track.formats == [
+        StreamQuality.MP3_128,
+        StreamQuality.MP3_320,
+        StreamQuality.FLAC,
+    ]
+
+    # Test available formats
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=DeezerSongResponseFactory.build(
+            error={},
+            results=DeezerSongFactory.build(
+                SNG_ID=track_id,
+                TRACK_TOKEN=track_token,
+                DURATION=track_duration,
+                ART_NAME=track_artist,
+                SNG_TITLE=track_title,
+                ALB_TITLE=track_album,
+                ALB_PICTURE=track_picture,
+                FILESIZE_MP3_128=track_filesize_mp3_128,
+                FILESIZE_MP3_320=track_filesize_mp3_320,
+                FILESIZE_FLAC=0,
+            ),
+        ).model_dump(),
+    )
+    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+
+    assert track.formats == [
+        StreamQuality.MP3_128,
+        StreamQuality.MP3_320,
+    ]
+
+    # Test when none of configured formats are available
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=DeezerSongResponseFactory.build(
+            error={},
+            results=DeezerSongFactory.build(
+                SNG_ID=track_id,
+                TRACK_TOKEN=track_token,
+                DURATION=track_duration,
+                ART_NAME=track_artist,
+                SNG_TITLE=track_title,
+                ALB_TITLE=track_album,
+                ALB_PICTURE=track_picture,
+                FILESIZE_MP3_128=0,
+                FILESIZE_MP3_320=0,
+                FILESIZE_FLAC=0,
+            ),
+        ).model_dump(),
+    )
+    with pytest.raises(
+        DeezerTrackException,
+        match=r"No available formats detected for track \d+$",
+    ):
+        Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+
+
+def test_track_query_quality(configured_onzr, responses):
+    """Test the track query_quality method."""
+    track_id = 1
+    track_token = "fake"  # noqa: S105
+    track_duration = 120
+    track_artist = "Jimi Hendrix"
+    track_title = "All along the watchtower"
+    track_album = "Experience"
+    track_picture = "ABCDEF"
+    track_filesize_mp3_128 = 128
+    track_filesize_mp3_320 = 320
+
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=DeezerSongResponseFactory.build(
+            error={},
+            results=DeezerSongFactory.build(
+                SNG_ID=track_id,
+                TRACK_TOKEN=track_token,
+                DURATION=track_duration,
+                ART_NAME=track_artist,
+                SNG_TITLE=track_title,
+                ALB_TITLE=track_album,
+                ALB_PICTURE=track_picture,
+                FILESIZE_MP3_128=track_filesize_mp3_128,
+                FILESIZE_MP3_320=track_filesize_mp3_320,
+                FILESIZE_FLAC=0,
+            ),
+        ).model_dump(),
+    )
+    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+
+    assert track.query_quality(StreamQuality.MP3_128) == StreamQuality.MP3_128
+    assert track.query_quality(StreamQuality.MP3_320) == StreamQuality.MP3_320
+    assert track.query_quality(StreamQuality.FLAC) == StreamQuality.MP3_320
 
 
 def test_track_serialize(configured_onzr, responses):

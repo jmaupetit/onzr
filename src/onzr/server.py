@@ -82,11 +82,11 @@ async def stream_track(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Track rank out of range."
         )
-    quality = settings.QUALITY
     onzr.queue.playing = rank
     track = onzr.queue[rank]
-    # Refresh track token to avoid having an expired one
+    # Refresh track token in case it expired
     track.refresh()
+    quality = track.query_quality(settings.QUALITY)
     return StreamingResponse(track.stream(quality), media_type=quality.media_type)
 
 

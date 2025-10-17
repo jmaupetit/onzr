@@ -15,6 +15,7 @@ and this project adheres to
 ### Fixed
 
 - Allow to play queue from the first track (rank 0)
+- Use the best available quality if the default quality is not available
 
 ## [0.3.0] - 2025-10-05
 
