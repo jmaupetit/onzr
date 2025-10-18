@@ -299,14 +299,14 @@ def test_add_command(test_server, responses, configured_cli_runner):
 
     result = configured_cli_runner.invoke(cli, ["add", "1", "2", "3"])
     assert result.exit_code == ExitCodes.OK
-    assert "Added 3 tracks to queue" in result.stdout
+    assert "Added 3 track(s) to queue" in result.stdout
 
     # Pass ids via stdin
     result = configured_cli_runner.invoke(
         cli, ["add", "-"], input="\n".join(map(str, track_ids))
     )
     assert result.exit_code == ExitCodes.OK
-    assert "Added 3 tracks to queue" in result.stdout
+    assert "Added 3 track(s) to queue" in result.stdout
 
 
 def test_queue_command(test_server, configured_cli_runner, configured_onzr, track):
@@ -314,7 +314,7 @@ def test_queue_command(test_server, configured_cli_runner, configured_onzr, trac
     # Empty queue
     result = configured_cli_runner.invoke(cli, ["queue"])
     assert result.exit_code == ExitCodes.OK
-    assert "QueuedTracks(playing=None, tracks=[])" in result.stdout
+    assert "Queue is empty, use onzr add to start adding tracks." in result.stdout
 
     # Fill the queue
     track_ids = [1, 2, 3]
@@ -323,7 +323,7 @@ def test_queue_command(test_server, configured_cli_runner, configured_onzr, trac
 
     result = configured_cli_runner.invoke(cli, ["queue"])
     assert result.exit_code == ExitCodes.OK
-    assert all(x in result.stdout for x in [f"id={i}" for i in track_ids])
+    assert all(x in result.stdout for x in [f"🧵   {i}" for i in range(1, 4)])
 
 
 def test_clear_command(test_server, configured_cli_runner, configured_onzr, track):
@@ -331,10 +331,7 @@ def test_clear_command(test_server, configured_cli_runner, configured_onzr, trac
     # Empty queue
     result = configured_cli_runner.invoke(cli, ["clear"])
     assert result.exit_code == ExitCodes.OK
-    assert (
-        "ServerState(player='State.Stopped', queue=QueueState(playing=None, queued=0))"
-        in result.stdout
-    )
+    assert "📢 Player: Stopped · Queue: None / 0" in result.stdout
 
     # Fill the queue
     track_ids = [1, 2, 3]
@@ -343,10 +340,7 @@ def test_clear_command(test_server, configured_cli_runner, configured_onzr, trac
 
     result = configured_cli_runner.invoke(cli, ["clear"])
     assert result.exit_code == ExitCodes.OK
-    assert (
-        "ServerState(player='State.Stopped', queue=QueueState(playing=None, queued=0))"
-        in result.stdout
-    )
+    assert "📢 Player: Stopped · Queue: None / 0" in result.stdout
     assert configured_onzr.queue.is_empty
 
 
@@ -355,7 +349,7 @@ def test_now_command(test_server, configured_cli_runner, configured_onzr, track)
     # Empty queue
     result = configured_cli_runner.invoke(cli, ["now"])
     assert result.exit_code == ExitCodes.OK
-    assert "Nothing's happening right now." in result.stdout
+    assert "Nothing more has been queued" in result.stdout
 
     # Fill the queue
     track_ids = [1, 2, 3]
@@ -365,18 +359,16 @@ def test_now_command(test_server, configured_cli_runner, configured_onzr, track)
     # Still nothing to display
     result = configured_cli_runner.invoke(cli, ["now"])
     assert result.exit_code == ExitCodes.OK
-    assert "Nothing's happening right now." in result.stdout
+    assert "Nothing more has been queued" in result.stdout
 
     # Start playing
     configured_onzr.player.play()
     sleep(0.3)
     result = configured_cli_runner.invoke(cli, ["now"])
     assert result.exit_code == ExitCodes.OK
-    assert "Now playing (1 / 3)" in result.stdout
-    assert "Player" in result.stdout
-    assert "State.Playing" in result.stdout
-    assert "Next in queue" in result.stdout
-    assert all(x in result.stdout for x in [f"[ {i}]" for i in [2, 3]])
+    assert "· (1/3)" in result.stdout
+    assert "▶️" in result.stdout
+    assert "Next:" in result.stdout
 
 
 def test_play_command(test_server, configured_cli_runner, configured_onzr, track):
@@ -584,14 +576,7 @@ def test_state_command(test_server, configured_cli_runner, configured_onzr, trac
     # Empty queue
     result = configured_cli_runner.invoke(cli, ["state"])
     assert result.exit_code == ExitCodes.OK
-    assert all(
-        sub in result.stdout
-        for sub in [
-            "ServerState",
-            "player='State.NothingSpecial'",
-            "queue=QueueState(playing=None, queued=0)",
-        ]
-    )
+    assert "📢 Player: NothingSpecial · Queue: None / 0" in result.stdout
 
     # Fill the queue
     track_ids = [1, 2, 3]
@@ -600,41 +585,20 @@ def test_state_command(test_server, configured_cli_runner, configured_onzr, trac
 
     result = configured_cli_runner.invoke(cli, ["state"])
     assert result.exit_code == ExitCodes.OK
-    assert all(
-        sub in result.stdout
-        for sub in [
-            "ServerState",
-            "player='State.NothingSpecial'",
-            "queue=QueueState(playing=None, queued=3)",
-        ]
-    )
+    assert "📢 Player: NothingSpecial · Queue: None / 3" in result.stdout
 
     # Start playing
     configured_onzr.player.play()
     sleep(0.3)
     result = configured_cli_runner.invoke(cli, ["state"])
     assert result.exit_code == ExitCodes.OK
-    assert all(
-        sub in result.stdout
-        for sub in [
-            "ServerState",
-            "player='State.Playing'",
-            "queue=QueueState(playing=0, queued=3)",
-        ]
-    )
+    assert "📢 Player: Playing · Queue: 1 / 3" in result.stdout
 
     # Stop the player
     configured_onzr.player.stop()
     result = configured_cli_runner.invoke(cli, ["state"])
     assert result.exit_code == ExitCodes.OK
-    assert all(
-        sub in result.stdout
-        for sub in [
-            "ServerState",
-            "player='State.Stopped'",
-            "queue=QueueState(playing=0, queued=3)",
-        ]
-    )
+    assert "📢 Player: Stopped · Queue: 1 / 3" in result.stdout
 
 
 def test_version_command(configured_cli_runner):
@@ -645,7 +609,7 @@ def test_version_command(configured_cli_runner):
         r"\.(?P<patch>0|[1-9]\d*)"
         r"(?P<extras>.*)"
     )
-    pattern = re.compile("Onzr version: " + semver)
+    pattern = re.compile("🔖 Version: " + semver)
     result = configured_cli_runner.invoke(cli, ["version"])
     assert result.exit_code == ExitCodes.OK
     assert pattern.match(result.stdout)

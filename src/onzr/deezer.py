@@ -284,6 +284,8 @@ class Track:
 
     def _get_track_info_attribute(self, field: str) -> Any | None:
         """Get self.track_info attribute if defined."""
+        if self.track_info is None:
+            return "fetching…"
         return getattr(self.track_info, field, None)
 
     @property

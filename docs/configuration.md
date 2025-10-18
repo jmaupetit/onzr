@@ -127,3 +127,27 @@ This secret is used to decrypt Deezer track stream on the fly.
 
     This secret is distributed with Onzr and is **not** supposed to be changed.
     You won't be able to stream your music if this value is falsy.
+
+---
+
+### `THEME`
+
+Onzr CLI uses colors defined in this theme.
+
+Default:
+
+```yaml
+THEME:
+  # Base palette
+  primary_color: "#9B6BDF"
+  secondary_color: "#75D7EC"
+  tertiary_color: "#E356A7"
+  # Entities
+  title_color: "#9B6BDF"
+  artist_color: "#75D7EC"
+  album_color: "#E356A7"
+  # Messages
+  alert_color: "red"
+```
+
+Colors should be given as hexadecimal codes or names (_e.g._ `red`).

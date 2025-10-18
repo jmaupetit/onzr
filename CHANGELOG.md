@@ -11,6 +11,11 @@ and this project adheres to
 ### Added
 
 - CLI: Add the `openapi` command
+- CLI: Add configurable `THEME`
+
+### Changed
+
+- CLI: Improve commands output (`now` command is no longer experimental)
 
 ### Fixed
 

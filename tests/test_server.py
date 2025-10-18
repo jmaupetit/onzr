@@ -19,7 +19,7 @@ def test_queue_add_empty(client, responses, configured_onzr):
     response = client.post("/queue/", json=track_ids)
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["message"] == f"Added {len(track_ids)} tracks to queue"
+    assert response.json()["message"] == f"Added {len(track_ids)} track(s) to queue"
     assert len(configured_onzr.queue.tracks) == 0
     for track, expected in zip(configured_onzr.queue.tracks, track_ids, strict=True):
         assert track.track_id == expected
@@ -42,7 +42,7 @@ def test_queue_add(client, responses, configured_onzr):
     response = client.post("/queue/", json=track_ids)
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["message"] == f"Added {len(track_ids)} tracks to queue"
+    assert response.json()["message"] == f"Added {len(track_ids)} track(s) to queue"
     assert len(configured_onzr.queue.tracks) == len(track_ids)
     for track, expected in zip(configured_onzr.queue.tracks, track_ids, strict=True):
         assert track.track_id == expected
