@@ -47,7 +47,7 @@ async def queue_add(
     """Add tracks to queue given their identifiers."""
     tracks = [Track(onzr.deezer, id_, background=True) for id_ in track_ids]
     onzr.queue.add(tracks=tracks)
-    return ServerMessage(message=f"Added {len(tracks)} tracks to queue")
+    return ServerMessage(message=f"Added {len(tracks)} track(s) to queue")
 
 
 @app.delete("/queue/")

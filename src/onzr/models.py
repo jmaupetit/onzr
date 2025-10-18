@@ -108,6 +108,10 @@ class QueuedTracks(BaseModel):
     playing: int | None
     tracks: List[QueuedTrack]
 
+    def __len__(self):
+        """Get tracks length."""
+        return len(self.tracks)
+
 
 class PlayerState(BaseModel):
     """Detailled player state."""

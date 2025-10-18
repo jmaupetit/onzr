@@ -12,6 +12,7 @@ from random import shuffle
 from typing import List, cast
 
 import click
+from rich.text import Text
 import typer
 import uvicorn
 import yaml
@@ -313,12 +314,12 @@ def add(track_ids: List[str]):
         track_ids = click.get_text_stream("stdin").read().split()
         logger.debug(f"{track_ids=}")
 
-    console.print("➕ adding tracks to queue…")
+    console.print("➕ Adding tracks to queue…")
 
     client = OnzrClient()
     response = client.queue_add(track_ids)
 
-    console.print(response)
+    console.print(f"✅ {response.message}")
 
 
 def _client_control(name: str, **kwargs):
@@ -326,19 +327,56 @@ def _client_control(name: str, **kwargs):
     client = OnzrClient()
     method = getattr(client, name)
     response = method(**kwargs)
-    console.print(response)
+    return response
 
 
 @cli.command()
 def queue():
     """List queue tracks."""
-    _client_control("queue_list")
+    queue = _client_control("queue_list")
+    if not len(queue):
+        console.print(
+            "⚠ [yellow]Queue is empty, use [magenta]onzr add[/magenta] "
+            "to start adding tracks.[/yellow]"
+        )
+        raise typer.Exit(0)
+
+    with console.pager(styles=True):
+        for qt in queue.tracks:
+            track_infos = (
+                f"[white][bold]{qt.position + 1:-3d}[/] "
+                f"[#9B6BDF]{qt.track.title}[white] - "
+                f"[#75D7EC]{qt.track.artist} "
+                f"[#E356A7]({qt.track.album})"
+            )
+            if queue.playing is not None and qt.position < queue.playing:
+                s = f"🏁 [italic]{track_infos}[/italic]"
+            elif qt.current:
+                s = f"▶  [bold]{track_infos}[/bold]"
+            else:
+                s = f"🧵 {track_infos}"
+            s += "[white]"
+            console.print(s)
+
+
+def print_server_state(state):
+    """Print server state."""
+    s = (
+        "📢 "
+        f"Player: [#9B6BDF]{state.player.split('.')[1]}[white]"
+        " · "
+        f"Queue: [#75D7EC]{state.queue.playing + 1 if state.queue.playing is not None else None}[white]"
+        " / "
+        f"[#E356A7]{state.queue.queued}[white]"
+    )
+    console.print(s)
 
 
 @cli.command()
 def clear():
     """Empty queue."""
-    _client_control("queue_clear")
+    state = _client_control("queue_clear")
+    print_server_state(state)
 
 
 @cli.command()
@@ -502,9 +540,8 @@ def serve(
 def state():
     """Get server state."""
     client = OnzrClient()
-    response = client.state()
-
-    console.print(response)
+    state = client.state()
+    print_server_state(state)
 
 
 @cli.command()
