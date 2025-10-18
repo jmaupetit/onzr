@@ -6,24 +6,25 @@ import sys
 import time
 from datetime import date
 from enum import IntEnum
+from functools import cache
 from importlib.metadata import version as import_lib_version
 from pathlib import Path
 from random import shuffle
 from typing import List, cast
 
 import click
+import pendulum
 import typer
 import uvicorn
 import yaml
 from pydantic import PositiveInt
 from rich.console import Console, Group
-from rich.layout import Layout
 from rich.live import Live
 from rich.logging import RichHandler
-from rich.panel import Panel
 from rich.progress_bar import ProgressBar
 from rich.prompt import Prompt
 from rich.table import Table
+from rich.text import Text
 from typing_extensions import Annotated
 from uvicorn.config import LOG_LEVELS
 
@@ -40,6 +41,8 @@ from .models import (
     AlbumShort,
     ArtistShort,
     Collection,
+    PlayerControl,
+    ServerState,
     TrackShort,
 )
 
@@ -56,6 +59,12 @@ logging.basicConfig(**logging_config)  # type: ignore[arg-type]
 cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
 console = Console()
 logger = logging.getLogger(__name__)
+
+
+@cache
+def get_theme():
+    """Get Onzr theme."""
+    return get_settings().THEME
 
 
 class ExitCodes(IntEnum):
@@ -90,6 +99,7 @@ def print_collection_ids(collection: Collection):
 
 def print_collection_table(collection: Collection, title="Collection"):
     """Print a collection as a table."""
+    theme = get_theme()
     table = Table(title=title)
 
     sample = collection[0]
@@ -111,11 +121,11 @@ def print_collection_table(collection: Collection, title="Collection"):
 
     table.add_column("ID", justify="right")
     if show_track:
-        table.add_column("Track", style="#9B6BDF")
+        table.add_column("Track", style=theme.title_color.as_hex())
     if show_album:
-        table.add_column("Album", style="#E356A7")
+        table.add_column("Album", style=theme.album_color.as_hex())
     if show_artist:
-        table.add_column("Artist", style="#75D7EC")
+        table.add_column("Artist", style=theme.artist_color.as_hex())
     if show_release:
         table.add_column("Released")
 
@@ -313,116 +323,179 @@ def add(track_ids: List[str]):
         track_ids = click.get_text_stream("stdin").read().split()
         logger.debug(f"{track_ids=}")
 
-    console.print("➕ adding tracks to queue…")
+    console.print("➕ Adding tracks to queue…")
 
     client = OnzrClient()
     response = client.queue_add(track_ids)
 
-    console.print(response)
+    console.print(f"✅ {response.message}")
 
 
-def _client_control(name: str, **kwargs):
+def _client_request(name: str, **kwargs):
     """A generic wrapper that executes a client method."""
     client = OnzrClient()
     method = getattr(client, name)
     response = method(**kwargs)
-    console.print(response)
+    return response
 
 
 @cli.command()
 def queue():
     """List queue tracks."""
-    _client_control("queue_list")
+    theme = get_theme()
+    queue = _client_request("queue_list")
+    if not len(queue):
+        console.print(
+            "⚠ [yellow]Queue is empty, use [magenta]onzr add[/magenta] "
+            "to start adding tracks.[/yellow]"
+        )
+        raise typer.Exit(0)
+
+    with console.pager(styles=True):
+        for qt in queue.tracks:
+            track_infos = (
+                f"[white][bold]{qt.position + 1:-3d}[/] "
+                f"[{theme.title_color}]{qt.track.title}[white] - "
+                f"[{theme.artist_color}]{qt.track.artist} "
+                f"[{theme.album_color}]({qt.track.album})"
+            )
+            if queue.playing is not None and qt.position < queue.playing:
+                s = f"🏁 [italic]{track_infos}[/italic]"
+            elif qt.current:
+                s = f"▶  [bold]{track_infos}[/bold]"
+            else:
+                s = f"🧵 {track_infos}"
+            s += "[white]"
+            console.print(s)
+
+
+def _print_server_state(state: ServerState):
+    """Print server state."""
+    theme = get_theme()
+    playing = state.queue.playing + 1 if state.queue.playing is not None else None
+    s = (
+        "📢 "
+        f"Player: [{theme.secondary_color}]{state.player.split('.')[1]}[white]"
+        " · "
+        f"Queue: [{theme.tertiary_color}]{playing}[white]"
+        " / "
+        f"[{theme.primary_color}]{state.queue.queued}[white]"
+    )
+    console.print(s)
+
+
+def _print_player_control(control: PlayerControl):
+    """Print player control action."""
+    theme = get_theme()
+    match control.action:
+        case "play":
+            icon = "▶️"
+        case "pause":
+            icon = "⏯️"
+        case "stop":
+            icon = "⏹️"
+        case "next":
+            icon = "⏭"
+        case "previous":
+            icon = "⏮"
+        case _:
+            icon = "⁉️"
+    console.print(f"{icon}  Action: [{theme.secondary_color}]{control.action}[white] ")
+    _print_server_state(control.state)
 
 
 @cli.command()
 def clear():
     """Empty queue."""
-    _client_control("queue_clear")
+    state = _client_request("queue_clear")
+    _print_server_state(state)
 
 
 @cli.command()
 def now(follow: Annotated[bool, typer.Option("--follow", "-f")] = False):
     """Get info about now playing track."""
     client = OnzrClient()
+    theme = get_theme()
 
-    def display():
-        """Now playing layout."""
+    def timecode(duration: pendulum.Duration) -> str:
+        """Convert a duration (in ms) to a time code."""
+        return (
+            f"{duration.hours:02d}:"
+            f"{duration.minutes:02d}:"
+            f"{duration.remaining_seconds:02d}"
+        )
+
+    def get_track_infos(track: TrackShort) -> str:
+        """Generate a fully qualified track string."""
+        return (
+            f"[{theme.title_color}]{track.title} - "
+            f"[{theme.artist_color}]{track.artist} - "
+            f"[{theme.album_color}]{track.album}"
+        )
+
+    def display() -> Group:
+        """Now playing."""
         now_playing = client.now_playing()
         queue = client.queue_list()
-        playing = queue.playing
-        queued = len(queue.tracks)
-
         track = now_playing.track
         player = now_playing.player
+        next_track = (
+            queue.tracks[queue.playing + 1].track
+            if queue.playing is not None and queue.playing < len(queue) - 1
+            else None
+        )
 
-        # Nothing to see
-        if track is None:
-            return "Nothing's happening right now."
+        match player.state:
+            case "State.Playing":
+                icon = "▶️"
+            case "State.Paused":
+                icon = "⏯️"
+            case "State.Stopped":
+                icon = "⏹️"
+            case "State.Ended":
+                icon = "🏁"
+            case "State.NothingSpecial":
+                icon = "🤷"
+            case "State.Opening":
+                icon = "📂"
+            case "State.Buffering":
+                icon = "🌐"
+            case _:
+                icon = "⁉️"
 
-        track_infos = (
-            f"[#9B6BDF]{track.title}\n[#75D7EC]{track.artist} - [#E356A7]{track.album}"
+        track_infos = f"{icon} "
+        if track is not None:
+            track_infos += get_track_infos(track)
+        track_infos += (
+            "[white] · "
+            f"({queue.playing + 1 if queue.playing is not None else '-'}/{len(queue)})"
         )
-        player_infos = (
-            f"{player.state}\n"
-            f"{player.time} / {player.length}"
-            f" ({player.position * 100:3.0f}%)\n"
+        track_duration = pendulum.duration(seconds=player.length / 1000.0)
+        track_played = pendulum.duration(seconds=player.time / 1000.0)
+        track_played_timecode = Text(
+            f"{timecode(track_played)} ", style=theme.secondary_color.as_hex(), end=""
         )
-        queue_infos = "Empty"
-        if playing < queued and playing != queued:
-            queue_infos = "\n".join(
-                [
-                    (
-                        f"[white][[bold]{t.position + 1:-2d}[/]] "
-                        f"[#9B6BDF]{t.track.title}[white] - "
-                        f"[#75D7EC]{t.track.artist} "
-                        f"[#E356A7]({t.track.album})"
-                    )
-                    for t in queue.tracks[playing + 1 :]
-                ]
-            )
-        layout = Layout()
-        layout.split_row(
-            Layout(name="left"),
-            Layout(
-                Panel(
-                    queue_infos,
-                    title="Next in queue",
-                    title_align="left",
-                    style="#75D7EC",
-                ),
-                name="right",
-            ),
+        track_total_timecode = f" [{theme.primary_color}]{timecode(track_duration)}"
+        progress_bar = ProgressBar(
+            total=player.length,
+            completed=player.time,
+            complete_style=theme.tertiary_color.as_hex(),
+            finished_style=theme.secondary_color.as_hex(),
+            width=62,
         )
-        layout["left"].split_column(
-            Layout(
-                Panel(
-                    track_infos,
-                    title=f"[bold] Now playing ({playing + 1} / {queued})",
-                    title_align="left",
-                    style="#E356A7",
-                    padding=1,
-                )
-            ),
-            Layout(
-                Panel(
-                    Group(
-                        player_infos,
-                        ProgressBar(
-                            total=player.length,
-                            completed=player.time,
-                            complete_style="#E356A7",
-                            finished_style="#75D7EC",
-                        ),
-                    ),
-                    title="Player",
-                    title_align="left",
-                    style="#9B6BDF",
-                    padding=1,
-                )
-            ),
+        coming_next = "Next: "
+        if next_track is not None:
+            coming_next += get_track_infos(next_track)
+        else:
+            coming_next += "❎ [italic]Nothing more has been queued[/italic]"
+
+        return Group(
+            track_infos,
+            track_played_timecode,
+            progress_bar,
+            track_total_timecode,
+            coming_next,
         )
-        return layout
 
     if not follow:
         console.print(display())
@@ -430,41 +503,53 @@ def now(follow: Annotated[bool, typer.Option("--follow", "-f")] = False):
 
     with Live(display(), refresh_per_second=4) as live:
         while True:
-            time.sleep(0.2)
+            time.sleep(0.1)
             live.update(display())
 
 
 @cli.command()
 def play(rank: PositiveInt | None = None):
     """Play queue."""
+    theme = get_theme()
     if rank is not None and rank < 1:
-        console.print("[red bold]Invalid rank![/red bold] It should be greater than 0.")
+        console.print(
+            (
+                "🙈 "
+                f"[{theme.alert_color} bold]Invalid rank![/{theme.alert_color} bold] "
+                "It should be greater than 0."
+            )
+        )
         raise typer.Exit(ExitCodes.INVALID_ARGUMENTS)
-    _client_control("play", rank=rank - 1 if rank else None)
+    control = _client_request("play", rank=rank - 1 if rank else None)
+    _print_player_control(control)
 
 
 @cli.command()
 def pause():
     """Pause/resume playing."""
-    _client_control("pause")
+    control = _client_request("pause")
+    _print_player_control(control)
 
 
 @cli.command()
 def stop():
     """Stop playing queue."""
-    _client_control("stop")
+    control = _client_request("stop")
+    _print_player_control(control)
 
 
 @cli.command()
 def next():
     """Play next track in queue."""
-    _client_control("next")
+    control = _client_request("next")
+    _print_player_control(control)
 
 
 @cli.command()
 def previous():
     """Play previous track in queue."""
-    _client_control("previous")
+    control = _client_request("previous")
+    _print_player_control(control)
 
 
 @cli.command()
@@ -474,12 +559,19 @@ def serve(
     log_level: str = "info",
 ):
     """Run onzr http server."""
+    theme = get_theme()
     # Typer does not support complex types such as Litteral, so let's check log_level
     # validity by ourselves.
     allowed_levels: list[str] = ["debug", "info", "warning", "error", "critical"]
     if log_level not in allowed_levels:
         console.print(
-            f"[bold red]Forbidden log-level[/bold red] Should be in: {allowed_levels}"
+            (
+                "🙈 "
+                f"[{theme.alert_color} bold]"
+                "Forbidden log-level!"
+                f"[/{theme.alert_color} bold] "
+                f"Should be in: {allowed_levels}"
+            )
         )
         raise typer.Exit(ExitCodes.INVALID_ARGUMENTS)
 
@@ -502,15 +594,17 @@ def serve(
 def state():
     """Get server state."""
     client = OnzrClient()
-    response = client.state()
-
-    console.print(response)
+    state = client.state()
+    _print_server_state(state)
 
 
 @cli.command()
 def version():
     """Get program version."""
-    console.print(f"Onzr version: {import_lib_version('onzr')}")
+    theme = get_theme()
+    console.print(
+        f"🔖 Version: [{theme.secondary_color}]{import_lib_version('onzr')}[white]"
+    )
 
 
 @cli.command()

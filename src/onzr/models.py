@@ -4,6 +4,19 @@ from enum import StrEnum
 from typing import Annotated, List, Optional, TypeAlias
 
 from pydantic import BaseModel, Field
+from pydantic_extra_types.color import Color
+
+
+class OnzrTheme(BaseModel):
+    """Onzr theme."""
+
+    primary_color: Color
+    secondary_color: Color
+    tertiary_color: Color
+    title_color: Color
+    artist_color: Color
+    album_color: Color
+    alert_color: Color
 
 
 class QueueState(BaseModel):
@@ -107,6 +120,10 @@ class QueuedTracks(BaseModel):
 
     playing: int | None
     tracks: List[QueuedTrack]
+
+    def __len__(self):
+        """Get tracks length."""
+        return len(self.tracks)
 
 
 class PlayerState(BaseModel):

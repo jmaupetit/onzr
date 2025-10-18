@@ -31,7 +31,7 @@ def test_queue_add(test_server, responses):
         )
 
     assert client.queue_add([str(t) for t in track_ids]) == ServerMessage(
-        message="Added 3 tracks to queue"
+        message="Added 3 track(s) to queue"
     )
 
 

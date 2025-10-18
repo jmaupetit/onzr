@@ -22,7 +22,9 @@ classifiers = [
 dependencies = [
     "deezer-py>=1.3.7,<2",
     "fastapi>=0.115.12,<0.116",
+    "pendulum>=3.1.0",
     "pycryptodomex>=3.21.0,<4",
+    "pydantic-extra-types>=2.10.6",
     "pydantic-settings>=2.9.1,<3",
     "python-vlc>=3.0.21203,<4",
     "typer>=0.15.2,<0.16",
@@ -90,6 +92,9 @@ select = [
     "S",  # flake8-bandit
     "T20", # flake8-print
     "W",  # pycodestyle warning
+]
+ignore = [
+    "PLR0915",  # Too many statements (50+)
 ]
 
 [tool.ruff.lint.per-file-ignores]

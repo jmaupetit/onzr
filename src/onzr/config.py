@@ -1,10 +1,12 @@
 """Dzr configuration."""
 
 import logging
+from functools import cache
 from pathlib import Path
 
 from pydantic import computed_field
 from pydantic.networks import HttpUrl
+from pydantic_extra_types.color import Color
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -14,6 +16,7 @@ from pydantic_settings import (
 from typer import get_app_dir
 
 from .deezer import StreamQuality
+from .models import OnzrTheme
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +53,20 @@ class Settings(BaseSettings):
         """Onzr server track stream URL."""
         return f"{self.SERVER_BASE_URL}{self.TRACK_STREAM_ENDPOINT}"
 
+    # Customization
+    THEME: OnzrTheme = OnzrTheme(
+        # Base palette
+        primary_color=Color("#9B6BDF"),
+        secondary_color=Color("#75D7EC"),
+        tertiary_color=Color("#E356A7"),
+        # Entities
+        title_color=Color("#9B6BDF"),
+        artist_color=Color("#75D7EC"),
+        album_color=Color("#E356A7"),
+        # Messages
+        alert_color=Color("red"),
+    )
+
     # Deezer
     QUALITY: StreamQuality = StreamQuality.MP3_128
     DEEZER_BLOWFISH_SECRET: str
@@ -79,6 +96,7 @@ class Settings(BaseSettings):
         )
 
 
+@cache
 def get_settings() -> Settings:
     """Get settings."""
     logger.debug(f"Loading settings from Onzr directory: {get_onzr_dir()}")

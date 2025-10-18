@@ -369,7 +369,7 @@ player:
 - `previous`: play previous track in queue
 - `stop`: stop the player without clearing the queue
 
-!!! Example "Experimental"
+!!! Tip
 
     If you want to follow currenly played tracks in real-time you may use the
     `now` command:
