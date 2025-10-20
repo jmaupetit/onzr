@@ -1,2 +1,20 @@
 # ARL:
+# QUALITY: MP3_128
+# DEBUG: false
+# SCHEMA: http
+# HOST: localhost
+# PORT: 9473
+# API_ROOT_URL: /api/v1
+# TRACK_STREAM_ENDPOINT: /queue/{rank}/stream
 DEEZER_BLOWFISH_SECRET: "g4el58wc0zvf9na1"
+# THEME:
+#   # Base palette
+#   primary_color: "#9B6BDF"
+#   secondary_color: "#75D7EC"
+#   tertiary_color: "#E356A7"
+#   # Entities
+#   title_color: "#9B6BDF"
+#   artist_color: "#75D7EC"
+#   album_color: "#E356A7"
+#   # Messages
+#   alert_color: "red"

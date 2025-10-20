@@ -100,23 +100,37 @@ should have been generated at the following path (depending on your OS):
 - **Windows**: `%appdata%\watson\config`, which usually expands to `C:\Users\<user>\AppData\Roaming\onzr\settings.yaml`
 - **Linux**: `~/.config/onzr/settings.yaml`
 
-If you edit this file, you should see at least two defined settings:
+You can check the configuration path using the `config -p` command:
+
+```sh
+onzr config -p
+```
+
+And the configuration content using:
+
+```sh
+onzr config
+```
+
+You should see at least two defined settings:
 
 ```yaml
 ARL: "your-arl-token"
 DEEZER_BLOWFISH_SECRET: "supersecret"
 ```
 
-!!! Tip
+!!! Tip "Edit your configuration"
 
-    Feel free to customize Onzr behavior by defining your own settings such as
-    the default audio quality:
+    Feel free to customize Onzr's behavior by changing your settings such as the
+    default audio quality:
 
     ```yaml
     ARL: "your-arl-token"
     DEEZER_BLOWFISH_SECRET: "supersecret"
     QUALITY: "FLAC"
     ```
+
+    Configuration can be edited using the `onzr config -e` command.
 
 For a complete list of configurable settings and configuration tips, please
 refer to the [configuration documentation](./configuration.md).

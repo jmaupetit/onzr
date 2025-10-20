@@ -64,6 +64,65 @@ other commands.
     it, please follow [this
     guide](https://github.com/nathom/streamrip/wiki/Finding-Your-Deezer-ARL-Cookie).
 
+## `config`
+
+The `config` command provides various operations related to Onzr's
+configuration. By default, it will display your current configuration in YAML
+format.
+
+```sh
+onzr config
+```
+
+The output should look like:
+
+```yaml
+ARL: "configuredarl"
+# QUALITY: MP3_128
+# DEBUG: false
+# SCHEMA: http
+# HOST: localhost
+# PORT: 9473
+# API_ROOT_URL: /api/v1
+# TRACK_STREAM_ENDPOINT: /queue/{rank}/stream
+DEEZER_BLOWFISH_SECRET: "g4el58wc0zvf9na1"
+# THEME:
+#   # Base palette
+#   primary_color: "#9B6BDF"
+#   secondary_color: "#75D7EC"
+#   tertiary_color: "#E356A7"
+#   # Entities
+#   title_color: "#9B6BDF"
+#   artist_color: "#75D7EC"
+#   album_color: "#E356A7"
+#   # Messages
+#   alert_color: "red"
+```
+
+Using the `--path` (or `-p`) option will only display the configuration file
+path:
+
+```sh
+onzr -p
+```
+
+```
+/home/johndoe/.config/onzr/settings.yaml
+```
+
+And you can also edit your configuration using the `--edit` (or `-e`):
+
+```sh
+onzr config -e
+```
+
+It will start your default editor with your configuration loaded. Save it and
+you're good to go.
+
+!!! Tip
+
+    You can set your default editor using the `$EDITOR` environment variable.
+
 ## `serve`
 
 The `serve` command should be run once to start Onzr web server:

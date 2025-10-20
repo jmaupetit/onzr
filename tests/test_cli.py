@@ -8,11 +8,13 @@ import re
 from os import stat
 from pathlib import Path
 from time import sleep
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import click
 import pytest
 import uvicorn
 import vlc
+import yaml
 
 import onzr
 from onzr.cli import ExitCodes, cli
@@ -105,6 +107,41 @@ def test_init_command_does_not_overwrite_settings(cli_runner, settings_file):
         == f"Configuration file '{settings_file}' already exists!"
     )
     assert original_stat == stat(settings_file)
+
+
+def test_config_command_no_config_file(cli_runner, settings_file):
+    """Test the `onzr config` command when the configuration file does not exist."""
+    assert settings_file.exists() is False
+
+    result = cli_runner.invoke(cli, ["config"])
+    assert result.exit_code == ExitCodes.INCOMPLETE_CONFIGURATION
+    assert "Configuration file does not exist, use `onzr init` first." in result.stdout
+
+
+def test_config_command(configured_cli_runner, settings_file):
+    """Test the `onzr config` command."""
+    assert settings_file.exists() is True
+
+    # Mock click.edit function
+    click.edit = MagicMock(return_value=0)
+
+    # Get configuration file path
+    result = configured_cli_runner.invoke(cli, ["config", "-p"])
+    assert result.exit_code == ExitCodes.OK
+    assert result.stdout.split("\n")[0] == str(settings_file)
+    click.edit.assert_not_called()
+
+    # Display configuration
+    result = configured_cli_runner.invoke(cli, ["config"])
+    assert result.exit_code == ExitCodes.OK
+    with settings_file.open() as s:
+        assert yaml.safe_load(result.stdout) == yaml.safe_load(s)
+    click.edit.assert_not_called()
+
+    # Edit configuration
+    result = configured_cli_runner.invoke(cli, ["config", "-e"])
+    assert result.exit_code == ExitCodes.OK
+    click.edit.assert_called_once()
 
 
 def test_search_command_with_no_argument(configured_cli_runner):
