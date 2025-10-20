@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
+- CLI: Add the `config` command
 - CLI: Add the `openapi` command
 - CLI: Add configurable `THEME`
 

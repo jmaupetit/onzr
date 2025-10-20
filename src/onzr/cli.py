@@ -23,6 +23,7 @@ from rich.live import Live
 from rich.logging import RichHandler
 from rich.progress_bar import ProgressBar
 from rich.prompt import Prompt
+from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 from typing_extensions import Annotated
@@ -189,6 +190,33 @@ def init():
 
 
 @cli.command()
+def config(
+    path: Annotated[bool, typer.Option("--path", "-p")] = False,
+    edit: Annotated[bool, typer.Option("--edit", "-e")] = False,
+):
+    """Display or edit Onzr's configuration."""
+    user_config_path = get_onzr_dir() / SETTINGS_FILE
+
+    if not user_config_path.exists():
+        console.print(
+            "[red]Configuration file does not exist, use `onzr init` first.[/red]"
+        )
+        raise typer.Exit(ExitCodes.INCOMPLETE_CONFIGURATION)
+
+    if path:
+        console.print(user_config_path)
+        raise typer.Exit(0)
+
+    if edit:
+        click.edit(filename=str(user_config_path))
+        raise typer.Exit(0)
+
+    with user_config_path.open() as f:
+        user_config = f.read()
+    console.print(Syntax(user_config, "yaml"))
+
+
+@cli.command()
 def search(  # noqa: PLR0913
     artist: str = "",
     album: str = "",
@@ -201,13 +229,14 @@ def search(  # noqa: PLR0913
     if ids:
         quiet = True
     deezer = get_deezer_client(quiet=quiet)
+    theme = get_theme()
 
     if not quiet:
         console.print("🔍 start searching…")
     results = deezer.search(artist, album, track, strict)
 
     if not results:
-        console.print("No match found.")
+        console.print(f"❌ [{theme.alert_color}]No match found[/{theme.alert_color}]")
         raise typer.Exit(code=ExitCodes.NOT_FOUND)
 
     if ids:
