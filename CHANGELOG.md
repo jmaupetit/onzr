@@ -18,6 +18,10 @@ and this project adheres to
 
 - CLI: Improve commands output (`now` command is no longer experimental)
 
+#### Dependencies
+
+- Upgrade `pydantic` to `2.12.3`
+
 ### Fixed
 
 - Allow to play queue from the first track (rank 0)
