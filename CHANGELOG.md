@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-10-22
+
 ### Added
 
 - CLI: Add the `config` command
@@ -67,8 +69,9 @@ and this project adheres to
 
 - Implement a draft CLI using VLC
 
-[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.3.0...main
+[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.4.0...main
 
+[0.4.0] https://github.com/jmaupetit/onzr/compare/v0.3.0...v0.4.0
 [0.3.0] https://github.com/jmaupetit/onzr/compare/v0.2.0...v0.3.0
 [0.2.0] https://github.com/jmaupetit/onzr/compare/v0.1.0...v0.2.0
 [0.1.0] https://github.com/jmaupetit/onzr/compare/13ca0d7...v0.1.0
