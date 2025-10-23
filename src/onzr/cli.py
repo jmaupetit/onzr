@@ -6,7 +6,7 @@ import sys
 import time
 from datetime import date
 from enum import IntEnum
-from functools import cache
+from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
 from pathlib import Path
 from random import shuffle
@@ -75,6 +75,7 @@ class ExitCodes(IntEnum):
     INVALID_CONFIGURATION = 11
     INVALID_ARGUMENTS = 20
     NOT_FOUND = 30
+    SERVER_DOWN = 40
 
 
 def get_deezer_client(quiet: bool = False) -> DeezerClient:
@@ -89,6 +90,25 @@ def get_deezer_client(quiet: bool = False) -> DeezerClient:
         blowfish=settings.DEEZER_BLOWFISH_SECRET,
         fast=True,
     )
+
+
+def require_server(func):
+    """A command decorator that tests if Onzr server is running."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        client = OnzrClient()
+        theme = get_theme()
+        if not client.ping():
+            console.print(
+                f"[{theme.alert_color}]❌ "
+                "Onzr server is down, run `onzr serve` first."
+                f"[/{theme.alert_color}]"
+            )
+            raise typer.Exit(ExitCodes.SERVER_DOWN)
+        func(*args, **kwargs)
+
+    return wrapper
 
 
 def print_collection_ids(collection: Collection):
@@ -393,6 +413,7 @@ def mix(
 
 
 @cli.command()
+@require_server
 def add(track_ids: List[str]):
     """Add one (or more) tracks to the queue."""
     if track_ids == ["-"]:
@@ -417,6 +438,7 @@ def _client_request(name: str, **kwargs):
 
 
 @cli.command()
+@require_server
 def queue():
     """List queue tracks."""
     theme = get_theme()
@@ -482,6 +504,7 @@ def _print_player_control(control: PlayerControl):
 
 
 @cli.command()
+@require_server
 def clear():
     """Empty queue."""
     state = _client_request("queue_clear")
@@ -489,6 +512,7 @@ def clear():
 
 
 @cli.command()
+@require_server
 def now(
     follow: Annotated[
         bool, typer.Option("--follow", "-f", help="Follow what's happening.")
@@ -593,6 +617,7 @@ def now(
 
 
 @cli.command()
+@require_server
 def play(
     rank: Annotated[
         int | None,
@@ -620,6 +645,7 @@ def play(
 
 
 @cli.command()
+@require_server
 def pause():
     """Pause/resume playing."""
     control = _client_request("pause")
@@ -627,6 +653,7 @@ def pause():
 
 
 @cli.command()
+@require_server
 def stop():
     """Stop playing queue."""
     control = _client_request("stop")
@@ -634,6 +661,7 @@ def stop():
 
 
 @cli.command()
+@require_server
 def next():
     """Play next track in queue."""
     control = _client_request("next")
@@ -641,6 +669,7 @@ def next():
 
 
 @cli.command()
+@require_server
 def previous():
     """Play previous track in queue."""
     control = _client_request("previous")
@@ -695,6 +724,7 @@ def serve(
 
 
 @cli.command()
+@require_server
 def state():
     """Get server state."""
     client = OnzrClient()
@@ -712,6 +742,7 @@ def version():
 
 
 @cli.command()
+@require_server
 def openapi():
     """Get Onzr HTTP API OpenAPI schema."""
     from onzr.server import app

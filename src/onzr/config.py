@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     PORT: int = 9473
     API_ROOT_URL: str = "/api/v1"
     TRACK_STREAM_ENDPOINT: str = "/queue/{rank}/stream"
+    PING_TIMEOUT: float = 0.1  # in seconds
 
     @computed_field  # type: ignore[prop-decorator]
     @property

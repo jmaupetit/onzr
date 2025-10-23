@@ -49,6 +49,13 @@ SYSTEM_EXIT_1 = 1
 SYSTEM_EXIT_2 = 2
 
 
+def test_require_server_command_wrapper(configured_cli_runner):
+    """Test the `require_server` decorator."""
+    result = configured_cli_runner.invoke(cli, ["state"])
+    assert result.exit_code == ExitCodes.SERVER_DOWN
+    assert "❌ Onzr server is down, run `onzr serve` first." in result.stdout
+
+
 def test_command_help(cli_runner):
     """Test the `onzr --help` command."""
     result = cli_runner.invoke(cli, ["--help"])

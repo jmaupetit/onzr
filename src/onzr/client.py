@@ -29,6 +29,7 @@ class OnzrClient:
 
         settings = get_settings()
         self.base_url = settings.SERVER_BASE_URL
+        self.ping_timeout = settings.PING_TIMEOUT
 
     # Queue
     def queue_add(self, track_ids: List[str]) -> ServerMessage:
@@ -56,6 +57,16 @@ class OnzrClient:
         """Get server status."""
         response = self.session.get(f"{self.base_url}/state")
         return ServerState.model_validate_json(response.text)
+
+    def ping(self) -> bool:
+        """Get server status."""
+        try:
+            response = self.session.get(
+                f"{self.base_url}/ping", timeout=self.ping_timeout
+            )
+        except requests.exceptions.ConnectionError:
+            return False
+        return response.status_code == requests.codes.ok
 
     # Controls
     def play(self, rank: Optional[Annotated[int, Ge(0)]] = None) -> PlayerControl:

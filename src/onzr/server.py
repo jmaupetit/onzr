@@ -163,3 +163,9 @@ async def state(
 ) -> ServerState:
     """Server state."""
     return onzr.state()
+
+
+@app.get("/ping")
+async def ping() -> None:
+    """Server ping."""
+    return
