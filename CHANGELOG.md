@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- CLI: add all command options short name
+
 ## [0.4.0] - 2025-10-22
 
 ### Added

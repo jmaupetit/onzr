@@ -3,34 +3,35 @@
 ```
 $ onzr --help
 
-
  Usage: onzr [OPTIONS] COMMAND [ARGS]...
 
-╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --install-completion          Install completion for the current shell.      │
-│ --show-completion             Show completion for the current shell, to copy │
-│                               it or customize the installation.              │
-│ --help                        Show this message and exit.                    │
-╰──────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ───────────────────────────────────────────────────────────────────╮
-│ init       Intialize onzr player.                                            │
-│ search     Search track, artist and/or album.                                │
-│ artist     Get artist popular track ids.                                     │
-│ album      Get album track ids.                                              │
-│ mix        Create a playlist from multiple artists.                          │
-│ add        Add one (or more) tracks to the queue.                            │
-│ queue      List queue tracks.                                                │
-│ clear      Empty queue.                                                      │
-│ now        Get info about now playing track.                                 │
-│ play       Play queue.                                                       │
-│ pause      Pause/resume playing.                                             │
-│ stop       Stop playing queue.                                               │
-│ next       Play next track in queue.                                         │
-│ previous   Play previous track in queue.                                     │
-│ serve      Run onzr http server.                                             │
-│ state      Get server state.                                                 │
-│ version    Get program version.                                              │
-╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.              │
+│ --show-completion             Show completion for the current shell, to copy it or   │
+│                               customize the installation.                            │
+│ --help                        Show this message and exit.                            │
+╰──────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────────────╮
+│ init       Intialize onzr player.                                                    │
+│ config     Display or edit Onzr's configuration.                                     │
+│ search     Search tracks, artists and/or albums.                                     │
+│ artist     Get artist popular track ids.                                             │
+│ album      Get album tracks.                                                         │
+│ mix        Create a playlist from multiple artists.                                  │
+│ add        Add one (or more) tracks to the queue.                                    │
+│ queue      List queue tracks.                                                        │
+│ clear      Empty queue.                                                              │
+│ now        Show details about the track that is being played and the player status.  │
+│ play       Play queued tracks.                                                       │
+│ pause      Pause/resume playing.                                                     │
+│ stop       Stop playing queue.                                                       │
+│ next       Play next track in queue.                                                 │
+│ previous   Play previous track in queue.                                             │
+│ serve      Run onzr http server.                                                     │
+│ state      Get server state.                                                         │
+│ version    Get program version.                                                      │
+│ openapi    Get Onzr HTTP API OpenAPI schema.                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 Remember that Onzr is a CLI (Command Line Interface) and that we love UNIX. That

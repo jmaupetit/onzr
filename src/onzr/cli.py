@@ -17,7 +17,6 @@ import pendulum
 import typer
 import uvicorn
 import yaml
-from pydantic import PositiveInt
 from rich.console import Console, Group
 from rich.live import Live
 from rich.logging import RichHandler
@@ -191,8 +190,12 @@ def init():
 
 @cli.command()
 def config(
-    path: Annotated[bool, typer.Option("--path", "-p")] = False,
-    edit: Annotated[bool, typer.Option("--edit", "-e")] = False,
+    path: Annotated[
+        bool, typer.Option("--path", "-p", help="Show configuration path and exit.")
+    ] = False,
+    edit: Annotated[
+        bool, typer.Option("--edit", "-e", help="Edit configuration in $EDITOR.")
+    ] = False,
 ):
     """Display or edit Onzr's configuration."""
     user_config_path = get_onzr_dir() / SETTINGS_FILE
@@ -218,14 +221,27 @@ def config(
 
 @cli.command()
 def search(  # noqa: PLR0913
-    artist: str = "",
-    album: str = "",
-    track: str = "",
-    strict: bool = False,
-    quiet: bool = False,
-    ids: bool = False,
+    artist: Annotated[
+        str, typer.Option("--artist", "-A", help="Search by artist name.")
+    ] = "",
+    album: Annotated[
+        str, typer.Option("--album", "-a", help="Search by album name.")
+    ] = "",
+    track: Annotated[
+        str, typer.Option("--track", "-t", help="Search by track title.")
+    ] = "",
+    strict: Annotated[
+        bool, typer.Option("--strict", "-s", help="Only consider strict matches.")
+    ] = False,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
 ):
-    """Search track, artist and/or album."""
+    """Search tracks, artists and/or albums.
+
+    Note that search criterion can be combined (e.g. artist and album).
+    """
     if ids:
         quiet = True
     deezer = get_deezer_client(quiet=quiet)
@@ -249,14 +265,29 @@ def search(  # noqa: PLR0913
 @cli.command()
 def artist(  # noqa: PLR0913
     artist_id: str,
-    top: bool = True,
-    radio: bool = False,
-    albums: bool = False,
-    limit: int = 10,
-    quiet: bool = False,
-    ids: bool = False,
+    top: Annotated[
+        bool, typer.Option("--top/--no-top", "-t/-T", help="Show artist top tracks.")
+    ] = True,
+    radio: Annotated[
+        bool,
+        typer.Option("--radio", "-r", help="Show artist-inspired tracks."),
+    ] = False,
+    albums: Annotated[
+        bool, typer.Option("--albums", "-a", help="Show artist albums.")
+    ] = False,
+    limit: Annotated[
+        int, typer.Option("--limit", "-l", help="Limit to the l first hits.")
+    ] = 10,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
 ):
-    """Get artist popular track ids."""
+    """Get artist popular track ids.
+
+    Remember to increase the default limit to show all artist albums if it has produced
+    more than one.
+    """
     if all([not top, not radio, not albums]):
         console.print("You should choose either top titles, artist radio or albums.")
         raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS)
@@ -287,10 +318,12 @@ def artist(  # noqa: PLR0913
 @cli.command()
 def album(
     album_id: str,
-    quiet: bool = False,
-    ids: bool = False,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
 ):
-    """Get album track ids."""
+    """Get album tracks."""
     if ids:
         quiet = True
 
@@ -312,10 +345,19 @@ def album(
 @cli.command()
 def mix(
     artist: list[str],
-    deep: bool = False,
-    limit: int = 10,
-    quiet: bool = False,
-    ids: bool = False,
+    deep: Annotated[
+        bool,
+        typer.Option(
+            "--deep", "-d", help="Create a mix with related artists (like a radio)."
+        ),
+    ] = False,
+    limit: Annotated[
+        int, typer.Option("--limit", "-l", help="Limit to the l first hits per artist.")
+    ] = 10,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
 ):
     """Create a playlist from multiple artists."""
     if ids:
@@ -441,8 +483,16 @@ def clear():
 
 
 @cli.command()
-def now(follow: Annotated[bool, typer.Option("--follow", "-f")] = False):
-    """Get info about now playing track."""
+def now(
+    follow: Annotated[
+        bool, typer.Option("--follow", "-f", help="Follow what's happening.")
+    ] = False,
+):
+    """Show details about the track that is being played and the player status.
+
+    In follow mode, you won't get the prompt back. You should type CTRL+C to exit this
+    mode.
+    """
     client = OnzrClient()
     theme = get_theme()
 
@@ -537,8 +587,18 @@ def now(follow: Annotated[bool, typer.Option("--follow", "-f")] = False):
 
 
 @cli.command()
-def play(rank: PositiveInt | None = None):
-    """Play queue."""
+def play(
+    rank: Annotated[
+        int | None,
+        typer.Option(
+            "--rank", "-r", help="Start playing the queue starting at the rank r."
+        ),
+    ] = None,
+):
+    """Play queued tracks.
+
+    If the player is paused, this command will resume the track.
+    """
     theme = get_theme()
     if rank is not None and rank < 1:
         console.print(
@@ -583,9 +643,18 @@ def previous():
 
 @cli.command()
 def serve(
-    host: str = "localhost",
-    port: int = 9473,
-    log_level: str = "info",
+    host: Annotated[
+        str, typer.Option("--host", "-H", help="Server host name.")
+    ] = "localhost",
+    port: Annotated[int, typer.Option("--port", "-P", help="Server port.")] = 9473,
+    log_level: Annotated[
+        str,
+        typer.Option(
+            "--log-level",
+            "-L",
+            help="Server log level (debug, info, warning, error, critical).",
+        ),
+    ] = "info",
 ):
     """Run onzr http server."""
     theme = get_theme()

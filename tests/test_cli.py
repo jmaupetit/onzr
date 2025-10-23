@@ -202,9 +202,7 @@ def test_artist_command_with_no_id(configured_cli_runner):
 def test_artist_command(configured_cli_runner, monkeypatch):
     """Test the `onzr artist` command."""
     # One should choose one type of result
-    result = configured_cli_runner.invoke(
-        cli, ["artist", "--no-top", "--no-radio", "--no-albums", "1"]
-    )
+    result = configured_cli_runner.invoke(cli, ["artist", "1", "--no-top"])
     assert result.exit_code == ExitCodes.INVALID_ARGUMENTS
 
     top_collection = copy.copy(tracks_collection)
