@@ -23,6 +23,7 @@ def test_track_init(configured_onzr, responses):
     track_duration = 120
     track_artist = "Jimi Hendrix"
     track_title = "All along the watchtower"
+    track_version = "(Dylan remix)"
     track_album = "Experience"
     track_picture = "ABCDEF"
     track_filesize_mp3_128 = 128
@@ -40,6 +41,7 @@ def test_track_init(configured_onzr, responses):
                 DURATION=track_duration,
                 ART_NAME=track_artist,
                 SNG_TITLE=track_title,
+                VERSION=track_version,
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
                 FILESIZE_MP3_128=track_filesize_mp3_128,
@@ -60,7 +62,7 @@ def test_track_init(configured_onzr, responses):
         token=track_token,
         duration=track_duration,
         artist=track_artist,
-        title=track_title,
+        title=f"{track_title} {track_version}",
         album=track_album,
         picture=track_picture,
         formats=[
@@ -72,7 +74,7 @@ def test_track_init(configured_onzr, responses):
     assert track.token == track_token
     assert track.duration == track_duration
     assert track.artist == track_artist
-    assert track.title == track_title
+    assert track.title == f"{track_title} {track_version}"
     assert track.album == track_album
     assert track.picture == track_picture
     assert track.cover_small == HttpUrl(
@@ -87,7 +89,10 @@ def test_track_init(configured_onzr, responses):
     assert track.cover_xl == HttpUrl(
         "https://e-cdns-images.dzcdn.net/images/cover/ABCDEF/1000x1000-000000-80-0-0.jpg"
     )
-    assert track.full_title == f"{track_artist} - {track_title} [{track_album}]"
+    assert (
+        track.full_title
+        == f"{track_artist} - {track_title} {track_version} [{track_album}]"
+    )
 
     # If picture is None
     track.track_info.picture = None
@@ -140,6 +145,7 @@ def test_track_init(configured_onzr, responses):
                 DURATION=track_duration,
                 ART_NAME=track_artist,
                 SNG_TITLE=track_title,
+                VERSION="",
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
                 FILESIZE_MP3_128=0,
@@ -153,6 +159,31 @@ def test_track_init(configured_onzr, responses):
         match=r"No available formats detected for track \d+$",
     ):
         Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+
+    # Test when no version is supplied
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=DeezerSongResponseFactory.build(
+            error={},
+            results=DeezerSongFactory.build(
+                SNG_ID=track_id,
+                TRACK_TOKEN=track_token,
+                DURATION=track_duration,
+                ART_NAME=track_artist,
+                SNG_TITLE=track_title,
+                VERSION="",
+                ALB_TITLE=track_album,
+                ALB_PICTURE=track_picture,
+                FILESIZE_MP3_128=track_filesize_mp3_128,
+                FILESIZE_MP3_320=track_filesize_mp3_320,
+                FILESIZE_FLAC=track_filesize_flac,
+            ),
+        ).model_dump(),
+    )
+
+    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    assert track.title == track_title
 
 
 def test_track_query_quality(configured_onzr, responses):
@@ -214,6 +245,7 @@ def test_track_serialize(configured_onzr, responses):
                 DURATION=track_duration,
                 ART_NAME=track_artist,
                 SNG_TITLE=track_title,
+                VERSION="",
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
             ),

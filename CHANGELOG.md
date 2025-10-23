@@ -13,6 +13,10 @@ and this project adheres to
 - CLI: add all command options short name
 - CLI: add `--first/-f` option to the `search` command
 
+### Fixed
+
+- Store song version in track title
+
 ## [0.4.0] - 2025-10-22
 
 ### Added
