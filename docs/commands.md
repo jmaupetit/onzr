@@ -39,8 +39,7 @@ being said, you won't be surprised to pipe Onzr commands to achieve what you
 want.
 
 ```sh
-onzr search --artist "Lady Gaga" --ids | \
-    head -n 1 | \
+onzr search --artist "Lady Gaga" --ids --first | \
     onzr artist --top --limit 20 --ids - | \
     onzr add -
 ```
@@ -204,8 +203,7 @@ intent is to pipe your search result to another command (e.g. `artist` or
 `play`).
 
 ```sh
-onzr search --artist "Lady Gaga" --ids | \
-    head -n 1 | \
+onzr search --artist "Lady Gaga" --ids --first | \
     onzr artist - # (1)
 ```
 
@@ -257,8 +255,7 @@ onzr artist --top 192
     the same task if you don't remember artists IDs (I don't 😅):
 
     ```sh
-    onzr search --artist "Eric Clapton" --ids | \
-        head -n 1 | \
+    onzr search --artist "Eric Clapton" --ids --first | \
         onzr artist --top -
     ```
 
@@ -338,8 +335,7 @@ Enjoy:
 You can also explore artist's albums using the `--albums` option:
 
 ```sh
-onzr search --artist Radiohead --ids | \
-    head -n 1 | \
+onzr search --artist Radiohead --ids --first | \
     onzr artist --albums --limit 20 -
 ```
 
@@ -379,8 +375,7 @@ There you go, here is Radiohead's discography:
 The `album` command lists album tracks to check or play them:
 
 ```sh
-onzr search --album "Friday night in San Francisco" --ids | \
-    head -n 1 | \
+onzr search --album "Friday night in San Francisco" --ids --first | \
     onzr album -
 ```
 
@@ -419,8 +414,7 @@ To play the entire album, don't forget to list only track ids and pass them to
 the `add` command:
 
 ```sh
-onzr search --album "Friday night in San Francisco" --ids | \
-    head -n 1 | \
+onzr search --album "Friday night in San Francisco" --ids --first | \
     onzr album --ids - | \
     onzr add -
 ```
@@ -597,8 +591,7 @@ onzr now -f
 The `play` command does what it says: it (re-)starts playing queued tracks.
 
 ```sh
-onzr search --artist "Go go penguin" --ids | \
-    head -n 1 | \
+onzr search --artist "Go go penguin" --ids --first | \
     onzr artist --ids - | \
     onzr add - && \
     onzr play

@@ -192,6 +192,14 @@ def test_search_command(configured_cli_runner, monkeypatch, option, results):
     expected = "".join([f"{r.id}\n" for r in results])
     assert result.stdout == expected
 
+    # Test first option
+    result = configured_cli_runner.invoke(
+        cli, ["search", f"--{option}", "foo", "--ids", "--first"]
+    )
+    assert result.exit_code == ExitCodes.OK
+    expected = f"{results[0].id}\n"
+    assert result.stdout == expected
+
 
 def test_artist_command_with_no_id(configured_cli_runner):
     """Test the `onzr artist` command with no ID."""

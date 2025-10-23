@@ -55,10 +55,8 @@ documentation for details about running Onzr server.
 Play your first album:
 
 ```sh
-onzr search --artist "Billie Eilish" --ids | \
-    head -n 1 | \
-    onzr artist --albums --ids - | \
-    head -n 1 | \
+onzr search --artist "Billie Eilish" --ids --first | \
+    onzr artist --albums --ids --limit 1 - | \
     onzr album --ids - | \
     onzr add - && \
     onzr play

@@ -233,6 +233,9 @@ def search(  # noqa: PLR0913
     strict: Annotated[
         bool, typer.Option("--strict", "-s", help="Only consider strict matches.")
     ] = False,
+    first: Annotated[
+        bool, typer.Option("--first", "-f", help="Limit to the first match.")
+    ] = False,
     quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
     ids: Annotated[
         bool, typer.Option("--ids", "-i", help="Show only result IDs.")
@@ -254,6 +257,9 @@ def search(  # noqa: PLR0913
     if not results:
         console.print(f"❌ [{theme.alert_color}]No match found[/{theme.alert_color}]")
         raise typer.Exit(code=ExitCodes.NOT_FOUND)
+
+    if first:
+        results = results[:1]
 
     if ids:
         print_collection_ids(results)
