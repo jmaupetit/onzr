@@ -27,9 +27,6 @@ settings = get_settings()
 app = FastAPI(title="Onzr", root_path=settings.API_ROOT_URL, debug=settings.DEBUG)
 
 
-logger.info("Starting Onzr server…")
-
-
 @lru_cache
 def get_onzr() -> Onzr:
     """Get Onzr core instance."""
@@ -163,3 +160,9 @@ async def state(
 ) -> ServerState:
     """Server state."""
     return onzr.state()
+
+
+@app.get("/ping")
+async def ping() -> None:
+    """Server ping."""
+    return

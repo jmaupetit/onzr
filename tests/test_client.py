@@ -127,6 +127,18 @@ def test_state(test_server, configured_onzr, track):
     configured_onzr.player.stop()
 
 
+def test_ping_server_down(configured_onzr):
+    """Test the `ping` method when the server is down."""
+    client = OnzrClient()
+    assert client.ping() is False
+
+
+def test_ping_server(test_server, configured_onzr):
+    """Test the `ping` method when the server is down."""
+    client = OnzrClient()
+    assert client.ping()
+
+
 def test_play(test_server, configured_onzr, track):
     """Test the `play` method."""
     client = OnzrClient()
