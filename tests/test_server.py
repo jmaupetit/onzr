@@ -328,3 +328,10 @@ def test_state(client, configured_onzr, track):
         # Should mock queue.playing
         "queue": {"playing": None, "queued": 3},
     }
+
+
+def test_ping(client):
+    """Test the GET /ping endpoint."""
+    response = client.get("/ping")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() is None

@@ -49,10 +49,27 @@ SYSTEM_EXIT_1 = 1
 SYSTEM_EXIT_2 = 2
 
 
+def test_require_server_command_wrapper(configured_cli_runner):
+    """Test the `require_server` decorator."""
+    result = configured_cli_runner.invoke(cli, ["state"])
+    assert result.exit_code == ExitCodes.SERVER_DOWN
+    assert "❌ Onzr server is down, run `onzr serve` first." in result.stdout
+
+
 def test_command_help(cli_runner):
     """Test the `onzr --help` command."""
     result = cli_runner.invoke(cli, ["--help"])
     assert result.exit_code == ExitCodes.OK
+
+
+def test_openapi_command(test_server, configured_cli_runner):
+    """Test the `onzr openapi` command."""
+    result = configured_cli_runner.invoke(cli, ["openapi"])
+    assert result.exit_code == ExitCodes.OK
+
+    # FIXME: a server log is captured as stdout (row 1)
+    schema = json.loads(result.stdout.split("\n")[1])
+    assert "openapi" in schema
 
 
 def test_init_command_without_input(cli_runner, settings_file):
@@ -656,12 +673,3 @@ def test_version_command(configured_cli_runner):
     result = configured_cli_runner.invoke(cli, ["version"])
     assert result.exit_code == ExitCodes.OK
     assert pattern.match(result.stdout)
-
-
-def test_command_openapi(test_server, configured_cli_runner):
-    """Test the `onzr openapi` command."""
-    result = configured_cli_runner.invoke(cli, ["openapi"])
-    assert result.exit_code == ExitCodes.OK
-
-    schema = json.loads(result.stdout)
-    assert "openapi" in schema
