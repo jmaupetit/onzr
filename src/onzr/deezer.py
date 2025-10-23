@@ -233,7 +233,11 @@ class Track:
             token=track_info["TRACK_TOKEN"],
             duration=track_info["DURATION"],
             artist=track_info["ART_NAME"],
-            title=track_info["SNG_TITLE"],
+            title=(
+                f"{track_info['SNG_TITLE']} {track_info['VERSION']}"
+                if track_info["VERSION"]
+                else track_info["SNG_TITLE"]
+            ),
             album=track_info["ALB_TITLE"],
             picture=track_info["ALB_PICTURE"],
             formats=[
