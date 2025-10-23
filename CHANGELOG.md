@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - CLI: add all command options short name
+- CLI: add `--first/-f` option to the `search` command
 
 ## [0.4.0] - 2025-10-22
 
