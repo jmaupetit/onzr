@@ -18,7 +18,7 @@ class DeezerSong(BaseModel):
     DURATION: int
     ART_NAME: str
     SNG_TITLE: str
-    VERSION: str = ""
+    VERSION: str | None = None
     ALB_TITLE: str
     ALB_PICTURE: str
     FILESIZE_MP3_128: int

@@ -235,7 +235,7 @@ class Track:
             artist=track_info["ART_NAME"],
             title=(
                 f"{track_info['SNG_TITLE']} {track_info['VERSION']}"
-                if track_info["VERSION"]
+                if "VERSION" in track_info and track_info["VERSION"]
                 else track_info["SNG_TITLE"]
             ),
             album=track_info["ALB_TITLE"],
