@@ -160,7 +160,7 @@ def test_track_init(configured_onzr, responses):
     ):
         Track(client=configured_onzr.deezer, track_id=track_id, background=False)
 
-    # Test when no version is supplied
+    # Test when no version is supplied (empty string)
     responses.post(
         "http://www.deezer.com/ajax/gw-light.php",
         status=200,
@@ -180,6 +180,33 @@ def test_track_init(configured_onzr, responses):
                 FILESIZE_FLAC=track_filesize_flac,
             ),
         ).model_dump(),
+    )
+
+    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    assert track.title == track_title
+
+    # Test when no version is supplied (field not in payload)
+    payload = DeezerSongResponseFactory.build(
+        error={},
+        results=DeezerSongFactory.build(
+            SNG_ID=track_id,
+            TRACK_TOKEN=track_token,
+            DURATION=track_duration,
+            ART_NAME=track_artist,
+            SNG_TITLE=track_title,
+            ALB_TITLE=track_album,
+            ALB_PICTURE=track_picture,
+            FILESIZE_MP3_128=track_filesize_mp3_128,
+            FILESIZE_MP3_320=track_filesize_mp3_320,
+            FILESIZE_FLAC=track_filesize_flac,
+        ),
+    )
+    del payload.results.VERSION
+
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=payload.model_dump(),
     )
 
     track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
