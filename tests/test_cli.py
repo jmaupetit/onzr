@@ -49,6 +49,13 @@ SYSTEM_EXIT_1 = 1
 SYSTEM_EXIT_2 = 2
 
 
+def test_require_server_command_wrapper(configured_cli_runner):
+    """Test the `require_server` decorator."""
+    result = configured_cli_runner.invoke(cli, ["state"])
+    assert result.exit_code == ExitCodes.SERVER_DOWN
+    assert "❌ Onzr server is down, run `onzr serve` first." in result.stdout
+
+
 def test_command_help(cli_runner):
     """Test the `onzr --help` command."""
     result = cli_runner.invoke(cli, ["--help"])
@@ -663,5 +670,6 @@ def test_command_openapi(test_server, configured_cli_runner):
     result = configured_cli_runner.invoke(cli, ["openapi"])
     assert result.exit_code == ExitCodes.OK
 
-    schema = json.loads(result.stdout)
+    # FIXME: a server log is captured as stdout (row 1)
+    schema = json.loads(result.stdout.split("\n")[1])
     assert "openapi" in schema

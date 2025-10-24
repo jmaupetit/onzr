@@ -13,6 +13,10 @@ and this project adheres to
 - CLI: add all command options short name
 - CLI: add `--first/-f` option to the `search` command
 
+### Changed
+
+- CLI: require Onzr server to be up before running commands that depend on it
+
 ### Fixed
 
 - Store song version in track title
