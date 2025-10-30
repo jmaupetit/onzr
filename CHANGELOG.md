@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Update server OpenAPI specification
+
 ## [0.5.0] - 2025-10-30
 
 ### Added
