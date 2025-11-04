@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-11-04
+
 ### Fixed
 
 - CLI: restore track progression bar (and length) for MP3 files
@@ -94,8 +96,8 @@ and this project adheres to
 
 - Implement a draft CLI using VLC
 
-[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.5.1...main
-
+[unreleased]: https://github.com/jmaupetit/onzr/compare/v0.5.2...main
+[0.5.2] https://github.com/jmaupetit/onzr/compare/v0.5.1...v0.5.2
 [0.5.1] https://github.com/jmaupetit/onzr/compare/v0.5.0...v0.5.1
 [0.5.0] https://github.com/jmaupetit/onzr/compare/v0.4.0...v0.5.0
 [0.4.0] https://github.com/jmaupetit/onzr/compare/v0.3.0...v0.4.0
