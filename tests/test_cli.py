@@ -404,7 +404,9 @@ def test_clear_command(test_server, configured_cli_runner, configured_onzr, trac
     assert configured_onzr.queue.is_empty
 
 
-def test_now_command(test_server, configured_cli_runner, configured_onzr, track):
+def test_now_command(
+    test_server, configured_cli_runner, configured_onzr, track, responses
+):
     """Test the `onzr clear` command."""
     # Empty queue
     result = configured_cli_runner.invoke(cli, ["now"])
@@ -413,13 +415,32 @@ def test_now_command(test_server, configured_cli_runner, configured_onzr, track)
 
     # Fill the queue
     track_ids = [1, 2, 3]
-    configured_onzr.queue.add([track(track_id) for track_id in track_ids])
+    durations = [128, 245, 142]
+    configured_onzr.queue.add(
+        [
+            track(track_id, DURATION=duration)
+            for track_id, duration in zip(track_ids, durations, strict=True)
+        ]
+    )
     assert len(configured_onzr.queue) == len(track_ids)
 
     # Still nothing to display
     result = configured_cli_runner.invoke(cli, ["now"])
     assert result.exit_code == ExitCodes.OK
     assert "Nothing more has been queued" in result.stdout
+
+    # Nota bene:
+    #
+    # Mock track info response as we will refresh this info before playing. If we do
+    # not mock this here, we will use the latest available response for this track
+    # which corresponds to the third track (and not the first).
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=DeezerSongResponseFactory.build(
+            error={}, results=DeezerSongFactory.build(SNG_ID=1, DURATION=128)
+        ).model_dump(),
+    )
 
     # Start playing
     configured_onzr.player.play()
@@ -429,6 +450,7 @@ def test_now_command(test_server, configured_cli_runner, configured_onzr, track)
     assert "· (1/3)" in result.stdout
     assert "▶️" in result.stdout
     assert "Next:" in result.stdout
+    assert " 00:02:08" in result.stdout
 
 
 def test_play_command(test_server, configured_cli_runner, configured_onzr, track):

@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- CLI: restore track progression bar (and length) for MP3 files
+
 ## [0.5.1] - 2025-10-30
 
 ### Fixed

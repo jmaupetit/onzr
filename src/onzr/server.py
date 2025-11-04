@@ -94,10 +94,14 @@ async def now_playing(
     """Get info about current track."""
     track = onzr.queue.current
     media_player = onzr.player.get_media_player()
+    length: int = media_player.get_length()
+    if track and length == 0:
+        logger.debug("Player cannot guess track length. Falling back to track info.")
+        length = track.duration * 1000 if isinstance(track.duration, int) else 0
     return PlayingState(
         player=PlayerState(
             state=str(media_player.get_state()),
-            length=media_player.get_length(),
+            length=length,
             time=media_player.get_time(),
             position=media_player.get_position(),
         ),

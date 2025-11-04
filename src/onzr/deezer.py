@@ -219,6 +219,10 @@ class Track:
         self.status: TrackStatus = TrackStatus.IDLE
         self.streamed: int = 0
 
+    def __str__(self) -> str:
+        """Get track str representation."""
+        return f"ID: {self.track_id}"
+
     def _set_track_info(self):
         """Get track info."""
         track_info = self.deezer.gw.get_track(self.track_id)
@@ -286,34 +290,34 @@ class Track:
             b"\x00\x01\x02\x03\x04\x05\x06\x07",
         ).decrypt(chunk)
 
-    def _get_track_info_attribute(self, field: str) -> Any | None:
+    def _get_track_info_attribute(self, field: str) -> Any:
         """Get self.track_info attribute if defined."""
         if self.track_info is None:
             return "fetching…"
-        return getattr(self.track_info, field, None)
+        return getattr(self.track_info, field, "missing info")
 
     @property
-    def token(self) -> str | None:
+    def token(self) -> str:
         """Get track token."""
         return self._get_track_info_attribute("token")
 
     @property
-    def duration(self) -> int | None:
+    def duration(self) -> int:
         """Get track duration (in seconds)."""
         return self._get_track_info_attribute("duration")
 
     @property
-    def artist(self) -> str | None:
+    def artist(self) -> str:
         """Get track artist."""
         return self._get_track_info_attribute("artist")
 
     @property
-    def title(self) -> str | None:
+    def title(self) -> str:
         """Get track title."""
         return self._get_track_info_attribute("title")
 
     @property
-    def album(self) -> str | None:
+    def album(self) -> str:
         """Get track album."""
         return self._get_track_info_attribute("album")
 

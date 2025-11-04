@@ -3,7 +3,7 @@
 from enum import StrEnum
 from typing import Annotated, List, Optional, TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PositiveInt
 from pydantic_extra_types.color import Color
 
 
@@ -100,7 +100,7 @@ class TrackInfo(BaseModel):
     artist: str
     picture: str
     token: str
-    duration: int
+    duration: PositiveInt
     formats: List[StreamQuality]
 
 

@@ -175,13 +175,13 @@ def track(responses, configured_onzr, faker, monkeypatch):
             while chunk := content.read(chunk_size):
                 yield chunk
 
-    def _track(track_id: int | None = None):
+    def _track(track_id: int | None = None, **kwargs):
         track_id = faker.pyint() if track_id is None else track_id
         responses.post(
             "http://www.deezer.com/ajax/gw-light.php",
             status=200,
             json=DeezerSongResponseFactory.build(
-                error={}, results=DeezerSongFactory.build(SNG_ID=track_id)
+                error={}, results=DeezerSongFactory.build(SNG_ID=track_id, **kwargs)
             ).model_dump(),
         )
         track = Track(configured_onzr.deezer, track_id)
