@@ -3,7 +3,7 @@
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import PositiveInt
 
-from onzr.models.core import AlbumShort, ArtistShort, TrackShort
+from onzr.models.core import AlbumShort, ArtistShort, PlaylistShort, TrackShort
 from onzr.models.deezer import (
     DeezerAdvancedSearchResponse,
     DeezerAlbum,
@@ -12,8 +12,10 @@ from onzr.models.deezer import (
     DeezerArtistAlbumsResponse,
     DeezerArtistRadioResponse,
     DeezerArtistTopResponse,
+    DeezerPlaylist,
     DeezerSearchAlbumResponse,
     DeezerSearchArtistResponse,
+    DeezerSearchPlaylistResponse,
     DeezerSearchTrackResponse,
     DeezerSong,
     DeezerSongResponse,
@@ -36,6 +38,10 @@ class DeezerAlbumFactory(ModelFactory[DeezerAlbum]):
 
 class DeezerArtistFactory(ModelFactory[DeezerArtist]):
     """DeezerArtist factory."""
+
+
+class DeezerPlaylistFactory(ModelFactory[DeezerPlaylist]):
+    """DeezerPlaylist factory."""
 
 
 class DeezerTrackFactory(ModelFactory[DeezerTrack]):
@@ -74,12 +80,12 @@ class DeezerSearchAlbumResponseFactory(ModelFactory[DeezerSearchAlbumResponse]):
     """DeezerSearchAlbumResponse factory."""
 
 
+class DeezerSearchPlaylistResponseFactory(ModelFactory[DeezerSearchPlaylistResponse]):
+    """DeezerSearchPlaylistResponse factory."""
+
+
 class DeezerSearchTrackResponseFactory(ModelFactory[DeezerSearchTrackResponse]):
     """DeezerSearchTrackResponse factory."""
-
-
-class TrackShortFactory(ModelFactory[TrackShort]):
-    """TrackShort factory."""
 
 
 class AlbumShortFactory(ModelFactory[AlbumShort]):
@@ -88,3 +94,11 @@ class AlbumShortFactory(ModelFactory[AlbumShort]):
 
 class ArtistShortFactory(ModelFactory[ArtistShort]):
     """ArtistShort factory."""
+
+
+class PlaylistShortFactory(ModelFactory[PlaylistShort]):
+    """PlaylistShort factory."""
+
+
+class TrackShortFactory(ModelFactory[TrackShort]):
+    """TrackShort factory."""
