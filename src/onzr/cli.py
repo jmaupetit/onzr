@@ -42,6 +42,7 @@ from .models import (
     ArtistShort,
     Collection,
     PlayerControl,
+    PlaylistShort,
     ServerState,
     TrackShort,
 )
@@ -163,6 +164,12 @@ def print_collection_table(collection: Collection, title="Collection"):
         )  # type: ignore[assignment]
         collection.extend(albums_without_release_date)  # type: ignore[arg-type]
 
+    if isinstance(sample, PlaylistShort):
+        table.add_column("Title")
+        table.add_column("Public")
+        table.add_column("# tracks")
+        table.add_column("User")
+
     for item in collection:
         table.add_row(*map(str, item.model_dump().values()))
 
@@ -250,6 +257,9 @@ def search(  # noqa: PLR0913
     track: Annotated[
         str, typer.Option("--track", "-t", help="Search by track title.")
     ] = "",
+    playlist: Annotated[
+        str, typer.Option("--playlist", "-p", help="Search by playlist name.")
+    ] = "",
     strict: Annotated[
         bool, typer.Option("--strict", "-s", help="Only consider strict matches.")
     ] = False,
@@ -272,7 +282,7 @@ def search(  # noqa: PLR0913
 
     if not quiet:
         console.print("🔍 start searching…")
-    results = deezer.search(artist, album, track, strict)
+    results = deezer.search(artist, album, track, playlist, strict)
 
     if not results:
         console.print(f"❌ [{theme.alert_color}]No match found[/{theme.alert_color}]")
