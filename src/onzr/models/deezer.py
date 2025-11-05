@@ -7,7 +7,14 @@ from typing import Annotated, Generator, Generic, List, Optional, TypeAlias, Typ
 from annotated_types import Ge, Gt
 from pydantic import BaseModel, PlainSerializer, PositiveInt
 
-from .core import AlbumShort, ArtistShort, StreamQuality, TrackInfo, TrackShort
+from .core import (
+    AlbumShort,
+    ArtistShort,
+    PlaylistShort,
+    StreamQuality,
+    TrackInfo,
+    TrackShort,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +86,46 @@ class DeezerTrack(BaseDeezerModel):
         )
 
 
+class DeezerUser(BaseDeezerModel):
+    """Deezer API user."""
+
+    id: PositiveInt
+    name: str
+
+
+class DeezerPlaylist(BaseDeezerModel):
+    """Deezer API playlist."""
+
+    id: PositiveInt
+    title: str
+    public: bool
+    nb_tracks: Annotated[int, Ge(0)]
+    # Creator is usually filled when requesting playlist details
+    creator: Optional[DeezerUser] = None
+    # User is filled when searching for playlists 🤷
+    user: Optional[DeezerUser] = None
+    tracks: Optional[DeezerAPIResponseCollection[DeezerTrack]] = None
+
+    def to_short(self) -> PlaylistShort:
+        """Get PlaylistShort."""
+        return PlaylistShort(
+            id=self.id,
+            title=self.title,
+            public=self.public,
+            nb_tracks=self.nb_tracks,
+            user=(
+                self.creator.name
+                if self.creator
+                else self.user.name if self.user else None
+            ),
+            tracks=(
+                [track.to_short() for track in self.tracks.data]
+                if self.tracks
+                else None
+            ),
+        )
+
+
 class DeezerAlbumResponse(BaseDeezerAPIResponse):
     """Deezer album response."""
 
@@ -113,11 +160,13 @@ DeezerArtistResponse: TypeAlias = (
 DeezerAdvancedSearchResponse = DeezerAPIResponseCollection[DeezerTrack]
 DeezerSearchAlbumResponse = DeezerAPIResponseCollection[DeezerAlbum]
 DeezerSearchArtistResponse = DeezerAPIResponseCollection[DeezerArtist]
+DeezerSearchPlaylistResponse = DeezerAPIResponseCollection[DeezerPlaylist]
 DeezerSearchTrackResponse = DeezerAPIResponseCollection[DeezerTrack]
 DeezerSearchResponse: TypeAlias = (
     DeezerAdvancedSearchResponse
     | DeezerSearchAlbumResponse
     | DeezerSearchArtistResponse
+    | DeezerSearchPlaylistResponse
     | DeezerSearchTrackResponse
 )
 
@@ -133,12 +182,7 @@ def to_tracks(
 ) -> Generator[TrackShort, None, None]:
     """Convert deezer API response tracks collection to short tracks."""
     for track in collection.data:
-        yield TrackShort(
-            id=track.id,
-            title=track.title,
-            album=track.album.title,
-            artist=track.artist.name,
-        )
+        yield track.to_short()
 
 
 def to_albums(
@@ -162,10 +206,15 @@ def to_artists(
 ) -> Generator[ArtistShort, None, None]:
     """Get artists collection iterator."""
     for artist in collection.data:
-        yield ArtistShort(
-            id=artist.id,
-            name=artist.name,
-        )
+        yield artist.to_short()
+
+
+def to_playlists(
+    collection: DeezerSearchPlaylistResponse,
+) -> Generator[PlaylistShort, None, None]:
+    """Get playlists collection iterator."""
+    for playlist in collection.data:
+        yield playlist.to_short()
 
 
 # Deezer API Gateway models

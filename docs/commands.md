@@ -17,6 +17,7 @@ $ onzr --help
 │ search     Search tracks, artists and/or albums.                                     │
 │ artist     Get artist popular track ids.                                             │
 │ album      Get album tracks.                                                         │
+│ playlist   Get playlist tracks.                                                      │
 │ mix        Create a playlist from multiple artists.                                  │
 │ add        Add one (or more) tracks to the queue.                                    │
 │ queue      List queue tracks.                                                        │
@@ -418,6 +419,82 @@ the `add` command:
 onzr search --album "Friday night in San Francisco" --ids --first | \
     onzr album --ids - | \
     onzr add -
+```
+
+## `playlist`
+
+The `playlist` command lists playlist tracks to check or play them:
+
+```sh
+onzr search --playlist "Peaky blinders" --ids --first | \
+    onzr playlist -
+```
+
+And there it is:
+
+```
+      « Peaky Blinders soundtrack » by Camojada - Deezer Soundtracks Editor      
+┏━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
+┃ #  ┃        ID ┃ Track              ┃ Album              ┃ Artist             ┃
+┡━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
+│ 1  │ 134523602 │ You Want It Darker │ You Want It Darker │ Leonard Cohen      │
+│ 2  │    935528 │ I'm a Man          │ Burn Your Own      │ Black Strobe       │
+│    │           │                    │ Church             │                    │
+│ 3  │  69000458 │ Red Right Hand     │ Let Love In        │ Nick Cave & The    │
+│    │           │                    │                    │ Bad Seeds          │
+│ 4  │ 127792993 │ In Flames          │ In Flames          │ Lungley            │
+│ 5  │  70322130 │ Do I Wanna Know?   │ AM                 │ Arctic Monkeys     │
+│ 6  │ 694053262 │ Blue Veins         │ Broken Boy         │ The Raconteurs     │
+│    │           │                    │ Soldiers           │                    │
+│ 7  │ 397479472 │ Evil               │ Holiday            │ Nadine Shah        │
+│    │           │                    │ Destination        │                    │
+│ 8  │ 138540343 │ I Might Be Wrong   │ Amnesiac           │ Radiohead          │
+│ 9  │    950489 │ The Hardest Button │ The Hardest Button │ The White Stripes  │
+│    │           │ to Button          │ to Button          │                    │
+│ 10 │ 106218096 │ Snake Oil          │ What Went Down     │ Foals              │
+│ 11 │   2963445 │ Clap Hands         │ Rain Dogs          │ Tom Waits          │
+│ 12 │  65445466 │ Riders on the      │ L.A. Woman         │ The Doors          │
+│    │           │ Storm              │                    │                    │
+│ 13 │   1169910 │ Down By The Water  │ To Bring You My    │ PJ Harvey          │
+│    │           │                    │ Love               │                    │
+│ 14 │  70322132 │ R U Mine?          │ AM                 │ Arctic Monkeys     │
+│ 15 │   4645351 │ Pull A U           │ Pull A U           │ The Kills          │
+│ 16 │ 620493572 │ Black Math         │ Elephant           │ The White Stripes  │
+│ 17 │ 138540341 │ You And Whose      │ Amnesiac           │ Radiohead          │
+│    │           │ Army?              │                    │                    │
+│ 18 │   5522774 │ What He Wrote      │ I Speak Because I  │ Laura Marling      │
+│    │           │                    │ Can                │                    │
+│ 19 │ 355649581 │ Breathless         │ Lovely Creatures - │ Nick Cave & The    │
+│    │           │                    │ The Best of Nick   │ Bad Seeds          │
+│    │           │                    │ Cave and The Bad   │                    │
+│    │           │                    │ Seeds (1984-2014)  │                    │
+│    │           │                    │ (Deluxe Edition)   │                    │
+│ 20 │ 137013086 │ Bad Habits         │ Everything You've  │ The Last Shadow    │
+│    │           │                    │ Come To Expect     │ Puppets            │
+│    │           │                    │ (Deluxe Edition)   │                    │
+│ 21 │ 116944274 │ Lazarus            │ Blackstar          │ David Bowie        │
+│ 22 │  65690370 │ Further On Up The  │ American V: A      │ Johnny Cash        │
+│    │           │ Road (Album        │ Hundred Highways   │                    │
+│    │           │ Version)           │                    │                    │
+│ 23 │ 694053192 │ Broken Boy Soldier │ Broken Boy         │ The Raconteurs     │
+│    │           │                    │ Soldiers           │                    │
+│ 24 │ 795435472 │ You’re Not God     │ You’re Not God     │ Anna Calvi         │
+│    │           │ (From ‘Peaky       │ (From ‘Peaky       │                    │
+│    │           │ Blinders’ Original │ Blinders’ Original │                    │
+│    │           │ Soundtrack)        │ Soundtrack)        │                    │
+│ 25 │   4637198 │ Crying Lightning   │ Crying Lightning   │ Arctic Monkeys     │
+│ 26 │ 344935301 │ The Longing        │ Life Love Flesh    │ Imelda May         │
+│    │           │                    │ Blood (Deluxe)     │                    │
+│ 27 │   2502145 │ This Is Love       │ Stories From The   │ PJ Harvey          │
+│    │           │                    │ City, Stories From │                    │
+│    │           │                    │ The Sea            │                    │
+│ 28 │    948066 │ The Hardest Button │ Elephant           │ The White Stripes  │
+│    │           │ To Button          │                    │                    │
+│ 29 │ 131590754 │ Abattoir Blues     │ Abattoir Blues /   │ Nick Cave & The    │
+│    │           │                    │ The Lyre of        │ Bad Seeds          │
+│    │           │                    │ Orpheus            │                    │
+│ 30 │   3129334 │ Pyramid Song       │ The Best Of        │ Radiohead          │
+└────┴───────────┴────────────────────┴────────────────────┴────────────────────┘
 ```
 
 ## `mix`

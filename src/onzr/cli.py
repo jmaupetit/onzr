@@ -42,6 +42,7 @@ from .models.core import (
     ArtistShort,
     Collection,
     PlayerControl,
+    PlaylistShort,
     ServerState,
     TrackShort,
 )
@@ -146,6 +147,7 @@ def print_collection_table(collection: Collection, title="Collection"):
     )
     logger.debug(f"{show_artist=} - {show_album=} - {show_track=}")
 
+    table.add_column("#", justify="left")
     table.add_column("ID", justify="right")
     if show_track:
         table.add_column("Track", style=theme.title_color.as_hex())
@@ -172,8 +174,17 @@ def print_collection_table(collection: Collection, title="Collection"):
         sorted_collection.extend(albums_without_release_date)
         collection = sorted_collection
 
-    for item in collection:
-        table.add_row(*map(str, item.model_dump(exclude_none=True).values()))
+    if isinstance(sample, PlaylistShort):
+        table.add_column("Title", style=theme.title_color.as_hex())
+        table.add_column("Public", style="italic")
+        table.add_column("# tracks", style="bold")
+        table.add_column("User", style=theme.secondary_color.as_hex())
+
+    for rk, item in enumerate(collection):
+        table.add_row(
+            str(rk + 1),
+            *map(str, item.model_dump(exclude_none=True, exclude={"tracks"}).values()),
+        )
 
     console.print(table)
 
@@ -259,6 +270,9 @@ def search(
     track: Annotated[
         str, typer.Option("--track", "-t", help="Search by track title.")
     ] = "",
+    playlist: Annotated[
+        str, typer.Option("--playlist", "-p", help="Search by playlist name.")
+    ] = "",
     strict: Annotated[
         bool, typer.Option("--strict", "-s", help="Only consider strict matches.")
     ] = False,
@@ -285,7 +299,7 @@ def search(
     if not quiet:
         console.print("🔍 start searching…")
     try:
-        results = deezer.search(artist, album, track, strict, release)
+        results = deezer.search(artist, album, track, playlist, strict, release)
     except ValueError as err:
         raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS) from err
 
@@ -389,6 +403,39 @@ def album(
         return
 
     print_collection_table(collection, title="Album tracks")
+
+
+@cli.command()
+def playlist(
+    playlist_id: str,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get playlist tracks."""
+    if ids:
+        quiet = True
+
+    if playlist_id == "-":
+        logger.debug("Reading playlist id from stdin…")
+        playlist_id = click.get_text_stream("stdin").read().strip()
+        logger.debug(f"{playlist_id=}")
+
+    deezer = get_deezer_client(quiet=quiet)
+    playlist = deezer.playlist(int(playlist_id))
+
+    if playlist.tracks is None:
+        console.print("This playlist contains no tracks")
+        raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS)
+
+    if ids:
+        print_collection_ids(playlist.tracks)
+        return
+
+    print_collection_table(
+        playlist.tracks, title=f"« {playlist.title} » by {playlist.user or '?'}"
+    )
 
 
 @cli.command()

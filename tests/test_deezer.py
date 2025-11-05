@@ -9,7 +9,13 @@ from pydantic import HttpUrl
 
 from onzr.deezer import DeezerClient, StreamQuality, Track, TrackStatus
 from onzr.exceptions import DeezerTrackException
-from onzr.models.core import AlbumShort, ArtistShort, TrackInfo, TrackShort
+from onzr.models.core import (
+    AlbumShort,
+    ArtistShort,
+    PlaylistShort,
+    TrackInfo,
+    TrackShort,
+)
 from tests.factories import (
     AlbumShortFactory,
     ArtistShortFactory,
@@ -20,8 +26,10 @@ from tests.factories import (
     DeezerArtistFactory,
     DeezerArtistRadioResponseFactory,
     DeezerArtistTopResponseFactory,
+    DeezerPlaylistFactory,
     DeezerSearchAlbumResponseFactory,
     DeezerSearchArtistResponseFactory,
+    DeezerSearchPlaylistResponseFactory,
     DeezerSearchTrackResponseFactory,
     DeezerSongFactory,
     DeezerSongResponseFactory,
@@ -183,6 +191,21 @@ def test_deezer_client_track(responses, deezer_client):
     assert track.id == track_id
 
 
+def test_deezer_client_playlist(responses, deezer_client):
+    """Test the DeezerClient `playlist` method."""
+    playlist_id = 666
+
+    payload = DeezerPlaylistFactory.build(id=playlist_id)
+    responses.get(
+        f"https://api.deezer.com/playlist/{playlist_id}",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    playlist = deezer_client.playlist(playlist_id=playlist_id)
+    assert isinstance(playlist, PlaylistShort)
+    assert playlist.id == playlist_id
+
+
 def test_deezer_client_search(responses, deezer_client):
     """Test the DeezerClient `search` method."""
     # Missing arguments
@@ -245,6 +268,17 @@ def test_deezer_client_search(responses, deezer_client):
     tracks = deezer_client.search(track="lol", fetch_release_date=True)
     assert isinstance(tracks[0], TrackShort)
     assert len(tracks) == len(payload.data)
+
+    # Playlist
+    payload = DeezerSearchPlaylistResponseFactory.build()
+    responses.get(
+        "https://api.deezer.com/search/playlist",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    playlists = deezer_client.search(playlist="jazz")
+    assert isinstance(playlists[0], PlaylistShort)
+    assert len(playlists) == len(payload.data)
 
 
 def test_stream_quality_enum():

@@ -10,10 +10,13 @@ and this project adheres to
 
 ### Added
 
+- Add playlist support
 - Add fallback track support
 - Fetch track details in separated threads (when requested)
 - Add the `CONNECTION_POOL_MAXSIZE` configuration setting
 - Add the `ALWAYS_FETCH_RELEASE_DATE` configuration setting
+- CLI: add the `playlist` command
+- CLI: add the `search` command `--playlist/-p` option
 - CLI: add track/album release date to outputs for the `search` 
   and `artist` commands using the `-r/--release` option
 

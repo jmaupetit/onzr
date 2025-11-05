@@ -1,7 +1,5 @@
 """Onzr CLI tests."""
 
-import copy
-import datetime
 import json
 import logging
 import re
@@ -20,41 +18,21 @@ import onzr
 from onzr.cli import ExitCodes, cli
 from onzr.deezer import DeezerClient
 from onzr.exceptions import OnzrConfigurationError
-from onzr.models.core import AlbumShort, ArtistShort, Collection, TrackShort
-from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
+from onzr.models.core import Collection
+from tests.factories import (
+    AlbumShortFactory,
+    ArtistShortFactory,
+    DeezerSongFactory,
+    DeezerSongResponseFactory,
+    PlaylistShortFactory,
+    TrackShortFactory,
+)
 
 # Test fixtures
-artist_1 = ArtistShort(id=1, name="foo")
-artist_2 = ArtistShort(id=2, name="bar")
-artists_collection: Collection = [artist_1, artist_2]
-album_1 = AlbumShort(
-    id=11,
-    title="foo",
-    artist="foo",
-    release_date=datetime.date(2025, 1, 1),
-)
-album_2 = AlbumShort(
-    id=12,
-    title="bar",
-    artist="bar",
-    release_date=datetime.date(1925, 10, 1),
-)
-albums_collection: Collection = [album_1, album_2]
-track_1 = TrackShort(
-    id=21,
-    title="foo",
-    album="foo",
-    artist="foo",
-    release_date=datetime.date(2025, 1, 1),
-)
-track_2 = TrackShort(
-    id=22,
-    title="bar",
-    album="bar",
-    artist="foo",
-    release_date=datetime.date(1925, 10, 1),
-)
-tracks_collection: Collection = [track_1, track_2]
+artists_collection: Collection = ArtistShortFactory.batch(2)
+albums_collection: Collection = AlbumShortFactory.batch(2)
+playlists_collection: Collection = PlaylistShortFactory.batch(2)
+tracks_collection: Collection = TrackShortFactory.batch(2)
 
 # System exit codes
 SYSTEM_EXIT_1 = 1
@@ -179,7 +157,7 @@ def test_search_command_with_no_argument(configured_cli_runner):
     assert result.exit_code == ExitCodes.INVALID_ARGUMENTS
 
 
-@pytest.mark.parametrize("option", ("artist", "album", "track"))
+@pytest.mark.parametrize("option", ("artist", "album", "track", "playlist"))
 def test_search_command_with_no_match(configured_cli_runner, monkeypatch, option):
     """Test the `onzr search` command with no match."""
 
@@ -199,6 +177,7 @@ def test_search_command_with_no_match(configured_cli_runner, monkeypatch, option
         ("artist", artists_collection),
         ("album", albums_collection),
         ("track", tracks_collection),
+        ("playlist", playlists_collection),
     ),
 )
 def test_search_command(configured_cli_runner, monkeypatch, option, results):
@@ -242,8 +221,7 @@ def test_artist_command(configured_cli_runner, monkeypatch):
     result = configured_cli_runner.invoke(cli, ["artist", "1", "--no-top"])
     assert result.exit_code == ExitCodes.INVALID_ARGUMENTS
 
-    top_collection = copy.copy(tracks_collection)
-    top_collection.reverse()
+    top_collection = TrackShortFactory.batch(3)
 
     def artist(*args, **kwargs):
         """Monkeypatch artist."""
@@ -312,6 +290,41 @@ def test_album_command(configured_cli_runner, monkeypatch):
         assert result.stdout == "".join([f"{t.id}\n" for t in tracks_collection])
 
 
+def test_playlist_command(configured_cli_runner, monkeypatch):
+    """Test the `onzr playlist` command."""
+    playlist_one = PlaylistShortFactory.build(
+        user="John Doe",
+        tracks=TrackShortFactory.batch(3),
+    )
+
+    monkeypatch.setattr(DeezerClient, "playlist", lambda x, y: playlist_one)
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["playlist", "1"])
+    assert result.exit_code == ExitCodes.OK
+
+    # Display only track ids
+    result = configured_cli_runner.invoke(cli, ["playlist", "--ids", "1"])
+    assert result.exit_code == ExitCodes.OK
+    assert result.stdout == "".join([f"{t.id}\n" for t in playlist_one.tracks])
+
+    # Use stdin
+    for input in ["1", " 1", " 1 ", "1 "]:
+        result = configured_cli_runner.invoke(
+            cli, ["playlist", "--ids", "-"], input=input
+        )
+        assert result.exit_code == ExitCodes.OK
+        assert result.stdout == "".join([f"{t.id}\n" for t in playlist_one.tracks])
+
+    # Empty playlist
+    empty = PlaylistShortFactory.build(user="John Doe", tracks=None)
+    monkeypatch.setattr(DeezerClient, "playlist", lambda x, y: empty)
+
+    result = configured_cli_runner.invoke(cli, ["playlist", "1"])
+    assert result.exit_code == ExitCodes.INVALID_ARGUMENTS
+    assert "This playlist contains no tracks" in result.stdout
+
+
 def test_mix_command(configured_cli_runner, monkeypatch):
     """Test the `onzr mix` command."""
 
@@ -321,9 +334,7 @@ def test_mix_command(configured_cli_runner, monkeypatch):
 
     monkeypatch.setattr(DeezerClient, "search", search)
 
-    track_3 = TrackShort(id="31", title="lol", album="foo", artist="foo")
-    track_4 = TrackShort(id="32", title="doe", album="bar", artist="bar")
-    deep_collection: Collection = [track_3, track_4]
+    deep_collection: Collection = TrackShortFactory.batch(2)
 
     def artist(*args, **kwargs) -> Collection | None:
         """Monkeypatch artist."""

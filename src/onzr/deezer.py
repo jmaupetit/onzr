@@ -15,34 +15,37 @@ import requests
 from Cryptodome.Cipher import Blowfish
 from pydantic import HttpUrl
 
-from onzr.models.deezer import (
+from .exceptions import DeezerTrackException
+from .models.core import (
+    AlbumShort,
+    Collection,
+    PlaylistShort,
+    StreamQuality,
+    TrackInfo,
+    TrackShort,
+)
+from .models.deezer import (
     DeezerAdvancedSearchResponse,
     DeezerAlbum,
+    DeezerAlbumResponse,
     DeezerArtist,
     DeezerArtistAlbumsResponse,
     DeezerArtistRadioResponse,
     DeezerArtistResponse,
     DeezerArtistTopResponse,
+    DeezerPlaylist,
     DeezerSearchAlbumResponse,
     DeezerSearchArtistResponse,
+    DeezerSearchPlaylistResponse,
     DeezerSearchResponse,
     DeezerSearchTrackResponse,
     DeezerSong,
     DeezerTrack,
     to_albums,
     to_artists,
+    to_playlists,
     to_tracks,
 )
-
-from .exceptions import DeezerTrackException
-from .models.core import (
-    AlbumShort,
-    Collection,
-    StreamQuality,
-    TrackInfo,
-    TrackShort,
-)
-from .models.deezer import DeezerAlbumResponse
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +102,6 @@ class DeezerClient(deezer.Deezer):
     def _collection_details(
         self,
         collection: Collection,
-        # ) -> Generator[TrackShort, None, None] | Generator[AlbumShort, None, None]:
     ) -> Collection:
         """Add detailled informations to collection.
 
@@ -163,6 +165,7 @@ class DeezerClient(deezer.Deezer):
             | type[DeezerAlbumResponse]
             | type[DeezerArtist]
             | type[DeezerArtistResponse]
+            | type[DeezerPlaylist]
             | type[DeezerSearchResponse]
             | type[DeezerTrack]
         ),
@@ -174,6 +177,7 @@ class DeezerClient(deezer.Deezer):
         | DeezerAlbumResponse
         | DeezerArtist
         | DeezerArtistResponse
+        | DeezerPlaylist
         | DeezerSearchResponse
         | DeezerTrack
     ):
@@ -270,16 +274,24 @@ class DeezerClient(deezer.Deezer):
             DeezerTrack, self._api(DeezerTrack, self.api.get_track, track_id)
         ).to_short()
 
+    def playlist(self, playlist_id: int) -> PlaylistShort:
+        """Get playlist tracks."""
+        return cast(
+            DeezerPlaylist,
+            self._api(DeezerPlaylist, self.api.get_playlist, playlist_id),
+        ).to_short()
+
     def search(
         self,
         artist: str = "",
         album: str = "",
         track: str = "",
+        playlist: str = "",
         strict: bool = False,
         fetch_release_date: bool = False,
     ) -> Collection:
         """Mixed custom search."""
-        criteria = list(filter(None, (artist, album, track)))
+        criteria = list(filter(None, (artist, album, track, playlist)))
         results: Collection = []
 
         if len(criteria) == 0:
@@ -331,6 +343,19 @@ class DeezerClient(deezer.Deezer):
                         DeezerSearchTrackResponse,
                         self._api(
                             DeezerSearchTrackResponse, self.api.search_track, track
+                        ),
+                    ),
+                )
+            )
+        elif playlist:
+            results = list(
+                to_playlists(
+                    cast(
+                        DeezerSearchPlaylistResponse,
+                        self._api(
+                            DeezerSearchPlaylistResponse,
+                            self.api.search_playlist,
+                            playlist,
                         ),
                     ),
                 )

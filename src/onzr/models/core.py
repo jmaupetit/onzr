@@ -93,7 +93,20 @@ class TrackShort(BaseModel):
     release_date: Optional[date] = None
 
 
-Collection: TypeAlias = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
+class PlaylistShort(BaseModel):
+    """A small model to represent a playlist."""
+
+    id: int
+    title: str
+    public: bool
+    nb_tracks: int
+    user: Optional[str] = None
+    tracks: Optional[List[TrackShort]] = None
+
+
+Collection: TypeAlias = (
+    List[ArtistShort] | List[AlbumShort] | List[TrackShort] | List[PlaylistShort]
+)
 
 
 class TrackInfo(BaseModel):
