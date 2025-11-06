@@ -122,6 +122,19 @@ class DeezerClient(deezer.Deezer):
         logger.debug(f"{response=}")
         return list(self._to_tracks(response["tracks"]["data"]))
 
+    def playlist(self, playlist_id: int) -> PlaylistShort:
+        """Get playlist tracks."""
+        response = self.api.get_playlist(playlist_id)
+        logger.debug(f"{response=}")
+        return PlaylistShort(
+            id=response["id"],
+            title=response["title"],
+            public=response["public"],
+            nb_tracks=response["nb_tracks"],
+            user=response["creator"]["name"],
+            tracks=list(self._to_tracks(response["tracks"]["data"])),
+        )
+
     def search(
         self,
         artist: str = "",

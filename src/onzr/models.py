@@ -99,6 +99,7 @@ class PlaylistShort(BaseModel):
     public: bool
     nb_tracks: int
     user: str
+    tracks: Optional[List[TrackShort]] = None
 
 
 class TrackInfo(BaseModel):
