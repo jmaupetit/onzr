@@ -1,5 +1,7 @@
 """Onzr deezer tests."""
 
+import datetime
+
 import pytest
 from pydantic import HttpUrl
 
@@ -26,6 +28,7 @@ def test_track_init(configured_onzr, responses):
     track_version = "(Dylan remix)"
     track_album = "Experience"
     track_picture = "ABCDEF"
+    track_physical_release_date = "2025-01-01"
     track_filesize_mp3_128 = 128
     track_filesize_mp3_320 = 320
     track_filesize_flac = 7142
@@ -44,6 +47,7 @@ def test_track_init(configured_onzr, responses):
                 VERSION=track_version,
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
+                PHYSICAL_RELEASE_DATE=track_physical_release_date,
                 FILESIZE_MP3_128=track_filesize_mp3_128,
                 FILESIZE_MP3_320=track_filesize_mp3_320,
                 FILESIZE_FLAC=track_filesize_flac,
@@ -64,6 +68,7 @@ def test_track_init(configured_onzr, responses):
         artist=track_artist,
         title=f"{track_title} {track_version}",
         album=track_album,
+        release_date=track_physical_release_date,
         picture=track_picture,
         formats=[
             StreamQuality.MP3_128,
@@ -76,6 +81,7 @@ def test_track_init(configured_onzr, responses):
     assert track.artist == track_artist
     assert track.title == f"{track_title} {track_version}"
     assert track.album == track_album
+    assert track.release_date == datetime.date(2025, 1, 1)
     assert track.picture == track_picture
     assert track.cover_small == HttpUrl(
         "https://e-cdns-images.dzcdn.net/images/cover/ABCDEF/56x56-000000-80-0-0.jpg"
@@ -120,6 +126,7 @@ def test_track_init(configured_onzr, responses):
                 SNG_TITLE=track_title,
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
+                PHYSICAL_RELEASE_DATE=track_physical_release_date,
                 FILESIZE_MP3_128=track_filesize_mp3_128,
                 FILESIZE_MP3_320=track_filesize_mp3_320,
                 FILESIZE_FLAC=0,
@@ -148,6 +155,7 @@ def test_track_init(configured_onzr, responses):
                 VERSION="",
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
+                PHYSICAL_RELEASE_DATE=track_physical_release_date,
                 FILESIZE_MP3_128=0,
                 FILESIZE_MP3_320=0,
                 FILESIZE_FLAC=0,
@@ -175,6 +183,7 @@ def test_track_init(configured_onzr, responses):
                 VERSION="",
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
+                PHYSICAL_RELEASE_DATE=track_physical_release_date,
                 FILESIZE_MP3_128=track_filesize_mp3_128,
                 FILESIZE_MP3_320=track_filesize_mp3_320,
                 FILESIZE_FLAC=track_filesize_flac,
@@ -196,6 +205,7 @@ def test_track_init(configured_onzr, responses):
             SNG_TITLE=track_title,
             ALB_TITLE=track_album,
             ALB_PICTURE=track_picture,
+            PHYSICAL_RELEASE_DATE=track_physical_release_date,
             FILESIZE_MP3_128=track_filesize_mp3_128,
             FILESIZE_MP3_320=track_filesize_mp3_320,
             FILESIZE_FLAC=track_filesize_flac,
@@ -238,6 +248,7 @@ def test_track_query_quality(configured_onzr, responses):
                 SNG_TITLE=track_title,
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
+                PHYSICAL_RELEASE_DATE="2023-01-01",
                 FILESIZE_MP3_128=track_filesize_mp3_128,
                 FILESIZE_MP3_320=track_filesize_mp3_320,
                 FILESIZE_FLAC=0,
@@ -275,6 +286,7 @@ def test_track_serialize(configured_onzr, responses):
                 VERSION="",
                 ALB_TITLE=track_album,
                 ALB_PICTURE=track_picture,
+                PHYSICAL_RELEASE_DATE="2025-01-01",
             ),
         ).model_dump(),
     )
@@ -286,4 +298,5 @@ def test_track_serialize(configured_onzr, responses):
         title=track_title,
         album=track_album,
         artist=track_artist,
+        release_date=datetime.date(2025, 1, 1),
     )

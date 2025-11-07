@@ -1,5 +1,6 @@
 """Test models."""
 
+from datetime import date
 from typing import Annotated
 
 from pydantic import BaseModel, PlainSerializer
@@ -23,6 +24,7 @@ class DeezerSong(BaseModel):
     VERSION: str | None = None
     ALB_TITLE: str
     ALB_PICTURE: str
+    PHYSICAL_RELEASE_DATE: Annotated[date, PlainSerializer(str)]
     FILESIZE_MP3_128: Annotated[int, PlainSerializer(str)]
     FILESIZE_MP3_320: Annotated[int, PlainSerializer(str)]
     FILESIZE_FLAC: Annotated[int, PlainSerializer(str)]

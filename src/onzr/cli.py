@@ -136,7 +136,11 @@ def print_collection_table(collection: Collection, title="Collection"):
         else False
     )
     show_track = True if isinstance(sample, TrackShort) else False
-    show_release = True if isinstance(sample, AlbumShort) else False
+    show_release = (
+        True
+        if isinstance(sample, TrackShort) or isinstance(sample, AlbumShort)
+        else False
+    )
     logger.debug(f"{show_artist=} - {show_album=} - {show_track=}")
 
     table.add_column("ID", justify="right")
@@ -456,7 +460,8 @@ def queue():
                 f"[white][bold]{qt.position + 1:-3d}[/] "
                 f"[{theme.title_color}]{qt.track.title}[white] - "
                 f"[{theme.artist_color}]{qt.track.artist} "
-                f"[{theme.album_color}]({qt.track.album})"
+                f"[{theme.album_color}]({qt.track.album} - "
+                f"{qt.track.release_date.year})[/]"
             )
             if queue.playing is not None and qt.position < queue.playing:
                 s = f"🏁 [italic]{track_infos}[/italic]"

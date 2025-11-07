@@ -40,8 +40,20 @@ album_2 = AlbumShort(
     release_date=datetime.date(1925, 10, 1).isoformat(),
 )
 albums_collection: Collection = [album_1, album_2]
-track_1 = TrackShort(id=21, title="foo", album="foo", artist="foo")
-track_2 = TrackShort(id=22, title="bar", album="bar", artist="foo")
+track_1 = TrackShort(
+    id=21,
+    title="foo",
+    album="foo",
+    artist="foo",
+    release_date=datetime.date(2025, 1, 1),
+)
+track_2 = TrackShort(
+    id=22,
+    title="bar",
+    album="bar",
+    artist="foo",
+    release_date=datetime.date(1925, 10, 1),
+)
 tracks_collection: Collection = [track_1, track_2]
 
 # System exit codes
