@@ -17,6 +17,7 @@ from .models import (
     AlbumShort,
     ArtistShort,
     Collection,
+    PlaylistShort,
     StreamQuality,
     TrackInfo,
     TrackShort,
@@ -121,11 +122,25 @@ class DeezerClient(deezer.Deezer):
         logger.debug(f"{response=}")
         return list(self._to_tracks(response["tracks"]["data"]))
 
+    def playlist(self, playlist_id: int) -> PlaylistShort:
+        """Get playlist tracks."""
+        response = self.api.get_playlist(playlist_id)
+        logger.debug(f"{response=}")
+        return PlaylistShort(
+            id=response["id"],
+            title=response["title"],
+            public=response["public"],
+            nb_tracks=response["nb_tracks"],
+            user=response["creator"]["name"],
+            tracks=list(self._to_tracks(response["tracks"]["data"])),
+        )
+
     def search(
         self,
         artist: str = "",
         album: str = "",
         track: str = "",
+        playlist: str = "",
         strict: bool = False,
     ) -> Collection:
         """Mixed custom search."""
@@ -159,6 +174,19 @@ class DeezerClient(deezer.Deezer):
         elif track:
             response = self.api.search_track(track)
             results = list(self._to_tracks(response["data"]))
+        elif playlist:
+            response = self.api.search_playlist(playlist)
+            logger.info(response["data"])
+            results = [
+                PlaylistShort(
+                    id=p.get("id"),
+                    title=p.get("title"),
+                    public=p.get("public"),
+                    nb_tracks=p.get("nb_tracks"),
+                    user=p.get("user").get("name"),
+                )
+                for p in response["data"]
+            ]
 
         return results
 

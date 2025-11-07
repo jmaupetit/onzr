@@ -91,6 +91,17 @@ class TrackShort(BaseModel):
     artist: str
 
 
+class PlaylistShort(BaseModel):
+    """A small model to represent a playlist."""
+
+    id: int
+    title: str
+    public: bool
+    nb_tracks: int
+    user: str
+    tracks: Optional[List[TrackShort]] = None
+
+
 class TrackInfo(BaseModel):
     """Used track data."""
 
@@ -104,7 +115,9 @@ class TrackInfo(BaseModel):
     formats: List[StreamQuality]
 
 
-Collection: TypeAlias = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
+Collection: TypeAlias = (
+    List[ArtistShort] | List[AlbumShort] | List[TrackShort] | List[PlaylistShort]
+)
 
 
 class QueuedTrack(BaseModel):

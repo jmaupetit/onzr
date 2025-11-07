@@ -42,6 +42,7 @@ from .models import (
     ArtistShort,
     Collection,
     PlayerControl,
+    PlaylistShort,
     ServerState,
     TrackShort,
 )
@@ -163,6 +164,12 @@ def print_collection_table(collection: Collection, title="Collection"):
         )  # type: ignore[assignment]
         collection.extend(albums_without_release_date)  # type: ignore[arg-type]
 
+    if isinstance(sample, PlaylistShort):
+        table.add_column("Title", style=theme.title_color.as_hex())
+        table.add_column("Public", style="italic")
+        table.add_column("# tracks", style="bold")
+        table.add_column("User", style=theme.secondary_color.as_hex())
+
     for item in collection:
         table.add_row(*map(str, item.model_dump().values()))
 
@@ -250,6 +257,9 @@ def search(  # noqa: PLR0913
     track: Annotated[
         str, typer.Option("--track", "-t", help="Search by track title.")
     ] = "",
+    playlist: Annotated[
+        str, typer.Option("--playlist", "-p", help="Search by playlist name.")
+    ] = "",
     strict: Annotated[
         bool, typer.Option("--strict", "-s", help="Only consider strict matches.")
     ] = False,
@@ -272,7 +282,7 @@ def search(  # noqa: PLR0913
 
     if not quiet:
         console.print("🔍 start searching…")
-    results = deezer.search(artist, album, track, strict)
+    results = deezer.search(artist, album, track, playlist, strict)
 
     if not results:
         console.print(f"❌ [{theme.alert_color}]No match found[/{theme.alert_color}]")
@@ -366,6 +376,37 @@ def album(
         return
 
     print_collection_table(collection, title="Album tracks")
+
+
+@cli.command()
+def playlist(
+    playlist_id: str,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get playlist tracks."""
+    if ids:
+        quiet = True
+
+    if playlist_id == "-":
+        logger.debug("Reading playlist id from stdin…")
+        playlist_id = click.get_text_stream("stdin").read().strip()
+        logger.debug(f"{playlist_id=}")
+
+    deezer = get_deezer_client(quiet=quiet)
+    playlist = deezer.playlist(int(playlist_id))
+
+    if playlist.tracks is None:
+        console.print("This playlist contains no tracks.")
+        raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS)
+
+    if ids:
+        print_collection_ids(playlist.tracks)
+        return
+
+    print_collection_table(playlist.tracks, title=f"{playlist.title}")
 
 
 @cli.command()
