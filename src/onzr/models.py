@@ -1,5 +1,6 @@
 """Onzr: Pydantic models."""
 
+from datetime import date
 from enum import StrEnum
 from typing import Annotated, List, Optional, TypeAlias
 
@@ -89,6 +90,7 @@ class TrackShort(BaseModel):
     title: str
     album: str
     artist: str
+    release_date: Optional[date] = None
 
 
 class TrackInfo(BaseModel):
@@ -98,6 +100,7 @@ class TrackInfo(BaseModel):
     title: str
     album: str
     artist: str
+    release_date: Optional[date] = None
     picture: str
     token: str
     duration: PositiveInt

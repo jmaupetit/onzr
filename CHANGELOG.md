@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- CLI: add track release date to outputs
+
 ## [0.5.2] - 2025-11-04
 
 ### Fixed

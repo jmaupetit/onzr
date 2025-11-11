@@ -65,16 +65,10 @@ class DeezerClient(deezer.Deezer):
         self.session.cookies.set_cookie(cookie_obj)
         self.logged_in = True
 
-    @staticmethod
-    def _to_tracks(data) -> Generator[TrackShort, None, None]:
+    def _to_tracks(self, data) -> Generator[TrackShort, None, None]:
         """API results to TrackShort."""
         for track in data:
-            yield TrackShort(
-                id=track.get("id"),
-                title=track.get("title"),
-                album=track.get("album").get("title"),
-                artist=track.get("artist").get("name"),
-            )
+            yield self.track(track["id"])
 
     @staticmethod
     def _to_albums(data, artist: ArtistShort) -> Generator[AlbumShort, None, None]:
@@ -120,6 +114,18 @@ class DeezerClient(deezer.Deezer):
         response = self.api.get_album(album_id)
         logger.debug(f"{response=}")
         return list(self._to_tracks(response["tracks"]["data"]))
+
+    def track(self, track_id: int) -> TrackShort:
+        """Get track info."""
+        response = self.api.get_track(track_id)
+        logger.debug(f"{response=}")
+        return TrackShort(
+            id=response.get("id"),
+            title=response.get("title"),
+            album=response.get("album").get("title"),
+            artist=response.get("artist").get("name"),
+            release_date=response.get("release_date"),
+        )
 
     def search(
         self,
@@ -244,6 +250,7 @@ class Track:
             ),
             album=track_info["ALB_TITLE"],
             picture=track_info["ALB_PICTURE"],
+            release_date=track_info["PHYSICAL_RELEASE_DATE"],
             formats=[
                 filesizes[size] for size in filesizes if int(track_info[size]) > 0
             ],
@@ -320,6 +327,11 @@ class Track:
     def album(self) -> str:
         """Get track album."""
         return self._get_track_info_attribute("album")
+
+    @property
+    def release_date(self) -> int:
+        """Get track release date."""
+        return self._get_track_info_attribute("release_date")
 
     @property
     def formats(self) -> List[StreamQuality]:
@@ -432,4 +444,5 @@ class Track:
             title=self.title,
             album=self.album,
             artist=self.artist,
+            release_date=self.release_date,
         )
