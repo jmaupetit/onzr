@@ -10,11 +10,14 @@ formatters:
     "()": uvicorn.logging.AccessFormatter
     fmt: '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
     use_colors: true
+  rich:
+    "()": uvicorn.logging.DefaultFormatter
+    fmt: "%(message)s"
+    use_colors: true
 handlers:
   default:
-    formatter: default
-    class: logging.StreamHandler
-    stream: ext://sys.stderr
+    formatter: rich 
+    class: rich.logging.RichHandler
   access:
     formatter: access
     class: logging.StreamHandler
