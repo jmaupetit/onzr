@@ -4,6 +4,7 @@ import functools
 import hashlib
 import logging
 from enum import IntEnum
+from pprint import pformat
 from threading import Thread
 from typing import Any, Generator, Iterator, List, Optional, no_type_check
 
@@ -232,7 +233,20 @@ class Track:
     def _set_track_info(self):
         """Get track info."""
         track_info = self.deezer.gw.get_track(self.track_id)
-        logger.debug("Track info: %s", track_info)
+        logger.debug("Track info: %s", pformat(track_info, sort_dicts=True))
+
+        if "FALLBACK" in track_info and track_info["FALLBACK"] is not None:
+            logger.debug("Track has a fallback track, we will use it now.")
+            track_info = track_info["FALLBACK"]
+            # We should update the track ID and key
+            original_track_id = self.track_id
+            self.track_id = int(track_info["SNG_ID"])
+            self.key = self._generate_blowfish_key()
+            logger.warning(
+                f"Using fallback track with id {self.track_id} "
+                f"(original was {original_track_id})"
+            )
+
         filesizes = {
             "FILESIZE_MP3_128": StreamQuality.MP3_128,
             "FILESIZE_MP3_320": StreamQuality.MP3_320,
@@ -273,7 +287,7 @@ class Track:
         return url
 
     def _generate_blowfish_key(self) -> bytes:
-        """Generate the blowfish key for Deezer downloads.
+        """Generate the blowfish key for Deezer streams.
 
         Taken from: https://github.com/nathom/streamrip/
         """

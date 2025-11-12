@@ -223,6 +223,74 @@ def test_track_init(configured_onzr, responses):
     assert track.title == track_title
 
 
+def test_track_fallback(configured_onzr, responses):
+    """Test track fallback.
+
+    When a track is no longer available or restricted in some country, a fallback track
+    is proposed in the track payload. We decide then to switch the initial reference by
+    the proposed fallback.
+    """
+    track_id = 1
+    track_token = "fake"  # noqa: S105
+    track_duration = 120
+    track_artist = "Jimi Hendrix"
+    track_title = "All along the watchtower"
+    track_album = "Experience"
+    track_picture = "ABCDEF"
+    track_physical_release_date = "2025-01-01"
+    track_filesize_mp3_128 = 128
+    track_filesize_mp3_320 = 320
+    track_filesize_flac = 0
+
+    fallback_track_id = 2
+    fallback_track_filesize_flac = 440
+
+    # Test when a fallback is supplied (field in payload)
+    payload = DeezerSongResponseFactory.build(
+        error={},
+        results=DeezerSongFactory.build(
+            SNG_ID=track_id,
+            TRACK_TOKEN=track_token,
+            DURATION=track_duration,
+            ART_NAME=track_artist,
+            SNG_TITLE=track_title,
+            ALB_TITLE=track_album,
+            ALB_PICTURE=track_picture,
+            PHYSICAL_RELEASE_DATE=track_physical_release_date,
+            FILESIZE_MP3_128=track_filesize_mp3_128,
+            FILESIZE_MP3_320=track_filesize_mp3_320,
+            FILESIZE_FLAC=track_filesize_flac,
+            FALLBACK=DeezerSongFactory.build(
+                SNG_ID=fallback_track_id,
+                TRACK_TOKEN=track_token,
+                DURATION=track_duration,
+                ART_NAME=track_artist,
+                SNG_TITLE=track_title,
+                ALB_TITLE=track_album,
+                ALB_PICTURE=track_picture,
+                PHYSICAL_RELEASE_DATE=track_physical_release_date,
+                FILESIZE_MP3_128=track_filesize_mp3_128,
+                FILESIZE_MP3_320=track_filesize_mp3_320,
+                FILESIZE_FLAC=fallback_track_filesize_flac,
+            ),
+        ),
+    )
+
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=payload.model_dump(),
+    )
+
+    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    assert track.track_id == fallback_track_id
+    assert track.formats == [
+        StreamQuality.MP3_128,
+        StreamQuality.MP3_320,
+        StreamQuality.FLAC,
+    ]
+
+
 def test_track_query_quality(configured_onzr, responses):
     """Test the track query_quality method."""
     track_id = 1
