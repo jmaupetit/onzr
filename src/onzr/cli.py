@@ -89,6 +89,7 @@ def get_deezer_client(quiet: bool = False) -> DeezerClient:
         arl=settings.ARL,
         blowfish=settings.DEEZER_BLOWFISH_SECRET,
         fast=True,
+        connection_pool_maxsize=settings.CONNECTION_POOL_MAXSIZE,
     )
 
 

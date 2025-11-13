@@ -5,10 +5,25 @@ import datetime
 import pytest
 from pydantic import HttpUrl
 
-from onzr.deezer import StreamQuality, Track, TrackStatus
+from onzr.deezer import DeezerClient, StreamQuality, Track, TrackStatus
 from onzr.exceptions import DeezerTrackException
 from onzr.models import TrackInfo, TrackShort
 from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
+
+
+def test_deezer_client_init():
+    """Test the DeezerClient init."""
+    client = DeezerClient(
+        arl="fake",
+        blowfish="fake",
+        fast=True,
+        connection_pool_maxsize=15,
+    )
+
+    assert client.arl == "fake"
+    assert client.blowfish == "fake"
+    expected = 15
+    assert client.session.adapters["https://"]._pool_maxsize == expected
 
 
 def test_stream_quality_enum():

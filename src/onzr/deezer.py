@@ -34,6 +34,7 @@ class DeezerClient(deezer.Deezer):
         arl: str,
         blowfish: str,
         fast: bool = False,
+        connection_pool_maxsize: int = 10,
     ) -> None:
         """Instantiate the Deezer API client.
 
@@ -41,6 +42,12 @@ class DeezerClient(deezer.Deezer):
         won't work if you need to stream tracks.
         """
         super().__init__()
+
+        # Set allowed maximal concurrent connections
+        self.adapter = requests.adapters.HTTPAdapter(
+            pool_maxsize=connection_pool_maxsize
+        )
+        self.session.mount("https://", self.adapter)
 
         self.arl = arl
         self.blowfish = blowfish
