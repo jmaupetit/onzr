@@ -116,6 +116,7 @@ class Onzr:
             arl=self.settings.ARL,
             blowfish=self.settings.DEEZER_BLOWFISH_SECRET,
             fast=False,
+            connection_pool_maxsize=self.settings.CONNECTION_POOL_MAXSIZE,
         )
 
         # Player

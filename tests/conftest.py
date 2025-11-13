@@ -72,7 +72,7 @@ def configured_cli_runner(app_configuration):
 
 
 @pytest.fixture
-def configured_onzr(responses, app_configuration, monkeypatch):
+def configured_onzr(responses, app_configuration):
     """Onzr core instance with an initialized Deezer client."""
     responses.post(
         "http://www.deezer.com/ajax/gw-light.php",

@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     )
 
     # Deezer
+    CONNECTION_POOL_MAXSIZE: int = 10
     QUALITY: StreamQuality = StreamQuality.MP3_128
     DEEZER_BLOWFISH_SECRET: str
     ARL: str
