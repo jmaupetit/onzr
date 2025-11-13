@@ -1,6 +1,7 @@
 """Onzr deezer tests."""
 
 import datetime
+import json
 
 import pytest
 from pydantic import HttpUrl
@@ -8,7 +9,11 @@ from pydantic import HttpUrl
 from onzr.deezer import DeezerClient, StreamQuality, Track, TrackStatus
 from onzr.exceptions import DeezerTrackException
 from onzr.models import TrackInfo, TrackShort
-from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
+from tests.factories import (
+    DeezerSongFactory,
+    DeezerSongResponseFactory,
+    DeezerTrackFactory,
+)
 
 
 def test_deezer_client_init():
@@ -24,6 +29,29 @@ def test_deezer_client_init():
     assert client.blowfish == "fake"
     expected = 15
     assert client.session.adapters["https://"]._pool_maxsize == expected
+
+
+def test_deezer_client_to_tracks(responses):
+    """Test the _to_tracks DeezerClient method."""
+    client = DeezerClient(
+        arl="fake",
+        blowfish="fake",
+        fast=True,
+        connection_pool_maxsize=5,
+    )
+    songs = [{"id": i} for i in range(1, 11)]
+    for song in songs:
+        id_ = song["id"]
+        responses.get(
+            f"https://api.deezer.com/track/{id_}",
+            status=200,
+            json=json.loads(DeezerTrackFactory.build(id=id_).model_dump_json()),
+        )
+
+    tracks = client._to_tracks(songs)
+
+    # Ensure order is preserved
+    assert [t.id for t in tracks] == list(range(1, 11))
 
 
 def test_stream_quality_enum():

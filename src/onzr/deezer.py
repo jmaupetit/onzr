@@ -5,6 +5,7 @@ import hashlib
 import logging
 from enum import IntEnum
 from pprint import pformat
+from queue import Queue as SyncQueue
 from threading import Thread
 from typing import Any, Generator, Iterator, List, Optional, no_type_check
 
@@ -73,10 +74,34 @@ class DeezerClient(deezer.Deezer):
         self.session.cookies.set_cookie(cookie_obj)
         self.logged_in = True
 
-    def _to_tracks(self, data) -> Generator[TrackShort, None, None]:
+    def _to_tracks(self, data: List[dict]) -> Generator[TrackShort, None, None]:
         """API results to TrackShort."""
-        for track in data:
-            yield self.track(track["id"])
+        queue: SyncQueue = SyncQueue()
+        threads = []
+        order = {}
+
+        # Start threads
+        for position, track in enumerate(data):
+            track_id = track["id"]
+            order[track_id] = position
+            t = Thread(
+                target=lambda q, id_: q.put(self.track(id_)), args=(queue, track_id)
+            )
+            t.start()
+            threads.append(t)
+
+        # Join threads
+        for t in threads:
+            t.join()
+
+        # Get all tracks
+        tracks = []
+        while not queue.empty():
+            tracks.append(queue.get())
+
+        # Preserve track ordering
+        for track in sorted(tracks, key=lambda t: order[t.id]):
+            yield track
 
     @staticmethod
     def _to_albums(data, artist: ArtistShort) -> Generator[AlbumShort, None, None]:

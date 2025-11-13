@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - Add fallback track support
+- Fetch track details in separated threads
 - Add the `CONNECTION_POOL_MAXSIZE` configuration setting
 - CLI: add track release date to outputs
 
