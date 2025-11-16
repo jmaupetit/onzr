@@ -64,15 +64,14 @@ class OnzrTuiApp(App):
     ]
 
     def on_mount(self) -> None:
-        self.set_interval(1 / 60, self.update_status)
+        self.set_interval(1, self.update_status)
 
     def update_status(self):
         self.query_one(PlayStatusWidget).now_playing_text = get_now_playing()
 
     def compose(self) -> ComposeResult:
         """Compose the tui app with tabbed content."""
-        # Footer to show keys
-        yield Footer()
+
         with TabbedContent(initial="playlist-tab"):
             with TabPane("Play list", id="playlist-tab"):
                 with Vertical():
@@ -82,6 +81,8 @@ class OnzrTuiApp(App):
                         yield PlayControl()
             with TabPane("Search", id="search-tab"):
                 yield Static("Search")
+        # Footer to show keys
+        yield Footer()
 
     def get_playlist_items(self) -> DataTable:
         client = OnzrClient()
