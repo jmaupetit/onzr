@@ -1,7 +1,7 @@
 from textual.app import App, ComposeResult
 from textual.containers import Vertical, Container, HorizontalGroup
 from textual.reactive import reactive
-from textual.widgets import Footer, TabbedContent, TabPane, Static, Button, DataTable
+from textual.widgets import Footer, TabbedContent, TabPane, Static, Button, DataTable, Header
 
 from onzr import cli
 from onzr.client import OnzrClient
@@ -64,6 +64,7 @@ class OnzrTuiApp(App):
     ]
 
     def on_mount(self) -> None:
+        self.title = "ONZR: play your music from the terminal"
         self.set_interval(1, self.update_status)
 
     def update_status(self):
@@ -71,13 +72,13 @@ class OnzrTuiApp(App):
 
     def compose(self) -> ComposeResult:
         """Compose the tui app with tabbed content."""
-
+        yield Header()
         with TabbedContent(initial="playlist-tab"):
             with TabPane("Play list", id="playlist-tab"):
                 with Vertical():
                     yield self.get_playlist_items()
                     with Container(classes="play-control"):
-                        yield PlayStatusWidget()
+                        yield PlayStatusWidget(classes="play-status")
                         yield PlayControl()
             with TabPane("Search", id="search-tab"):
                 yield Static("Search")
