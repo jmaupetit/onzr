@@ -754,9 +754,12 @@ def openapi():
 
     sys.stdout.write(f"{json.dumps(app.openapi())}\n")
 
+
 @cli.command()
 @require_server
 def tui():
+    """Start the TUI application."""
     from onzr.tui import OnzrTuiApp
+
     app = OnzrTuiApp()
     app.run()
