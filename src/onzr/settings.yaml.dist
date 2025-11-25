@@ -1,5 +1,7 @@
 # ARL:
 # QUALITY: MP3_128
+# CONNECTION_POOL_MAXSIZE: 10
+# ALWAYS_FETCH_RELEASE_DATE: false
 # DEBUG: false
 # SCHEMA: http
 # HOST: localhost
