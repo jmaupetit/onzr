@@ -139,7 +139,8 @@ def print_collection_table(collection: Collection, title="Collection"):
     show_track = True if isinstance(sample, TrackShort) else False
     show_release = (
         True
-        if isinstance(sample, TrackShort) or isinstance(sample, AlbumShort)
+        if (isinstance(sample, TrackShort) and sample.release_date is not None)
+        or isinstance(sample, AlbumShort)
         else False
     )
     logger.debug(f"{show_artist=} - {show_album=} - {show_track=}")
@@ -169,7 +170,7 @@ def print_collection_table(collection: Collection, title="Collection"):
         collection.extend(albums_without_release_date)  # type: ignore[arg-type]
 
     for item in collection:
-        table.add_row(*map(str, item.model_dump().values()))
+        table.add_row(*map(str, item.model_dump(exclude_none=True).values()))
 
     console.print(table)
 

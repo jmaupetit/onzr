@@ -74,8 +74,40 @@ class DeezerClient(deezer.Deezer):
         self.session.cookies.set_cookie(cookie_obj)
         self.logged_in = True
 
-    def _to_tracks(self, data: List[dict]) -> Generator[TrackShort, None, None]:
+    @staticmethod
+    def _album_tracks(album: dict) -> Generator[TrackShort, None, None]:
+        """Convert Deezer album API response to tracks."""
+        release_date = album.get("release_date")
+        album_tracks = album.get("tracks")
+
+        if album_tracks is None:
+            logger.error(f"Empty album {album.get('id')}")
+            return
+
+        for track in album_tracks.get("data"):
+            yield TrackShort(
+                id=track.get("id"),
+                title=track.get("title"),
+                album=track.get("album").get("title"),
+                artist=track.get("artist").get("name"),
+                release_date=release_date,
+            )
+
+    def _to_tracks(
+        self, data: List[dict], fetch_release_date: bool = False
+    ) -> Generator[TrackShort, None, None]:
         """API results to TrackShort."""
+        if not fetch_release_date:
+            for track in data:
+                yield TrackShort(
+                    id=track.get("id"),
+                    title=track.get("title"),
+                    album=track.get("album").get("title"),
+                    artist=track.get("artist").get("name"),
+                )
+            return
+
+        # Query details for every track as background tasks
         queue: SyncQueue = SyncQueue()
         threads = []
         order = {}
@@ -146,7 +178,8 @@ class DeezerClient(deezer.Deezer):
         """Get album tracks."""
         response = self.api.get_album(album_id)
         logger.debug(f"{response=}")
-        return list(self._to_tracks(response["tracks"]["data"]))
+        print(pformat(response, sort_dicts=True))
+        return list(self._album_tracks(response))
 
     def track(self, track_id: int) -> TrackShort:
         """Get track info."""
