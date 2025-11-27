@@ -69,10 +69,11 @@ class Settings(BaseSettings):
     )
 
     # Deezer
-    CONNECTION_POOL_MAXSIZE: int = 10
-    QUALITY: StreamQuality = StreamQuality.MP3_128
-    DEEZER_BLOWFISH_SECRET: str
     ARL: str
+    ALWAYS_FETCH_RELEASE_DATE: bool = False
+    CONNECTION_POOL_MAXSIZE: int = 10
+    DEEZER_BLOWFISH_SECRET: str
+    QUALITY: StreamQuality = StreamQuality.MP3_128
 
     # Player
     # How long should we wait before getting player status after player control action?

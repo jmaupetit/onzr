@@ -49,7 +49,7 @@ from .models import (
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging_config = {
-    "level": logging.INFO,
+    "level": logging.DEBUG,
     "format": FORMAT,
     "datefmt": "[%X]",
     "handlers": [RichHandler(console=logging_console)],
@@ -90,6 +90,7 @@ def get_deezer_client(quiet: bool = False) -> DeezerClient:
         blowfish=settings.DEEZER_BLOWFISH_SECRET,
         fast=True,
         connection_pool_maxsize=settings.CONNECTION_POOL_MAXSIZE,
+        always_fetch_release_date=settings.ALWAYS_FETCH_RELEASE_DATE,
     )
 
 

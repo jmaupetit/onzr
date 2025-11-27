@@ -117,6 +117,7 @@ class Onzr:
             blowfish=self.settings.DEEZER_BLOWFISH_SECRET,
             fast=False,
             connection_pool_maxsize=self.settings.CONNECTION_POOL_MAXSIZE,
+            always_fetch_release_date=self.settings.ALWAYS_FETCH_RELEASE_DATE,
         )
 
         # Player

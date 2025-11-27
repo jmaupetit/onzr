@@ -76,6 +76,18 @@ Default: `10`
 
 ---
 
+### `ALWAYS_FETCH_RELEASE_DATE`
+
+When listing track details, by default track list don't show track release date
+(except for album tracks). If you want to always have this information, you can
+set this configuration to `true`. By doing so, you will systematically fetch
+track details from Deezer. You should know that this can slow down the CLI
+reactivity.
+
+Default: `false`
+
+---
+
 ### `DEBUG`
 
 Set to `true` to enable debugging mode, CLI messages and server logs will be
