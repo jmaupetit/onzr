@@ -145,12 +145,14 @@ class DeezerClient(deezer.Deezer):
 
     def _api(
         self,
-        model: DeezerAlbum
-        | DeezerAlbumResponse
-        | DeezerArtist
-        | DeezerArtistResponse
-        | DeezerSearchResponse
-        | DeezerTrack,
+        model: (
+            DeezerAlbum
+            | DeezerAlbumResponse
+            | DeezerArtist
+            | DeezerArtistResponse
+            | DeezerSearchResponse
+            | DeezerTrack
+        ),
         endpoint: Callable,
         *args,
         **kwargs,

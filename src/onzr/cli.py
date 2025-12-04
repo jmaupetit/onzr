@@ -4,7 +4,6 @@ import json
 import logging
 import sys
 import time
-from datetime import date
 from enum import IntEnum
 from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
@@ -246,7 +245,7 @@ def config(
 
 
 @cli.command()
-def search(  # noqa: PLR0913
+def search(
     artist: Annotated[
         str, typer.Option("--artist", "-A", help="Search by artist name.")
     ] = "",
@@ -298,7 +297,7 @@ def search(  # noqa: PLR0913
 
 
 @cli.command()
-def artist(  # noqa: PLR0913
+def artist(
     artist_id: str,
     top: Annotated[
         bool, typer.Option("--top/--no-top", "-t/-T", help="Show artist top tracks.")
