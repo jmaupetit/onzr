@@ -1,0 +1,198 @@
+"""Onzr: deezer models."""
+
+import logging
+from datetime import date
+from typing import Annotated, Generator, Generic, List, Optional, TypeAlias, TypeVar
+
+from annotated_types import Ge, Gt
+from pydantic import BaseModel, PlainSerializer, PositiveInt
+
+from .core import AlbumShort, ArtistShort, TrackShort
+
+logger = logging.getLogger(__name__)
+
+# Deezer type
+DeezerT = TypeVar("DeezerT")
+
+
+class BaseDeezerModel(BaseModel):
+    """Base Deezer Model."""
+
+
+# Deezer API models
+class BaseDeezerAPIResponse(BaseModel):
+    """Deezer API response base Model."""
+
+
+class DeezerAPIResponseCollection(BaseModel, Generic[DeezerT]):
+    """An intermediate model for collections in data fields."""
+
+    data: List[DeezerT]
+
+    def _check_collection(self):
+        """Check collection type and length."""
+        if not len(self.data):
+            logger.error(f"Empty collection {self}")
+            return
+        # elif not isinstance(self.data[0], Generic[DeezerT]):
+        #     logger.error(
+        #         f"Cannot extract tracks from another type than a List[{DeezerT}]"
+        #     )
+        #     return
+
+    def to_tracks(self) -> Generator[TrackShort, None, None]:
+        """Get tracks collection iterator."""
+        self._check_collection()
+
+        for track in self.data:
+            yield TrackShort(
+                id=track.id,
+                title=track.title,
+                album=track.album.title,
+                artist=track.artist.name,
+            )
+
+    def to_albums(
+        self, artist: Optional[ArtistShort] = None
+    ) -> Generator[AlbumShort, None, None]:
+        """Get tracks collection iterator."""
+        self._check_collection()
+
+        for album in self.data:
+            yield AlbumShort(
+                id=album.id,
+                title=album.title,
+                release_date=album.release_date,
+                artist=album.artist.name if album.artist else artist.name,
+            )
+
+    def to_artists(self) -> Generator[ArtistShort, None, None]:
+        """Get artists collection iterator."""
+        self._check_collection()
+
+        for artist in self.data:
+            yield ArtistShort(
+                id=artist.id,
+                name=artist.name,
+            )
+
+
+class DeezerArtist(BaseDeezerModel):
+    """Deezer API artist."""
+
+    id: int
+    name: str
+
+    def to_short(self) -> ArtistShort:
+        """Get ArtistShort."""
+        return ArtistShort(id=self.id, name=self.name)
+
+
+class DeezerAlbum(BaseDeezerModel):
+    """Deezer API album."""
+
+    id: int
+    title: str
+    release_date: Optional[date] = None
+    artist: Optional[DeezerArtist] = None
+
+    def to_short(self) -> AlbumShort:
+        """Get AlbumShort."""
+        return AlbumShort(
+            id=self.id,
+            title=self.title,
+            release_date=self.release_date,
+            artist=self.artist.name if self.artist else None,
+        )
+
+
+class DeezerTrack(BaseDeezerModel):
+    """Deezer API track."""
+
+    id: PositiveInt
+    title: str
+    album: DeezerAlbum
+    artist: DeezerArtist
+    release_date: Optional[date] = None
+
+    def to_short(self) -> TrackShort:
+        """Get TrackShort."""
+        return TrackShort(
+            id=self.id,
+            title=self.title,
+            album=self.album.title,
+            artist=self.artist.name,
+            release_date=self.release_date,
+        )
+
+
+class DeezerAlbumResponse(BaseDeezerAPIResponse):
+    """Deezer album response."""
+
+    id: int
+    title: str
+    release_date: date
+    artist: DeezerArtist
+    tracks: DeezerAPIResponseCollection[DeezerTrack]
+
+    def get_tracks(self) -> Generator[TrackShort, None, None]:
+        """Get album TrackShort iterator."""
+        if not len(self.tracks.data):
+            logger.error(f"Empty album {self.id}")
+            return
+
+        for track in self.tracks.data:
+            yield TrackShort(
+                id=track.id,
+                title=track.title,
+                album=track.album.title,
+                artist=track.artist.name,
+                release_date=self.release_date,
+            )
+
+
+DeezerArtistTopResponse = DeezerAPIResponseCollection[DeezerTrack]
+DeezerArtistRadioResponse = DeezerAPIResponseCollection[DeezerTrack]
+DeezerArtistAlbumsResponse = DeezerAPIResponseCollection[DeezerAlbum]
+DeezerArtistResponse: TypeAlias = (
+    DeezerArtistTopResponse | DeezerArtistRadioResponse | DeezerArtistAlbumsResponse
+)
+DeezerAdvancedSearchResponse = DeezerAPIResponseCollection[DeezerTrack]
+DeezerSearchAlbumResponse = DeezerAPIResponseCollection[DeezerAlbum]
+DeezerSearchArtistResponse = DeezerAPIResponseCollection[DeezerArtist]
+DeezerSearchTrackResponse = DeezerAPIResponseCollection[DeezerTrack]
+DeezerSearchResponse: TypeAlias = (
+    DeezerAdvancedSearchResponse
+    | DeezerSearchAlbumResponse
+    | DeezerSearchArtistResponse
+    | DeezerSearchTrackResponse
+)
+
+
+# Deezer API Gateway models
+class BaseDeezerGWResponse(BaseModel, Generic[DeezerT]):
+    """Deezer API Gateway response base Model."""
+
+    error: dict = {}
+    results: DeezerT
+
+
+class DeezerSong(BaseDeezerModel):
+    """Deezer API Song."""
+
+    SNG_ID: Annotated[int, Gt(0), PlainSerializer(str)]
+    TRACK_TOKEN: str
+    DURATION: Annotated[int, Gt(0), PlainSerializer(str)]
+    ART_NAME: str
+    SNG_TITLE: str
+    VERSION: Optional[str] = None
+    ALB_TITLE: str
+    ALB_PICTURE: str
+    PHYSICAL_RELEASE_DATE: Annotated[date, PlainSerializer(str)]
+    FILESIZE_MP3_128: Annotated[int, Ge(0), PlainSerializer(str)]
+    FILESIZE_MP3_320: Annotated[int, Ge(0), PlainSerializer(str)]
+    FILESIZE_FLAC: Annotated[int, Ge(0), PlainSerializer(str)]
+    FALLBACK: "Optional[DeezerSong]" = None
+
+
+DeezerSongResponse = BaseDeezerGWResponse[DeezerSong]

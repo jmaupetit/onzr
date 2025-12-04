@@ -7,22 +7,37 @@ from enum import IntEnum
 from pprint import pformat
 from queue import Queue as SyncQueue
 from threading import Thread
-from typing import Any, Generator, Iterator, List, Optional, no_type_check
+from typing import Any, Callable, Generator, Iterator, List, Optional, no_type_check
 
 import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
 from pydantic import HttpUrl
 
+from onzr.models.deezer import (
+    DeezerAdvancedSearchResponse,
+    DeezerAlbum,
+    DeezerArtist,
+    DeezerArtistAlbumsResponse,
+    DeezerArtistRadioResponse,
+    DeezerArtistResponse,
+    DeezerArtistTopResponse,
+    DeezerSearchAlbumResponse,
+    DeezerSearchArtistResponse,
+    DeezerSearchResponse,
+    DeezerSearchTrackResponse,
+    DeezerTrack,
+)
+
 from .exceptions import DeezerTrackException
-from .models import (
+from .models.core import (
     AlbumShort,
-    ArtistShort,
     Collection,
     StreamQuality,
     TrackInfo,
     TrackShort,
 )
+from .models.deezer import DeezerAlbumResponse
 
 logger = logging.getLogger(__name__)
 
@@ -76,48 +91,39 @@ class DeezerClient(deezer.Deezer):
         self.session.cookies.set_cookie(cookie_obj)
         self.logged_in = True
 
-    @staticmethod
-    def _album_tracks(album: dict) -> Generator[TrackShort, None, None]:
-        """Convert Deezer album API response to tracks."""
-        release_date = album.get("release_date")
-        album_tracks = album.get("tracks")
+    def _collection_details(
+        self, collection: Collection
+    ) -> Generator[TrackShort | AlbumShort, None, None]:
+        """Add detailled informations to collection.
 
-        if album_tracks is None:
-            logger.error(f"Empty album {album.get('id')}")
-            return
-
-        for track in album_tracks.get("data"):
-            yield TrackShort(
-                id=track.get("id"),
-                title=track.get("title"),
-                album=track.get("album").get("title"),
-                artist=track.get("artist").get("name"),
-                release_date=release_date,
-            )
-
-    def _to_tracks(self, data: List[dict]) -> Generator[TrackShort, None, None]:
-        """API results to TrackShort."""
-        if not self.always_fetch_release_date:
-            for track in data:
-                yield TrackShort(
-                    id=track.get("id"),
-                    title=track.get("title"),
-                    album=track.get("album").get("title"),
-                    artist=track.get("artist").get("name"),
-                )
-            return
-
-        # Query details for every track as background tasks
+        Detailled informations are fetched using separated threads to speed up response
+        time for large collections.
+        """
         queue: SyncQueue = SyncQueue()
         threads = []
         order = {}
 
+        def get_track(id_: int) -> TrackShort:
+            return self._api(DeezerTrack, self.api.get_track, id_).to_short()
+
+        def get_album(id_: int) -> AlbumShort:
+            return self._api(DeezerAlbum, self.api.get_album, id_).to_short()
+
+        sample = collection[0]
+        if isinstance(sample, TrackShort):
+            endpoint = get_track
+        elif isinstance(sample, AlbumShort):
+            endpoint = get_album
+        else:
+            msg = "Input collection should be TrackShort or AlbumShort iterator"
+            logger.error(msg)
+            raise ValueError(msg)
+
         # Start threads
-        for position, track in enumerate(data):
-            track_id = track["id"]
-            order[track_id] = position
+        for position, item in enumerate(collection):
+            order[item.id] = position
             t = Thread(
-                target=lambda q, id_: q.put(self.track(id_)), args=(queue, track_id)
+                target=lambda q, id_: q.put(endpoint(id_)), args=(queue, item.id)
             )
             t.start()
             threads.append(t)
@@ -126,26 +132,43 @@ class DeezerClient(deezer.Deezer):
         for t in threads:
             t.join()
 
-        # Get all tracks
-        tracks = []
+        # Get updated collection
+        new = []
         while not queue.empty():
-            tracks.append(queue.get())
+            new.append(queue.get())
 
-        # Preserve track ordering
-        for track in sorted(tracks, key=lambda t: order[t.id]):
-            yield track
+        # Preserve collection ordering
+        for item in sorted(new, key=lambda i: order[i.id]):
+            yield item
 
-    @staticmethod
-    def _to_albums(data, artist: ArtistShort) -> Generator[AlbumShort, None, None]:
-        """API results to AlbumShort."""
-        for album in data:
-            logger.debug(pformat(album, sort_dicts=True))
-            yield AlbumShort(
-                id=album.get("id"),
-                title=album.get("title"),
-                release_date=album.get("release_date"),
-                artist=artist.name,
-            )
+    def _api(
+        self,
+        model: DeezerAlbum
+        | DeezerAlbumResponse
+        | DeezerArtist
+        | DeezerArtistResponse
+        | DeezerSearchResponse
+        | DeezerTrack,
+        endpoint: Callable,
+        *args,
+        **kwargs,
+    ) -> (
+        DeezerAlbum
+        | DeezerAlbumResponse
+        | DeezerArtist
+        | DeezerArtistResponse
+        | DeezerSearchResponse
+        | DeezerTrack
+    ):
+        """An API proxy that validates response using the input model."""
+        logger.debug(f"Will query {endpoint=} to {model=} with {args=}/{kwargs=}")
+
+        response = endpoint(*args, **kwargs)
+        logger.debug(f"{pformat(response,sort_dicts=True)=}")
+
+        instance = model(**response)
+        logger.debug(f"{instance=}")
+        return instance
 
     def artist(
         self,
@@ -154,43 +177,59 @@ class DeezerClient(deezer.Deezer):
         top: bool = True,
         albums: bool = False,
         limit: int = 10,
-    ) -> List[TrackShort] | List[AlbumShort]:
+        fetch_release_date: bool = False,
+    ) -> List[TrackShort | AlbumShort]:
         """Get artist tracks."""
-        response = self.api.get_artist(artist_id)
-        artist = ArtistShort(id=response.get("id"), name=response.get("name"))
+        artist = self._api(DeezerArtist, self.api.get_artist, artist_id).to_short()
         logger.debug(f"{artist=}")
+        results: Collection = []
 
         if radio:
-            response = self.api.get_artist_radio(artist_id, limit=limit)
-            return list(self._to_tracks(response["data"]))
+            results = list(
+                self._api(
+                    DeezerArtistRadioResponse,
+                    self.api.get_artist_radio,
+                    artist.id,
+                    limit=limit,
+                ).to_tracks()
+            )
         elif top:
-            response = self.api.get_artist_top(artist_id, limit=limit)
-            return list(self._to_tracks(response["data"]))
+            results = list(
+                self._api(
+                    DeezerArtistTopResponse,
+                    self.api.get_artist_top,
+                    artist.id,
+                    limit=limit,
+                ).to_tracks()
+            )
         elif albums:
-            response = self.api.get_artist_albums(artist_id, limit=limit)
-            return list(self._to_albums(response["data"], artist))
+            results = list(
+                self._api(
+                    DeezerArtistAlbumsResponse,
+                    self.api.get_artist_albums,
+                    artist.id,
+                    limit=limit,
+                ).to_albums(artist=artist)
+            )
         else:
             raise ValueError(
                 "Either radio, top or albums should be True to get artist details"
             )
 
+        if self.always_fetch_release_date or fetch_release_date:
+            results = list(self._collection_details(results))
+
+        return results
+
     def album(self, album_id: int) -> List[TrackShort]:
         """Get album tracks."""
-        response = self.api.get_album(album_id)
-        logger.debug(pformat(response, sort_dicts=True))
-        return list(self._album_tracks(response))
+        return list(
+            self._api(DeezerAlbumResponse, self.api.get_album, album_id).get_tracks()
+        )
 
     def track(self, track_id: int) -> TrackShort:
         """Get track info."""
-        response = self.api.get_track(track_id)
-        logger.debug(pformat(response, sort_dicts=True))
-        return TrackShort(
-            id=response.get("id"),
-            title=response.get("title"),
-            album=response.get("album").get("title"),
-            artist=response.get("artist").get("name"),
-            release_date=response.get("release_date"),
-        )
+        return self._api(DeezerTrack, self.api.get_track, track_id).to_short()
 
     def search(
         self,
@@ -198,38 +237,48 @@ class DeezerClient(deezer.Deezer):
         album: str = "",
         track: str = "",
         strict: bool = False,
+        fetch_release_date: bool = False,
     ) -> Collection:
         """Mixed custom search."""
+        criteria = list(filter(None, (artist, album, track)))
         results: Collection = []
 
-        if len(list(filter(None, (artist, album, track)))) > 1:
-            response = self.api.advanced_search(
-                artist=artist, album=album, track=track, strict=strict
+        if len(criteria) == 0:
+            msg = "You should at least provide one search criterion"
+            logger.error(msg)
+            raise ValueError(msg)
+        elif len(criteria) > 1:
+            results = list(
+                self._api(
+                    DeezerAdvancedSearchResponse,
+                    self.api.advanced_search,
+                    artist=artist,
+                    album=album,
+                    track=track,
+                    strict=strict,
+                ).to_tracks()
             )
-            results = list(self._to_tracks(response["data"]))
         elif artist:
-            response = self.api.search_artist(artist)
-            results = [
-                ArtistShort(
-                    id=a.get("id"),
-                    name=a.get("name"),
-                )
-                for a in response["data"]
-            ]
+            results = list(
+                self._api(
+                    DeezerSearchArtistResponse, self.api.search_artist, artist
+                ).to_artists()
+            )
         elif album:
-            response = self.api.search_album(album)
-            results = [
-                AlbumShort(
-                    id=a.get("id"),
-                    title=a.get("title"),
-                    release_date=a.get("release_date"),
-                    artist=a.get("artist").get("name"),
-                )
-                for a in response["data"]
-            ]
+            results = list(
+                self._api(
+                    DeezerSearchAlbumResponse, self.api.search_album, album
+                ).to_albums()
+            )
         elif track:
-            response = self.api.search_track(track)
-            results = list(self._to_tracks(response["data"]))
+            results = list(
+                self._api(
+                    DeezerSearchTrackResponse, self.api.search_track, track
+                ).to_tracks()
+            )
+
+        if (self.always_fetch_release_date or fetch_release_date) and not artist:
+            results = list(self._collection_details(results))
 
         return results
 
