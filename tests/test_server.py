@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from fastapi import status
 
-from onzr.models import PlayingState
+from onzr.models.core import PlayingState
 
 from .factories import DeezerSongFactory, DeezerSongResponseFactory
 
@@ -33,7 +33,8 @@ def test_queue_add(client, responses, configured_onzr):
             "http://www.deezer.com/ajax/gw-light.php",
             status=200,
             json=DeezerSongResponseFactory.build(
-                error={}, results=DeezerSongFactory.build(SNG_ID=track_id)
+                error={},
+                results=DeezerSongFactory.build(SNG_ID=track_id, FALLBACK=None),
             ).model_dump(),
         )
 

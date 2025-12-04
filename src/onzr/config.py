@@ -16,7 +16,7 @@ from pydantic_settings import (
 from typer import get_app_dir
 
 from .deezer import StreamQuality
-from .models import OnzrTheme
+from .models.core import OnzrTheme
 
 logger = logging.getLogger(__name__)
 

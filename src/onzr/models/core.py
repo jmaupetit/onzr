@@ -1,4 +1,4 @@
-"""Onzr: Pydantic models."""
+"""Onzr: core models."""
 
 from datetime import date
 from enum import StrEnum
@@ -71,12 +71,12 @@ class ArtistShort(BaseModel):
 
 
 class AlbumShort(BaseModel):
-    """A small model to represent an artist."""
+    """A small model to represent an album."""
 
     id: int
     title: str
     artist: Optional[str] = None
-    release_date: Optional[str] = None
+    release_date: Optional[date] = None
 
     def __hash__(self):
         """Make AlbumShort hashable."""
@@ -84,13 +84,16 @@ class AlbumShort(BaseModel):
 
 
 class TrackShort(BaseModel):
-    """A small model to represent an artist."""
+    """A small model to represent a Track."""
 
     id: int
     title: str
     album: str
     artist: str
     release_date: Optional[date] = None
+
+
+Collection: TypeAlias = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
 
 
 class TrackInfo(BaseModel):
@@ -105,9 +108,6 @@ class TrackInfo(BaseModel):
     token: str
     duration: PositiveInt
     formats: List[StreamQuality]
-
-
-Collection: TypeAlias = List[ArtistShort] | List[AlbumShort] | List[TrackShort]
 
 
 class QueuedTrack(BaseModel):

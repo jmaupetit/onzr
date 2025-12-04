@@ -20,7 +20,7 @@ import onzr
 from onzr.cli import ExitCodes, cli
 from onzr.deezer import DeezerClient
 from onzr.exceptions import OnzrConfigurationError
-from onzr.models import AlbumShort, ArtistShort, Collection, TrackShort
+from onzr.models.core import AlbumShort, ArtistShort, Collection, TrackShort
 from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
 
 # Test fixtures
@@ -31,13 +31,13 @@ album_1 = AlbumShort(
     id=11,
     title="foo",
     artist="foo",
-    release_date=datetime.date(2025, 1, 1).isoformat(),
+    release_date=datetime.date(2025, 1, 1),
 )
 album_2 = AlbumShort(
     id=12,
     title="bar",
     artist="bar",
-    release_date=datetime.date(1925, 10, 1).isoformat(),
+    release_date=datetime.date(1925, 10, 1),
 )
 albums_collection: Collection = [album_1, album_2]
 track_1 = TrackShort(
@@ -176,7 +176,7 @@ def test_config_command(configured_cli_runner, settings_file):
 def test_search_command_with_no_argument(configured_cli_runner):
     """Test the `onzr search` without any argument."""
     result = configured_cli_runner.invoke(cli, ["search"])
-    assert result.exit_code == ExitCodes.NOT_FOUND
+    assert result.exit_code == ExitCodes.INVALID_ARGUMENTS
 
 
 @pytest.mark.parametrize("option", ("artist", "album", "track"))
@@ -315,7 +315,7 @@ def test_album_command(configured_cli_runner, monkeypatch):
 def test_mix_command(configured_cli_runner, monkeypatch):
     """Test the `onzr mix` command."""
 
-    def search(*args, **kwargs):
+    def search(*args, **kwargs) -> Collection:
         """Monkeypatch search."""
         return artists_collection
 
@@ -325,12 +325,13 @@ def test_mix_command(configured_cli_runner, monkeypatch):
     track_4 = TrackShort(id="32", title="doe", album="bar", artist="bar")
     deep_collection: Collection = [track_3, track_4]
 
-    def artist(*args, **kwargs):
+    def artist(*args, **kwargs) -> Collection | None:
         """Monkeypatch artist."""
         if kwargs.get("radio"):
             return deep_collection
         elif kwargs.get("top"):
             return tracks_collection
+        return None
 
     monkeypatch.setattr(DeezerClient, "artist", artist)
 

@@ -2,17 +2,31 @@
 
 import datetime
 import json
+from time import sleep
 
 import pytest
 from pydantic import HttpUrl
 
 from onzr.deezer import DeezerClient, StreamQuality, Track, TrackStatus
 from onzr.exceptions import DeezerTrackException
-from onzr.models import TrackInfo, TrackShort
+from onzr.models.core import AlbumShort, ArtistShort, TrackInfo, TrackShort
 from tests.factories import (
+    AlbumShortFactory,
+    ArtistShortFactory,
+    DeezerAdvancedSearchResponseFactory,
+    DeezerAlbumFactory,
+    DeezerAlbumResponseFactory,
+    DeezerArtistAlbumsResponseFactory,
+    DeezerArtistFactory,
+    DeezerArtistRadioResponseFactory,
+    DeezerArtistTopResponseFactory,
+    DeezerSearchAlbumResponseFactory,
+    DeezerSearchArtistResponseFactory,
+    DeezerSearchTrackResponseFactory,
     DeezerSongFactory,
     DeezerSongResponseFactory,
     DeezerTrackFactory,
+    TrackShortFactory,
 )
 
 
@@ -31,27 +45,206 @@ def test_deezer_client_init():
     assert client.session.adapters["https://"]._pool_maxsize == expected
 
 
-def test_deezer_client_to_tracks(responses):
-    """Test the _to_tracks DeezerClient method."""
-    client = DeezerClient(
-        arl="fake",
-        blowfish="fake",
-        fast=True,
-        connection_pool_maxsize=5,
-    )
-    songs = [{"id": i} for i in range(1, 11)]
-    for song in songs:
-        id_ = song["id"]
+def test_deezer_client_collection_details(responses, deezer_client):
+    """Test the DeezerClient `_collection_details` method."""
+    # Tracks
+    tracks = [TrackShortFactory.build(id=i) for i in range(1, 11)]
+    for track in tracks:
         responses.get(
-            f"https://api.deezer.com/track/{id_}",
+            f"https://api.deezer.com/track/{track.id}",
             status=200,
-            json=json.loads(DeezerTrackFactory.build(id=id_).model_dump_json()),
+            json=json.loads(DeezerTrackFactory.build(id=track.id).model_dump_json()),
         )
-
-    tracks = client._to_tracks(songs)
-
+    tracks = deezer_client._collection_details(tracks)
     # Ensure order is preserved
     assert [t.id for t in tracks] == list(range(1, 11))
+
+    # Albums
+    albums = [AlbumShortFactory.build(id=i) for i in range(1, 11)]
+    for album in albums:
+        responses.get(
+            f"https://api.deezer.com/album/{album.id}",
+            status=200,
+            json=json.loads(DeezerAlbumFactory.build(id=album.id).model_dump_json()),
+        )
+    albums = deezer_client._collection_details(albums)
+    # Ensure order is preserved
+    assert [t.id for t in albums] == list(range(1, 11))
+
+    # Artists
+    artists = [ArtistShortFactory.build(id=i) for i in range(1, 11)]
+    with pytest.raises(
+        ValueError, match="Input collection should be TrackShort or AlbumShort iterator"
+    ):
+        deezer_client._collection_details(artists)
+
+
+def test_deezer_client_artist(responses, deezer_client):
+    """Test the DeezerClient `artist` method."""
+    artist_id = 1
+
+    # Artist
+    payload = DeezerArtistFactory.build(id=artist_id)
+    responses.get(
+        f"https://api.deezer.com/artist/{artist_id}",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Either radio, top or albums should be True to get artist details",
+    ):
+        deezer_client.artist(artist_id=artist_id, radio=False, top=False, albums=False)
+
+    # Radio
+    payload = DeezerArtistRadioResponseFactory.build()
+    responses.get(
+        f"https://api.deezer.com/artist/{artist_id}/radio",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    radio = deezer_client.artist(
+        artist_id=artist_id, radio=True, top=False, albums=False
+    )
+    assert isinstance(radio[0], TrackShort)
+    assert len(radio) == len(payload.data)
+
+    # Radio - with collection details
+    for track in payload.data:
+        responses.get(
+            f"https://api.deezer.com/track/{track.id}",
+            status=200,
+            json=json.loads(DeezerTrackFactory.build(id=track.id).model_dump_json()),
+        )
+    radio = deezer_client.artist(
+        artist_id=artist_id,
+        radio=True,
+        top=False,
+        albums=False,
+        fetch_release_date=True,
+    )
+    assert isinstance(radio[0], TrackShort)
+    assert len(radio) == len(payload.data)
+
+    # Top
+    payload = DeezerArtistTopResponseFactory.build()
+    responses.get(
+        f"https://api.deezer.com/artist/{artist_id}/top",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    radio = deezer_client.artist(
+        artist_id=artist_id, radio=False, top=True, albums=False
+    )
+    assert isinstance(radio[0], TrackShort)
+    assert len(radio) == len(payload.data)
+
+    # Albums
+    payload = DeezerArtistAlbumsResponseFactory.build()
+    responses.get(
+        f"https://api.deezer.com/artist/{artist_id}/albums",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    radio = deezer_client.artist(
+        artist_id=artist_id, radio=False, top=False, albums=True
+    )
+    assert isinstance(radio[0], AlbumShort)
+    assert len(radio) == len(payload.data)
+
+
+def test_deezer_client_album(responses, deezer_client):
+    """Test the DeezerClient `album` method."""
+    album_id = 666
+
+    payload = DeezerAlbumResponseFactory.build(id=album_id)
+    responses.get(
+        f"https://api.deezer.com/album/{album_id}",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    tracks = deezer_client.album(album_id=album_id)
+    assert isinstance(tracks[0], TrackShort)
+
+
+def test_deezer_client_track(responses, deezer_client):
+    """Test the DeezerClient `track` method."""
+    track_id = 666
+
+    payload = DeezerTrackFactory.build(id=track_id)
+    responses.get(
+        f"https://api.deezer.com/track/{track_id}",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    track = deezer_client.track(track_id=track_id)
+    assert isinstance(track, TrackShort)
+    assert track.id == track_id
+
+
+def test_deezer_client_search(responses, deezer_client):
+    """Test the DeezerClient `search` method."""
+    # Missing arguments
+    with pytest.raises(
+        ValueError, match="You should at least provide one search criterion"
+    ):
+        deezer_client.search()
+
+    # Advanced search
+    payload = DeezerAdvancedSearchResponseFactory.build()
+    responses.get(
+        "https://api.deezer.com/search",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    tracks = deezer_client.search(artist="foo", album="bar")
+    assert isinstance(tracks[0], TrackShort)
+    assert len(tracks) == len(payload.data)
+
+    # Artists
+    payload = DeezerSearchArtistResponseFactory.build()
+    responses.get(
+        "https://api.deezer.com/search/artist",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    artists = deezer_client.search(artist="foo")
+    assert isinstance(artists[0], ArtistShort)
+    assert len(artists) == len(payload.data)
+
+    # Albums
+    payload = DeezerSearchAlbumResponseFactory.build()
+    responses.get(
+        "https://api.deezer.com/search/album",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    albums = deezer_client.search(album="bar")
+    assert isinstance(albums[0], AlbumShort)
+    assert len(albums) == len(payload.data)
+
+    # Tracks
+    payload = DeezerSearchTrackResponseFactory.build()
+    responses.get(
+        "https://api.deezer.com/search/track",
+        status=200,
+        json=json.loads(payload.model_dump_json()),
+    )
+    tracks = deezer_client.search(track="lol")
+    assert isinstance(tracks[0], TrackShort)
+    assert len(tracks) == len(payload.data)
+
+    # Tracks - with collection details
+    for track in payload.data:
+        responses.get(
+            f"https://api.deezer.com/track/{track.id}",
+            status=200,
+            json=json.loads(DeezerTrackFactory.build(id=track.id).model_dump_json()),
+        )
+    tracks = deezer_client.search(track="lol", fetch_release_date=True)
+    assert isinstance(tracks[0], TrackShort)
+    assert len(tracks) == len(payload.data)
 
 
 def test_stream_quality_enum():
@@ -61,7 +254,7 @@ def test_stream_quality_enum():
     assert StreamQuality.MP3_128.media_type == "audio/mpeg"
 
 
-def test_track_init(configured_onzr, responses):
+def test_track_init(deezer_client, responses):
     """Test the Track instantiation."""
     track_id = 1
     track_token = "fake"  # noqa: S105
@@ -98,7 +291,7 @@ def test_track_init(configured_onzr, responses):
         ).model_dump(),
     )
 
-    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    track = Track(client=deezer_client, track_id=track_id, background=False)
 
     assert track.track_id == track_id
     assert track.key == b"4den4:}:g,#j3i`a"
@@ -142,6 +335,7 @@ def test_track_init(configured_onzr, responses):
         track.full_title
         == f"{track_artist} - {track_title} {track_version} [{track_album}]"
     )
+    assert str(track) == "ID: 1"
 
     # If picture is None
     track.track_info.picture = None
@@ -176,7 +370,7 @@ def test_track_init(configured_onzr, responses):
             ),
         ).model_dump(),
     )
-    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    track = Track(client=deezer_client, track_id=track_id, background=False)
 
     assert track.formats == [
         StreamQuality.MP3_128,
@@ -209,7 +403,7 @@ def test_track_init(configured_onzr, responses):
         DeezerTrackException,
         match=r"No available formats detected for track \d+$",
     ):
-        Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+        Track(client=deezer_client, track_id=track_id, background=False)
 
     # Test when no version is supplied (empty string)
     responses.post(
@@ -234,7 +428,7 @@ def test_track_init(configured_onzr, responses):
         ).model_dump(),
     )
 
-    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    track = Track(client=deezer_client, track_id=track_id, background=False)
     assert track.title == track_title
 
     # Test when no version is supplied (field not in payload)
@@ -262,11 +456,16 @@ def test_track_init(configured_onzr, responses):
         json=payload.model_dump(),
     )
 
-    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    track = Track(client=deezer_client, track_id=track_id, background=False)
+    assert track.title == track_title
+
+    # Background init
+    track = Track(client=deezer_client, track_id=track_id, background=True)
+    sleep(0.5)
     assert track.title == track_title
 
 
-def test_track_fallback(configured_onzr, responses):
+def test_track_fallback(deezer_client, responses):
     """Test track fallback.
 
     When a track is no longer available or restricted in some country, a fallback track
@@ -325,7 +524,7 @@ def test_track_fallback(configured_onzr, responses):
         json=payload.model_dump(),
     )
 
-    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    track = Track(client=deezer_client, track_id=track_id, background=False)
     assert track.track_id == fallback_track_id
     assert track.formats == [
         StreamQuality.MP3_128,
@@ -334,7 +533,48 @@ def test_track_fallback(configured_onzr, responses):
     ]
 
 
-def test_track_query_quality(configured_onzr, responses):
+def test_track_refresh(deezer_client, responses):
+    """Test the track `refresh` method."""
+    track_id = 1
+    track_title = "Paint it black"
+
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=DeezerSongResponseFactory.build(
+            error={},
+            results=DeezerSongFactory.build(
+                SNG_ID=track_id, SNG_TITLE=track_title, VERSION=None
+            ),
+        ).model_dump(),
+    )
+    track = Track(client=deezer_client, track_id=track_id, background=False)
+    assert track.title == track_title
+
+    new_title = "Paint it white"
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json=DeezerSongResponseFactory.build(
+            error={},
+            results=DeezerSongFactory.build(
+                SNG_ID=track_id, SNG_TITLE=new_title, VERSION=None
+            ),
+        ).model_dump(),
+    )
+    track.refresh()
+    assert track.title == new_title
+
+
+def test_track_get_url(track, monkeypatch):
+    """Test the track `_get_url` method."""
+    url = "https://fake.example.org/foo/1"
+    instance = track(1)
+    monkeypatch.setattr(instance.deezer, "get_track_url", lambda x, y: url)
+    assert instance._get_url(quality=StreamQuality.MP3_128) == HttpUrl(url)
+
+
+def test_track_query_quality(deezer_client, responses):
     """Test the track query_quality method."""
     track_id = 1
     track_token = "fake"  # noqa: S105
@@ -366,14 +606,14 @@ def test_track_query_quality(configured_onzr, responses):
             ),
         ).model_dump(),
     )
-    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    track = Track(client=deezer_client, track_id=track_id, background=False)
 
     assert track.query_quality(StreamQuality.MP3_128) == StreamQuality.MP3_128
     assert track.query_quality(StreamQuality.MP3_320) == StreamQuality.MP3_320
     assert track.query_quality(StreamQuality.FLAC) == StreamQuality.MP3_320
 
 
-def test_track_serialize(configured_onzr, responses):
+def test_track_serialize(deezer_client, responses):
     """Test the Track serialization."""
     track_id = 1
     track_token = "fake"  # noqa: S105
@@ -402,7 +642,7 @@ def test_track_serialize(configured_onzr, responses):
         ).model_dump(),
     )
 
-    track = Track(client=configured_onzr.deezer, track_id=track_id, background=False)
+    track = Track(client=deezer_client, track_id=track_id, background=False)
 
     assert track.serialize() == TrackShort(
         id=track_id,

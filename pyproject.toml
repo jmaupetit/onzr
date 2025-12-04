@@ -94,6 +94,7 @@ select = [
     "W",  # pycodestyle warning
 ]
 ignore = [
+    "PLR0913",  # Too many arguments in function definition (6 > 5)
     "PLR0915",  # Too many statements (50+)
 ]
 
@@ -109,6 +110,7 @@ convention = "google"
 [tool.mypy]
 files = "./**/*.py"
 exclude = []
+plugins = ['pydantic.mypy']
 
 [[tool.mypy.overrides]]
 module = ["deezer.*", "dynaconf.*", "vlc.*"]

@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from .config import get_settings
 from .core import Onzr
 from .deezer import Track
-from .models import (
+from .models.core import (
     PlayerControl,
     PlayerState,
     PlayingState,

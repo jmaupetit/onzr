@@ -204,36 +204,37 @@ intent is to pipe your search result to another command (e.g. `artist` or
 
 ```sh
 onzr search --artist "Lady Gaga" --ids --first | \
-    onzr artist - # (1)
+    onzr artist - \ # (1)
+    --release # (2)
 ```
 
 1. 💡 the `-` argument of the `artist` command indicates to read artist ID from `stdin`
+2. the `--release` flag adds the `Released` column with tracks release date.
 
-Your search result piped to the artist command display the artist top tracks:
+Your search result piped to the artist command display the artist top tracks
+(with release dates):
 
 ```
-                               Artist collection
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃         ID ┃ Track                    ┃ Album                    ┃ Artist    ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
-│ 3537990861 │ The Dead Dance           │ The Dead Dance           │ Lady Gaga │
-│ 2947516331 │ Die With A Smile         │ Die With A Smile         │ Lady Gaga │
-│ 3214169391 │ Abracadabra              │ Abracadabra              │ Lady Gaga │
-│  561856742 │ Shallow                  │ A Star Is Born           │ Lady Gaga │
-│            │                          │ Soundtrack               │           │
-│    2603558 │ Poker Face               │ The Fame                 │ Lady Gaga │
-│  561856792 │ Always Remember Us This  │ A Star Is Born           │ Lady Gaga │
-│            │ Way                      │ Soundtrack               │           │
-│    4709947 │ Just Dance               │ The Fame Monster         │ Lady Gaga │
-│            │                          │ (International Deluxe)   │           │
-│    4709944 │ Telephone                │ The Fame Monster         │ Lady Gaga │
-│            │                          │ (International Deluxe)   │           │
-│   11747937 │ Bloody Mary              │ Born This Way            │ Lady Gaga │
-│            │                          │ (International Special   │           │
-│            │                          │ Edition Version)         │           │
-│    4709938 │ Alejandro                │ The Fame Monster         │ Lady Gaga │
-│            │                          │ (International Deluxe)   │           │
-└────────────┴──────────────────────────┴──────────────────────────┴───────────┘
+                                   Artist collection                                    
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃         ID ┃ Track                 ┃ Album                  ┃ Artist    ┃ Released   ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━┩
+│ 3537990861 │ The Dead Dance        │ The Dead Dance         │ Lady Gaga │ 2025-09-03 │
+│ 3214169391 │ Abracadabra           │ Abracadabra            │ Lady Gaga │ 2025-02-03 │
+│ 2947516331 │ Die With A Smile      │ Die With A Smile       │ Lady Gaga │ 2024-08-16 │
+│    2603558 │ Poker Face            │ The Fame               │ Lady Gaga │ 2008-11-24 │
+│  561856742 │ Shallow               │ A Star Is Born         │ Lady Gaga │ 2018-10-05 │
+│            │                       │ Soundtrack             │           │            │
+│  561856792 │ Always Remember Us    │ A Star Is Born         │ Lady Gaga │ 2018-10-05 │
+│            │ This Way              │ Soundtrack             │           │            │
+│ 3017033871 │ Oh, When The Saints   │ Harlequin              │ Lady Gaga │ 2024-09-27 │
+│    4709944 │ Telephone             │ The Fame Monster       │ Lady Gaga │ 2009-11-23 │
+│            │                       │ (International Deluxe) │           │            │
+│    4709947 │ Just Dance            │ The Fame Monster       │ Lady Gaga │ 2009-11-23 │
+│            │                       │ (International Deluxe) │           │            │
+│    4709938 │ Alejandro             │ The Fame Monster       │ Lady Gaga │ 2009-11-23 │
+│            │                       │ (International Deluxe) │           │            │
+└────────────┴───────────────────────┴────────────────────────┴───────────┴────────────┘
 ```
 
 !!! Tip
