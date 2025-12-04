@@ -20,7 +20,7 @@ import onzr
 from onzr.cli import ExitCodes, cli
 from onzr.deezer import DeezerClient
 from onzr.exceptions import OnzrConfigurationError
-from onzr.models import AlbumShort, ArtistShort, Collection, TrackShort
+from onzr.models.core import AlbumShort, ArtistShort, Collection, TrackShort
 from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
 
 # Test fixtures
@@ -176,7 +176,7 @@ def test_config_command(configured_cli_runner, settings_file):
 def test_search_command_with_no_argument(configured_cli_runner):
     """Test the `onzr search` without any argument."""
     result = configured_cli_runner.invoke(cli, ["search"])
-    assert result.exit_code == ExitCodes.NOT_FOUND
+    assert result.exit_code == ExitCodes.INVALID_ARGUMENTS
 
 
 @pytest.mark.parametrize("option", ("artist", "album", "track"))

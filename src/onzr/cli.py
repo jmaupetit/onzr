@@ -48,7 +48,7 @@ from .models.core import (
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging_config = {
-    "level": logging.DEBUG,
+    "level": logging.INFO,
     "format": FORMAT,
     "datefmt": "[%X]",
     "handlers": [RichHandler(console=logging_console)],
@@ -280,7 +280,10 @@ def search(
 
     if not quiet:
         console.print("🔍 start searching…")
-    results = deezer.search(artist, album, track, strict, release)
+    try:
+        results = deezer.search(artist, album, track, strict, release)
+    except ValueError as err:
+        raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS) from err
 
     if not results:
         console.print(f"❌ [{theme.alert_color}]No match found[/{theme.alert_color}]")

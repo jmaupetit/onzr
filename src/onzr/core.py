@@ -11,7 +11,7 @@ from vlc import Instance, MediaList, MediaListPlayer
 from onzr.config import get_settings
 
 from .deezer import DeezerClient, Track
-from .models import QueuedTrack, QueuedTracks, QueueState, ServerState
+from .models.core import QueuedTrack, QueuedTracks, QueueState, ServerState
 
 logger = logging.getLogger(__name__)
 

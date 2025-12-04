@@ -211,7 +211,9 @@ class DeezerSong(BaseDeezerModel):
         }
         return TrackInfo(
             id=song.SNG_ID,
-            title=song.SNG_TITLE,
+            title=(
+                f"{self.SNG_TITLE} {self.VERSION}" if self.VERSION else song.SNG_TITLE
+            ),
             album=song.ALB_TITLE,
             artist=song.ART_NAME,
             release_date=song.PHYSICAL_RELEASE_DATE,

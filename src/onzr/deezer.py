@@ -15,7 +15,6 @@ import requests
 from Cryptodome.Cipher import Blowfish
 from pydantic import HttpUrl
 
-from onzr.models import DeezerSong
 from onzr.models.deezer import (
     DeezerAdvancedSearchResponse,
     DeezerAlbum,
@@ -28,6 +27,7 @@ from onzr.models.deezer import (
     DeezerSearchArtistResponse,
     DeezerSearchResponse,
     DeezerSearchTrackResponse,
+    DeezerSong,
     DeezerTrack,
 )
 

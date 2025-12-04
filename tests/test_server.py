@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from fastapi import status
 
-from onzr.models import PlayingState
+from onzr.models.core import PlayingState
 
 from .factories import DeezerSongFactory, DeezerSongResponseFactory
 

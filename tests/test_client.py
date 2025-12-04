@@ -3,7 +3,7 @@
 from time import sleep
 
 from onzr.client import OnzrClient
-from onzr.models import (
+from onzr.models.core import (
     PlayerControl,
     PlayerState,
     PlayingState,
