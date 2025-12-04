@@ -3,17 +3,19 @@
 import functools
 import hashlib
 import logging
+from datetime import date
 from enum import IntEnum
 from pprint import pformat
 from queue import Queue as SyncQueue
 from threading import Thread
-from typing import Any, Callable, Generator, Iterator, List, Optional, no_type_check
+from typing import Any, Callable, Generator, Iterator, List, Optional
 
 import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
 from pydantic import HttpUrl
 
+from onzr.models import DeezerSong
 from onzr.models.deezer import (
     DeezerAdvancedSearchResponse,
     DeezerAlbum,
@@ -328,6 +330,8 @@ class Track:
         self.session = requests.Session()
 
         self.track_info: Optional[TrackInfo] = None
+        self.key: Optional[bytes] = None
+
         # Fetch track info in a separated thread to make instantiation non-blocking
         if background:
             thread = Thread(target=self._set_track_info)
@@ -335,7 +339,6 @@ class Track:
         else:
             self._set_track_info()
 
-        self.key: bytes = self._generate_blowfish_key()
         self.status: TrackStatus = TrackStatus.IDLE
         self.streamed: int = 0
 
@@ -345,44 +348,14 @@ class Track:
 
     def _set_track_info(self):
         """Get track info."""
-        track_info = self.deezer.gw.get_track(self.track_id)
-        logger.debug("Track info: %s", pformat(track_info, sort_dicts=True))
+        self.track_info = DeezerSong(
+            **self.deezer.gw.get_track(self.track_id)
+        ).to_track_info()
+        logger.debug("Track info: %s", pformat(self.track_info, sort_dicts=True))
 
-        if "FALLBACK" in track_info and track_info["FALLBACK"] is not None:
-            logger.debug("Track has a fallback track, we will use it now.")
-            track_info = track_info["FALLBACK"]
-            # We should update the track ID and key
-            original_track_id = self.track_id
-            self.track_id = int(track_info["SNG_ID"])
-            self.key = self._generate_blowfish_key()
-            logger.warning(
-                f"Using fallback track with id {self.track_id} "
-                f"(original was {original_track_id})"
-            )
-
-        filesizes = {
-            "FILESIZE_MP3_128": StreamQuality.MP3_128,
-            "FILESIZE_MP3_320": StreamQuality.MP3_320,
-            "FILESIZE_FLAC": StreamQuality.FLAC,
-        }
-        self.track_info = TrackInfo(
-            id=track_info["SNG_ID"],
-            token=track_info["TRACK_TOKEN"],
-            duration=track_info["DURATION"],
-            artist=track_info["ART_NAME"],
-            title=(
-                f"{track_info['SNG_TITLE']} {track_info['VERSION']}"
-                if "VERSION" in track_info and track_info["VERSION"]
-                else track_info["SNG_TITLE"]
-            ),
-            album=track_info["ALB_TITLE"],
-            picture=track_info["ALB_PICTURE"],
-            release_date=track_info["PHYSICAL_RELEASE_DATE"],
-            formats=[
-                filesizes[size] for size in filesizes if int(track_info[size]) > 0
-            ],
-        )
-        if not len(self.formats):
+        self.track_id = self.track_info.id
+        self.key = self._generate_blowfish_key()
+        if not len(self.track_info.formats):
             raise DeezerTrackException(
                 f"No available formats detected for track {self.track_id}"
             )
@@ -393,11 +366,10 @@ class Track:
         logger.debug("Refreshing track info…")
         self._set_track_info()
 
-    def _get_url(self, quality: StreamQuality) -> str:
+    def _get_url(self, quality: StreamQuality) -> HttpUrl:
         """Get URL of the track to stream."""
         logger.debug(f"Getting track url with quality {quality}…")
-        url = self.deezer.get_track_url(self.token, quality.value)
-        return url
+        return HttpUrl(self.deezer.get_track_url(self.token, quality.value))
 
     def _generate_blowfish_key(self) -> bytes:
         """Generate the blowfish key for Deezer streams.
@@ -456,7 +428,7 @@ class Track:
         return self._get_track_info_attribute("album")
 
     @property
-    def release_date(self) -> int:
+    def release_date(self) -> date:
         """Get track release date."""
         return self._get_track_info_attribute("release_date")
 
@@ -544,7 +516,7 @@ class Track:
         self.status = TrackStatus.IDLE
 
         url = self._get_url(quality)
-        with self.session.get(url, stream=True) as r:
+        with self.session.get(str(url), stream=True) as r:
             r.raise_for_status()
             filesize = int(r.headers.get("Content-Length", 0))
             logger.debug(f"Track size: {filesize}")
@@ -563,7 +535,6 @@ class Track:
         logger.debug(f"Track fully streamed {self.streamed}")
 
     # Pydantic will raise an error for us
-    @no_type_check
     def serialize(self) -> TrackShort:
         """Serialize current track."""
         return TrackShort(

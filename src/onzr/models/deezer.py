@@ -7,7 +7,7 @@ from typing import Annotated, Generator, Generic, List, Optional, TypeAlias, Typ
 from annotated_types import Ge, Gt
 from pydantic import BaseModel, PlainSerializer, PositiveInt
 
-from .core import AlbumShort, ArtistShort, TrackShort
+from .core import AlbumShort, ArtistShort, StreamQuality, TrackInfo, TrackShort
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +193,33 @@ class DeezerSong(BaseDeezerModel):
     FILESIZE_MP3_320: Annotated[int, Ge(0), PlainSerializer(str)]
     FILESIZE_FLAC: Annotated[int, Ge(0), PlainSerializer(str)]
     FALLBACK: "Optional[DeezerSong]" = None
+
+    def to_track_info(self) -> TrackInfo:
+        """Get TrackInfo from this song."""
+        song: DeezerSong = self
+        if self.FALLBACK:
+            logger.warning(
+                f"Using fallback track with id {self.FALLBACK.SNG_ID} "
+                f"(original was {song.SNG_ID})"
+            )
+            song = self.FALLBACK
+
+        filesizes = {
+            "FILESIZE_MP3_128": StreamQuality.MP3_128,
+            "FILESIZE_MP3_320": StreamQuality.MP3_320,
+            "FILESIZE_FLAC": StreamQuality.FLAC,
+        }
+        return TrackInfo(
+            id=song.SNG_ID,
+            title=song.SNG_TITLE,
+            album=song.ALB_TITLE,
+            artist=song.ART_NAME,
+            release_date=song.PHYSICAL_RELEASE_DATE,
+            picture=song.ALB_PICTURE,
+            token=song.TRACK_TOKEN,
+            duration=song.DURATION,
+            formats=[filesizes[size] for size in filesizes if getattr(song, size) > 0],
+        )
 
 
 DeezerSongResponse = BaseDeezerGWResponse[DeezerSong]
