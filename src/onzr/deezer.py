@@ -95,7 +95,7 @@ class DeezerClient(deezer.Deezer):
 
     def _collection_details(
         self, collection: Collection
-    ) -> Generator[TrackShort | AlbumShort, None, None]:
+    ) -> Generator[TrackShort, None, None] | Generator[AlbumShort, None, None]:
         """Add detailled informations to collection.
 
         Detailled informations are fetched using separated threads to speed up response
@@ -104,6 +104,9 @@ class DeezerClient(deezer.Deezer):
         queue: SyncQueue = SyncQueue()
         threads = []
         order = {}
+        endpoint: Callable[[int], TrackShort] | Callable[[int], AlbumShort] | None = (
+            None
+        )
 
         def get_track(id_: int) -> TrackShort:
             return self._api(DeezerTrack, self.api.get_track, id_).to_short()
@@ -182,7 +185,7 @@ class DeezerClient(deezer.Deezer):
         albums: bool = False,
         limit: int = 10,
         fetch_release_date: bool = False,
-    ) -> List[TrackShort | AlbumShort]:
+    ) -> List[TrackShort] | List[AlbumShort]:
         """Get artist tracks."""
         artist = self._api(DeezerArtist, self.api.get_artist, artist_id).to_short()
         logger.debug(f"{artist=}")

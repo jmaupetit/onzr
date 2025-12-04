@@ -34,6 +34,7 @@ class DeezerAPIResponseCollection(BaseModel, Generic[DeezerT]):
         if not len(self.data):
             logger.error(f"Empty collection {self}")
             return
+        # FIXME
         # elif not isinstance(self.data[0], Generic[DeezerT]):
         #     logger.error(
         #         f"Cannot extract tracks from another type than a List[{DeezerT}]"

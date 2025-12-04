@@ -31,13 +31,13 @@ album_1 = AlbumShort(
     id=11,
     title="foo",
     artist="foo",
-    release_date=datetime.date(2025, 1, 1).isoformat(),
+    release_date=datetime.date(2025, 1, 1),
 )
 album_2 = AlbumShort(
     id=12,
     title="bar",
     artist="bar",
-    release_date=datetime.date(1925, 10, 1).isoformat(),
+    release_date=datetime.date(1925, 10, 1),
 )
 albums_collection: Collection = [album_1, album_2]
 track_1 = TrackShort(

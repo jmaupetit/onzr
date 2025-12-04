@@ -110,6 +110,7 @@ convention = "google"
 [tool.mypy]
 files = "./**/*.py"
 exclude = []
+plugins = ['pydantic.mypy']
 
 [[tool.mypy.overrides]]
 module = ["deezer.*", "dynaconf.*", "vlc.*"]
