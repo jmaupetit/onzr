@@ -4,13 +4,13 @@ import json
 import logging
 import sys
 import time
-from datetime import date
 from enum import IntEnum
 from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
+from operator import attrgetter
 from pathlib import Path
 from random import shuffle
-from typing import List, cast
+from typing import List, Set, cast
 
 import click
 import pendulum
@@ -37,7 +37,7 @@ from .config import (
     get_settings,
 )
 from .deezer import DeezerClient
-from .models import (
+from .models.core import (
     AlbumShort,
     ArtistShort,
     Collection,
@@ -49,7 +49,7 @@ from .models import (
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging_config = {
-    "level": logging.DEBUG,
+    "level": logging.INFO,
     "format": FORMAT,
     "datefmt": "[%X]",
     "handlers": [RichHandler(console=logging_console)],
@@ -141,7 +141,7 @@ def print_collection_table(collection: Collection, title="Collection"):
     show_release = (
         True
         if (isinstance(sample, TrackShort) and sample.release_date is not None)
-        or isinstance(sample, AlbumShort)
+        or (isinstance(sample, AlbumShort) and sample.release_date is not None)
         else False
     )
     logger.debug(f"{show_artist=} - {show_album=} - {show_track=}")
@@ -157,18 +157,20 @@ def print_collection_table(collection: Collection, title="Collection"):
         table.add_column("Released")
 
     # Sort albums by release date
-    # FIXME: mypy does not get that we are dealing with a List[AlbumShort] collection
     if isinstance(sample, AlbumShort):
-        albums_with_release_date = set(
-            filter(lambda x: x.release_date is not None, collection)  # type: ignore[attr-defined]
+        albums_with_release_date: Set[AlbumShort] = set(
+            filter(attrgetter("release_date"), collection)  # type: ignore[arg-type]
         )
-        albums_without_release_date = list(set(collection) - albums_with_release_date)
-        collection = sorted(
+        albums_without_release_date: List[AlbumShort] = list(
+            cast(Set[AlbumShort], set(collection)) - albums_with_release_date
+        )
+        sorted_collection: List[AlbumShort] = sorted(
             albums_with_release_date,
-            key=lambda i: date.fromisoformat(i.release_date),  # type: ignore[attr-defined]
+            key=attrgetter("release_date"),
             reverse=True,
-        )  # type: ignore[assignment]
-        collection.extend(albums_without_release_date)  # type: ignore[arg-type]
+        )
+        sorted_collection.extend(albums_without_release_date)
+        collection = sorted_collection
 
     for item in collection:
         table.add_row(*map(str, item.model_dump(exclude_none=True).values()))
@@ -247,7 +249,7 @@ def config(
 
 
 @cli.command()
-def search(  # noqa: PLR0913
+def search(
     artist: Annotated[
         str, typer.Option("--artist", "-A", help="Search by artist name.")
     ] = "",
@@ -259,6 +261,9 @@ def search(  # noqa: PLR0913
     ] = "",
     strict: Annotated[
         bool, typer.Option("--strict", "-s", help="Only consider strict matches.")
+    ] = False,
+    release: Annotated[
+        bool, typer.Option("--release", "-r", help="Fetch albums or tracks release.")
     ] = False,
     first: Annotated[
         bool, typer.Option("--first", "-f", help="Limit to the first match.")
@@ -279,7 +284,10 @@ def search(  # noqa: PLR0913
 
     if not quiet:
         console.print("🔍 start searching…")
-    results = deezer.search(artist, album, track, strict)
+    try:
+        results = deezer.search(artist, album, track, strict, release)
+    except ValueError as err:
+        raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS) from err
 
     if not results:
         console.print(f"❌ [{theme.alert_color}]No match found[/{theme.alert_color}]")
@@ -296,7 +304,7 @@ def search(  # noqa: PLR0913
 
 
 @cli.command()
-def artist(  # noqa: PLR0913
+def artist(
     artist_id: str,
     top: Annotated[
         bool, typer.Option("--top/--no-top", "-t/-T", help="Show artist top tracks.")
@@ -307,6 +315,9 @@ def artist(  # noqa: PLR0913
     ] = False,
     albums: Annotated[
         bool, typer.Option("--albums", "-a", help="Show artist albums.")
+    ] = False,
+    release: Annotated[
+        bool, typer.Option("--release", "-r", help="Fetch albums or tracks release.")
     ] = False,
     limit: Annotated[
         int, typer.Option("--limit", "-l", help="Limit to the l first hits.")
@@ -338,7 +349,12 @@ def artist(  # noqa: PLR0913
 
     deezer = get_deezer_client(quiet=quiet)
     collection = deezer.artist(
-        int(artist_id), radio=radio, top=top, albums=albums, limit=limit
+        int(artist_id),
+        radio=radio,
+        top=top,
+        albums=albums,
+        limit=limit,
+        fetch_release_date=release,
     )
 
     if ids:

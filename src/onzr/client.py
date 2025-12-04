@@ -6,7 +6,7 @@ import requests
 from annotated_types import Ge
 
 from .config import get_settings
-from .models import (
+from .models.core import (
     PlayerControl,
     PlayingState,
     PlayQueryParams,

@@ -6,6 +6,7 @@ import logging
 import tempfile
 import threading
 from pathlib import Path
+from typing import Generator
 
 import pytest
 import requests
@@ -18,7 +19,7 @@ from typer.testing import CliRunner
 import onzr
 from onzr import cli, config
 from onzr.core import Onzr
-from onzr.deezer import Track
+from onzr.deezer import DeezerClient, Track
 from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,43 @@ def cli_runner():
 def configured_cli_runner(app_configuration):
     """Configured CLI runner."""
     yield CliRunner()
+
+
+@pytest.fixture
+def deezer_client(responses, settings):
+    """Configured DeezerClient instance."""
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        body=json.dumps(
+            {
+                "error": {},
+                "results": {
+                    "checkForm": "secret_token",
+                    "USER": {
+                        "USER_ID": 666,
+                        "MULTI_ACCOUNT": {"ENABLED": False},
+                        "BLOG_NAME": "onzr",
+                        "OPTIONS": {
+                            "license_token": "fake",
+                            "web_hq": True,
+                            "web_lossless": True,
+                            "license_country": "FR",
+                        },
+                        "SETTING": {"global": {}},
+                    },
+                },
+            }
+        ),
+        status=200,
+        content_type="application/json",
+    )
+    client = DeezerClient(
+        arl=settings.ARL,
+        blowfish=settings.DEEZER_BLOWFISH_SECRET,
+        fast=False,
+    )
+
+    yield client
 
 
 @pytest.fixture
@@ -168,7 +206,7 @@ def test_server(responses, settings, configured_onzr):
 def track(responses, configured_onzr, faker, monkeypatch):
     """Track factory fixture."""
 
-    def stream_local_file(_):
+    def stream_local_file(_) -> Generator[bytes, None, None]:
         """Stream the same file for every track."""
         chunk_size: int = 2048 * 3
         with Path("./tests/intro-lvs.mp3").open("rb") as content:
