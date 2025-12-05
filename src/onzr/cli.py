@@ -7,9 +7,10 @@ import time
 from enum import IntEnum
 from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
+from operator import attrgetter
 from pathlib import Path
 from random import shuffle
-from typing import List, cast
+from typing import List, Set, cast
 
 import click
 import pendulum
@@ -157,16 +158,19 @@ def print_collection_table(collection: Collection, title="Collection"):
 
     # Sort albums by release date
     if isinstance(sample, AlbumShort):
-        albums_with_release_date = set(
-            filter(lambda x: x.release_date is not None, collection)
+        albums_with_release_date: Set[AlbumShort] = set(
+            filter(attrgetter("release_date"), collection)  # type: ignore[arg-type]
         )
-        albums_without_release_date = list(set(collection) - albums_with_release_date)
-        collection = sorted(
+        albums_without_release_date: List[AlbumShort] = list(
+            cast(Set[AlbumShort], set(collection)) - albums_with_release_date
+        )
+        sorted_collection: List[AlbumShort] = sorted(
             albums_with_release_date,
-            key=lambda a: a.release_date,
+            key=attrgetter("release_date"),
             reverse=True,
         )
-        collection.extend(albums_without_release_date)
+        sorted_collection.extend(albums_without_release_date)
+        collection = sorted_collection
 
     for item in collection:
         table.add_row(*map(str, item.model_dump(exclude_none=True).values()))

@@ -315,7 +315,7 @@ def test_album_command(configured_cli_runner, monkeypatch):
 def test_mix_command(configured_cli_runner, monkeypatch):
     """Test the `onzr mix` command."""
 
-    def search(*args, **kwargs):
+    def search(*args, **kwargs) -> Collection:
         """Monkeypatch search."""
         return artists_collection
 
@@ -325,12 +325,13 @@ def test_mix_command(configured_cli_runner, monkeypatch):
     track_4 = TrackShort(id="32", title="doe", album="bar", artist="bar")
     deep_collection: Collection = [track_3, track_4]
 
-    def artist(*args, **kwargs):
+    def artist(*args, **kwargs) -> Collection | None:
         """Monkeypatch artist."""
         if kwargs.get("radio"):
             return deep_collection
         elif kwargs.get("top"):
             return tracks_collection
+        return None
 
     monkeypatch.setattr(DeezerClient, "artist", artist)
 

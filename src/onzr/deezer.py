@@ -8,7 +8,7 @@ from enum import IntEnum
 from pprint import pformat
 from queue import Queue as SyncQueue
 from threading import Thread
-from typing import Any, Callable, Generator, Iterator, List, Optional
+from typing import Any, Callable, Generator, Iterator, List, Optional, cast
 
 import deezer
 import requests
@@ -29,6 +29,9 @@ from onzr.models.deezer import (
     DeezerSearchTrackResponse,
     DeezerSong,
     DeezerTrack,
+    to_albums,
+    to_artists,
+    to_tracks,
 )
 
 from .exceptions import DeezerTrackException
@@ -94,8 +97,10 @@ class DeezerClient(deezer.Deezer):
         self.logged_in = True
 
     def _collection_details(
-        self, collection: Collection
-    ) -> Generator[TrackShort, None, None] | Generator[AlbumShort, None, None]:
+        self,
+        collection: Collection,
+        # ) -> Generator[TrackShort, None, None] | Generator[AlbumShort, None, None]:
+    ) -> Collection:
         """Add detailled informations to collection.
 
         Detailled informations are fetched using separated threads to speed up response
@@ -109,10 +114,14 @@ class DeezerClient(deezer.Deezer):
         )
 
         def get_track(id_: int) -> TrackShort:
-            return self._api(DeezerTrack, self.api.get_track, id_).to_short()
+            return cast(
+                DeezerTrack, self._api(DeezerTrack, self.api.get_track, id_)
+            ).to_short()
 
         def get_album(id_: int) -> AlbumShort:
-            return self._api(DeezerAlbum, self.api.get_album, id_).to_short()
+            return cast(
+                DeezerAlbum, self._api(DeezerAlbum, self.api.get_album, id_)
+            ).to_short()
 
         sample = collection[0]
         if isinstance(sample, TrackShort):
@@ -125,10 +134,12 @@ class DeezerClient(deezer.Deezer):
             raise ValueError(msg)
 
         # Start threads
+        # FIXME: mypy cannot reliably guess types when using enumerate
         for position, item in enumerate(collection):
-            order[item.id] = position
+            order[item.id] = position  # type: ignore[attr-defined]
             t = Thread(
-                target=lambda q, id_: q.put(endpoint(id_)), args=(queue, item.id)
+                target=lambda q, id_: q.put(endpoint(id_)),
+                args=(queue, item.id),  # type: ignore[attr-defined]
             )
             t.start()
             threads.append(t)
@@ -143,18 +154,17 @@ class DeezerClient(deezer.Deezer):
             new.append(queue.get())
 
         # Preserve collection ordering
-        for item in sorted(new, key=lambda i: order[i.id]):
-            yield item
+        return sorted(new, key=lambda i: order[i.id])
 
     def _api(
         self,
         model: (
-            DeezerAlbum
-            | DeezerAlbumResponse
-            | DeezerArtist
-            | DeezerArtistResponse
-            | DeezerSearchResponse
-            | DeezerTrack
+            type[DeezerAlbum]
+            | type[DeezerAlbumResponse]
+            | type[DeezerArtist]
+            | type[DeezerArtistResponse]
+            | type[DeezerSearchResponse]
+            | type[DeezerTrack]
         ),
         endpoint: Callable,
         *args,
@@ -185,38 +195,55 @@ class DeezerClient(deezer.Deezer):
         albums: bool = False,
         limit: int = 10,
         fetch_release_date: bool = False,
-    ) -> List[TrackShort] | List[AlbumShort]:
+    ) -> Collection:
         """Get artist tracks."""
-        artist = self._api(DeezerArtist, self.api.get_artist, artist_id).to_short()
+        artist = cast(
+            DeezerArtist, self._api(DeezerArtist, self.api.get_artist, artist_id)
+        ).to_short()
         logger.debug(f"{artist=}")
         results: Collection = []
 
         if radio:
             results = list(
-                self._api(
-                    DeezerArtistRadioResponse,
-                    self.api.get_artist_radio,
-                    artist.id,
-                    limit=limit,
-                ).to_tracks()
+                to_tracks(
+                    cast(
+                        DeezerArtistRadioResponse,
+                        self._api(
+                            DeezerArtistRadioResponse,
+                            self.api.get_artist_radio,
+                            artist.id,
+                            limit=limit,
+                        ),
+                    )
+                )
             )
         elif top:
             results = list(
-                self._api(
-                    DeezerArtistTopResponse,
-                    self.api.get_artist_top,
-                    artist.id,
-                    limit=limit,
-                ).to_tracks()
+                to_tracks(
+                    cast(
+                        DeezerArtistTopResponse,
+                        self._api(
+                            DeezerArtistTopResponse,
+                            self.api.get_artist_top,
+                            artist.id,
+                            limit=limit,
+                        ),
+                    )
+                )
             )
         elif albums:
             results = list(
-                self._api(
-                    DeezerArtistAlbumsResponse,
-                    self.api.get_artist_albums,
-                    artist.id,
-                    limit=limit,
-                ).to_albums(artist=artist)
+                to_albums(
+                    cast(
+                        DeezerArtistAlbumsResponse,
+                        self._api(
+                            DeezerArtistAlbumsResponse,
+                            self.api.get_artist_albums,
+                            artist.id,
+                            limit=limit,
+                        ),
+                    )
+                )
             )
         else:
             raise ValueError(
@@ -224,19 +251,24 @@ class DeezerClient(deezer.Deezer):
             )
 
         if self.always_fetch_release_date or fetch_release_date:
-            results = list(self._collection_details(results))
+            results = self._collection_details(results)
 
         return results
 
     def album(self, album_id: int) -> List[TrackShort]:
         """Get album tracks."""
         return list(
-            self._api(DeezerAlbumResponse, self.api.get_album, album_id).get_tracks()
+            cast(
+                DeezerAlbumResponse,
+                self._api(DeezerAlbumResponse, self.api.get_album, album_id),
+            ).get_tracks()
         )
 
     def track(self, track_id: int) -> TrackShort:
         """Get track info."""
-        return self._api(DeezerTrack, self.api.get_track, track_id).to_short()
+        return cast(
+            DeezerTrack, self._api(DeezerTrack, self.api.get_track, track_id)
+        ).to_short()
 
     def search(
         self,
@@ -256,36 +288,56 @@ class DeezerClient(deezer.Deezer):
             raise ValueError(msg)
         elif len(criteria) > 1:
             results = list(
-                self._api(
-                    DeezerAdvancedSearchResponse,
-                    self.api.advanced_search,
-                    artist=artist,
-                    album=album,
-                    track=track,
-                    strict=strict,
-                ).to_tracks()
+                to_tracks(
+                    cast(
+                        DeezerAdvancedSearchResponse,
+                        self._api(
+                            DeezerAdvancedSearchResponse,
+                            self.api.advanced_search,
+                            artist=artist,
+                            album=album,
+                            track=track,
+                            strict=strict,
+                        ),
+                    )
+                )
             )
         elif artist:
             results = list(
-                self._api(
-                    DeezerSearchArtistResponse, self.api.search_artist, artist
-                ).to_artists()
+                to_artists(
+                    cast(
+                        DeezerSearchArtistResponse,
+                        self._api(
+                            DeezerSearchArtistResponse, self.api.search_artist, artist
+                        ),
+                    )
+                )
             )
         elif album:
             results = list(
-                self._api(
-                    DeezerSearchAlbumResponse, self.api.search_album, album
-                ).to_albums()
+                to_albums(
+                    cast(
+                        DeezerSearchAlbumResponse,
+                        self._api(
+                            DeezerSearchAlbumResponse, self.api.search_album, album
+                        ),
+                    )
+                )
             )
         elif track:
             results = list(
-                self._api(
-                    DeezerSearchTrackResponse, self.api.search_track, track
-                ).to_tracks()
+                to_tracks(
+                    cast(
+                        DeezerSearchTrackResponse,
+                        self._api(
+                            DeezerSearchTrackResponse, self.api.search_track, track
+                        ),
+                    ),
+                )
             )
 
         if (self.always_fetch_release_date or fetch_release_date) and not artist:
-            results = list(self._collection_details(results))
+            results = self._collection_details(results)
 
         return results
 

@@ -29,54 +29,6 @@ class DeezerAPIResponseCollection(BaseModel, Generic[DeezerT]):
 
     data: List[DeezerT]
 
-    def _check_collection(self):
-        """Check collection type and length."""
-        if not len(self.data):
-            logger.error(f"Empty collection {self}")
-            return
-        # FIXME
-        # elif not isinstance(self.data[0], Generic[DeezerT]):
-        #     logger.error(
-        #         f"Cannot extract tracks from another type than a List[{DeezerT}]"
-        #     )
-        #     return
-
-    def to_tracks(self) -> Generator[TrackShort, None, None]:
-        """Get tracks collection iterator."""
-        self._check_collection()
-
-        for track in self.data:
-            yield TrackShort(
-                id=track.id,
-                title=track.title,
-                album=track.album.title,
-                artist=track.artist.name,
-            )
-
-    def to_albums(
-        self, artist: Optional[ArtistShort] = None
-    ) -> Generator[AlbumShort, None, None]:
-        """Get tracks collection iterator."""
-        self._check_collection()
-
-        for album in self.data:
-            yield AlbumShort(
-                id=album.id,
-                title=album.title,
-                release_date=album.release_date,
-                artist=album.artist.name if album.artist else artist.name,
-            )
-
-    def to_artists(self) -> Generator[ArtistShort, None, None]:
-        """Get artists collection iterator."""
-        self._check_collection()
-
-        for artist in self.data:
-            yield ArtistShort(
-                id=artist.id,
-                name=artist.name,
-            )
-
 
 class DeezerArtist(BaseDeezerModel):
     """Deezer API artist."""
@@ -168,6 +120,52 @@ DeezerSearchResponse: TypeAlias = (
     | DeezerSearchArtistResponse
     | DeezerSearchTrackResponse
 )
+
+
+# Helpers
+def to_tracks(
+    collection: (
+        DeezerArtistTopResponse
+        | DeezerArtistRadioResponse
+        | DeezerAdvancedSearchResponse
+        | DeezerSearchTrackResponse
+    ),
+) -> Generator[TrackShort, None, None]:
+    """Convert deezer API response tracks collection to short tracks."""
+    for track in collection.data:
+        yield TrackShort(
+            id=track.id,
+            title=track.title,
+            album=track.album.title,
+            artist=track.artist.name,
+        )
+
+
+def to_albums(
+    collection: DeezerArtistAlbumsResponse | DeezerSearchAlbumResponse,
+    artist: Optional[ArtistShort] = None,
+) -> Generator[AlbumShort, None, None]:
+    """Get tracks collection iterator."""
+    for album in collection.data:
+        yield AlbumShort(
+            id=album.id,
+            title=album.title,
+            release_date=album.release_date,
+            artist=(
+                artist.name if artist else album.artist.name if album.artist else None
+            ),
+        )
+
+
+def to_artists(
+    collection: DeezerSearchArtistResponse,
+) -> Generator[ArtistShort, None, None]:
+    """Get artists collection iterator."""
+    for artist in collection.data:
+        yield ArtistShort(
+            id=artist.id,
+            name=artist.name,
+        )
 
 
 # Deezer API Gateway models
