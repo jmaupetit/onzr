@@ -1,0 +1,16 @@
+.playlist {
+    border: solid green;
+}
+
+.play-control {
+    height: 5;
+    dock: bottom;
+}
+
+.play-status {
+    margin: 0 1 1 1
+}
+
+.play-button {
+    margin: 0 0 1 1;
+}
