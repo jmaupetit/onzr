@@ -27,7 +27,7 @@ dependencies = [
     "pydantic-extra-types>=2.10.6",
     "pydantic-settings>=2.9.1,<3",
     "python-vlc>=3.0.21203,<4",
-    "typer>=0.15.2,<0.16",
+    "typer>=0.15.2,<0.21",
     "uvicorn[standard]>=0.34.2,<0.35",
 ]
 
