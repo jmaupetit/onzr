@@ -17,6 +17,14 @@ and this project adheres to
 - CLI: add track/album release date to outputs for the `search` 
   and `artist` commands using the `-r/--release` option
 
+### Changed 
+
+#### Dependencies
+
+- Upgrade `pydantic` to `2.12.5`
+- Upgrade `pydantic-settings` to `2.12.0`
+
+
 ## [0.5.2] - 2025-11-04
 
 ### Fixed
