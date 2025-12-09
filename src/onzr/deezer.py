@@ -185,7 +185,7 @@ class DeezerClient(deezer.Deezer):
         logger.debug(f"Will query {endpoint=} to {model=} with {args=}/{kwargs=}")
 
         response = endpoint(*args, **kwargs)
-        logger.debug(f"{pformat(response,sort_dicts=True)=}")
+        logger.debug(pformat(response, sort_dicts=True))
 
         instance = model(**response)
         logger.debug(f"{instance=}")
@@ -246,7 +246,8 @@ class DeezerClient(deezer.Deezer):
                             artist.id,
                             limit=limit,
                         ),
-                    )
+                    ),
+                    artist=artist,
                 )
             )
         else:
