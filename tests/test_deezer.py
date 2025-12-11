@@ -92,11 +92,11 @@ def test_deezer_client_artist(responses, deezer_client):
     artist_id = 1
 
     # Artist
-    payload = DeezerArtistFactory.build(id=artist_id)
+    artist = DeezerArtistFactory.build(id=artist_id)
     responses.get(
         f"https://api.deezer.com/artist/{artist_id}",
         status=200,
-        json=json.loads(payload.model_dump_json()),
+        json=json.loads(artist.model_dump_json()),
     )
 
     with pytest.raises(
@@ -149,17 +149,21 @@ def test_deezer_client_artist(responses, deezer_client):
     assert len(radio) == len(payload.data)
 
     # Albums
-    payload = DeezerArtistAlbumsResponseFactory.build()
+    # The API does not include the artist in artist albums
+    payload = DeezerArtistAlbumsResponseFactory.build(
+        data=[DeezerAlbumFactory.build(artist=None) for _ in range(2)]
+    )
     responses.get(
         f"https://api.deezer.com/artist/{artist_id}/albums",
         status=200,
         json=json.loads(payload.model_dump_json()),
     )
-    radio = deezer_client.artist(
+    albums = deezer_client.artist(
         artist_id=artist_id, radio=False, top=False, albums=True
     )
-    assert isinstance(radio[0], AlbumShort)
-    assert len(radio) == len(payload.data)
+    assert isinstance(albums[0], AlbumShort)
+    assert len(albums) == len(payload.data)
+    assert all(a.artist == artist.name for a in albums)
 
 
 def test_deezer_client_album(responses, deezer_client):
