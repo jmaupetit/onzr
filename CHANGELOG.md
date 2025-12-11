@@ -12,7 +12,6 @@ and this project adheres to
 
 - Add playlist support
 - Add fallback track support
-- Fetch track details in separated threads (when requested)
 - Add the `CONNECTION_POOL_MAXSIZE` configuration setting
 - Add the `ALWAYS_FETCH_RELEASE_DATE` configuration setting
 - CLI: add the `playlist` command
@@ -22,11 +21,15 @@ and this project adheres to
 
 ### Changed 
 
+- Fetch track details in separated threads (when requested)
+
 #### Dependencies
 
+- Upgrade `fastapi` to `0.123.10`
 - Upgrade `pydantic` to `2.12.5`
 - Upgrade `pydantic-settings` to `2.12.0`
-
+- Upgrade `typer` to `0.20.0`
+- Upgrade `uvicorn` to `0.38.0`
 
 ## [0.5.2] - 2025-11-04
 
