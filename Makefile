@@ -1,6 +1,12 @@
 # -- General
 SHELL := /bin/bash
 
+# -- Docs
+DOCS_TAPES_PATH = scripts/docs
+DOCS_GIFS_PATH  = docs/img/tapes
+DOCS_TAPES      = $(wildcard $(DOCS_TAPES_PATH)/*.tape)
+DOCS_GIFS       = $(addprefix $(DOCS_GIFS_PATH)/,$(patsubst %.tape,%.gif,$(notdir $(DOCS_TAPES))))
+
 # ==============================================================================
 # RULES
 
@@ -8,6 +14,11 @@ default: help
 
 docs/openapi.json:
 	uv run onzr openapi > docs/openapi.json
+
+$(DOCS_GIFS_PATH)/%.gif: $(DOCS_TAPES_PATH)/%.tape 
+	@echo -e "---\n📼 $< → $@"
+	# Unset MAILCHECK to avoid notification in generated GIFs
+	unset MAILCHECK; uv run vhs $< -o $@
 
 # -- Build
 bootstrap: ## bootstrap the project for development
@@ -19,6 +30,11 @@ bootstrap: \
 build: ## install project
 	uv sync --locked --all-extras --dev
 .PHONY: build
+
+docs-gifs: ## compile all tapes included in the docs
+docs-gifs: $(DOCS_GIFS)
+	@echo "✅ Documentation GIFs updated"
+.PHONY: docs-gifs
 
 docs-serve: ## run documentation server 
 	# Force OpenAPI schema generation

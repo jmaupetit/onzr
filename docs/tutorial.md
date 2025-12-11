@@ -181,24 +181,7 @@ onzr search --artist Radiohead
 
 The command output should look like:
 
-```
-              Search results
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        ID ┃ Artist                      ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│       399 │ Radiohead                   │
-│ 177930417 │ Mau P                       │
-│    171883 │ NTO                         │
-│   7888234 │ Kelly Lee Owens             │
-│      2762 │ Easy Star All-Stars         │
-│  53477202 │ DJ Radiohead                │
-│  12189436 │ Radio Head                  │
-│ 258886601 │ radiohead two               │
-│ 271721572 │ Coldplay, Radiohead, Hozier │
-│  14009761 │ Radiohead Tribute Band      │
-│   4674537 │ Radiodread                  │
-└───────────┴─────────────────────────────┘
-```
+![`onzr search --artist Radiohead`](./img/tapes/tuto-search.gif)
 
 The identifier we are interested in for Radiohead is `399`. We can then use
 this identifier to explore the artist top tracks:
@@ -209,23 +192,7 @@ onzr artist 399
 
 The output should look like:
 
-```
-                           Artist collection
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃        ID ┃ Track                         ┃ Album        ┃ Artist    ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
-│ 138547415 │ Creep                         │ Pablo Honey  │ Radiohead │
-│ 138539979 │ Let Down                      │ OK Computer  │ Radiohead │
-│ 138539157 │ No Surprises                  │ No Surprises │ Radiohead │
-│ 138539981 │ Karma Police                  │ OK Computer  │ Radiohead │
-│ 138539977 │ Exit Music (For A Film)       │ OK Computer  │ Radiohead │
-│ 138547587 │ Everything In Its Right Place │ Kid A        │ Radiohead │
-│ 138546819 │ Jigsaw Falling Into Place     │ In Rainbows  │ Radiohead │
-│ 138539973 │ Paranoid Android              │ OK Computer  │ Radiohead │
-│ 138546811 │ All I Need                    │ In Rainbows  │ Radiohead │
-│ 138546809 │ Weird Fishes / Arpeggi        │ In Rainbows  │ Radiohead │
-└───────────┴───────────────────────────────┴──────────────┴───────────┘
-```
+![`onzr artist 399`](./img/tapes/tuto-artist.gif)
 
 In this top track list, we can find the track identifiers, title and album.
 
@@ -249,7 +216,7 @@ In this top track list, we can find the track identifiers, title and album.
 And if we want the artist discography, we can use the `--albums` option:
 
 ```sh
-onzr artist --albums --limit 100 399 # (1)
+onzr artist --albums --limit 20 399 # (1)
 ```
 
 1. The `--limit` option is used here to avoid being limited to the 10 latest
@@ -257,29 +224,7 @@ onzr artist --albums --limit 100 399 # (1)
 
 The output should look like:
 
-```
-                                  Artist collection
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┓
-┃        ID ┃ Album                                         ┃ Artist    ┃ Released   ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━┩
-│ 792320571 │ Hail to the Thief (Live Recordings 2003-2009) │ Radiohead │ 2025-08-13 │
-│ 265569082 │ KID A MNESIA                                  │ Radiohead │ 2021-11-05 │
-│  14879823 │ A Moon Shaped Pool                            │ Radiohead │ 2016-05-09 │
-│  14880501 │ TKOL RMX 1234567                              │ Radiohead │ 2011-10-10 │
-│  14880315 │ The King Of Limbs                             │ Radiohead │ 2011-02-18 │
-│  14880659 │ In Rainbows                                   │ Radiohead │ 2007-12-28 │
-│  14879789 │ Com Lag: 2+2=5                                │ Radiohead │ 2004-03-24 │
-│  14879739 │ Hail To the Thief                             │ Radiohead │ 2003-06-09 │
-│  14879753 │ I Might Be Wrong                              │ Radiohead │ 2001-11-12 │
-│  14879749 │ Amnesiac                                      │ Radiohead │ 2001-03-12 │
-│  ...      │ ...                                           │ ...       │ ...        │
-│  14880711 │ Pablo Honey                                   │ Radiohead │ 1993-02-22 │
-│  14880307 │ Anyone Can Play Guitar                        │ Radiohead │ 1993-01-25 │
-│  14880783 │ Creep                                         │ Radiohead │ 1992-09-21 │
-│ 423524437 │ Creep EP                                      │ Radiohead │ 1992-09-21 │
-│ 121893052 │ Drill EP                                      │ Radiohead │ 1992-05-05 │
-└───────────┴───────────────────────────────────────────────┴───────────┴────────────┘
-```
+![`onzr artist --albums --limit 20 399`](./img/tapes/tuto-artist-albums.gif)
 
 I hear you from here saying:
 
@@ -302,8 +247,7 @@ the `add` command is often the last command of a more complete pipeline,
 _e.g._:
 
 ```sh
-onzr search --artist "Radiohead" --ids | # (1) \
-    head -n 1 | \
+onzr search --artist "Radiohead" --ids --first | # (1) \
     onzr artist --top --ids - | # (2) \
     onzr add - # (3)
 ```
@@ -349,23 +293,7 @@ onzr queue
 
 The output should look like:
 
-```
-                           Queued tracks
-┏━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃ Rank ┃ Track                         ┃ Album        ┃ Artist    ┃
-┡━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
-│    1 │ Creep                         │ Pablo Honey  │ Radiohead │
-│    2 │ No Surprises                  │ No Surprises │ Radiohead │
-│    3 │ Let Down                      │ OK Computer  │ Radiohead │
-│    4 │ Karma Police                  │ OK Computer  │ Radiohead │
-│    5 │ Everything In Its Right Place │ Kid A        │ Radiohead │
-│    6 │ Exit Music (For A Film)       │ OK Computer  │ Radiohead │
-│    7 │ Jigsaw Falling Into Place     │ In Rainbows  │ Radiohead │
-│    8 │ All I Need                    │ In Rainbows  │ Radiohead │
-│    9 │ Weird Fishes / Arpeggi        │ In Rainbows  │ Radiohead │
-│   10 │ Paranoid Android              │ OK Computer  │ Radiohead │
-└──────┴───────────────────────────────┴──────────────┴───────────┘
-```
+![`onzr queue`](./img/tapes/tuto-queue.gif)
 
 If you want to start playing _Jigsaw Falling Into Place_ use its rank:
 

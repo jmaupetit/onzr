@@ -10,6 +10,8 @@
     This project is still at an early stage. It works in its core parts, but
     will not meet standard requirements for a decent player.
 
+![Onzr Demo VHS](https://vhs.charm.sh/vhs-6cGaxSq0RKCq7ELvYDItWy.gif)
+
 ## Requirements
 
 - [Python](https://www.python.org): 3.11+

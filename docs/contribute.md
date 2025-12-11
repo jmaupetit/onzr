@@ -5,6 +5,7 @@ Contributing to Onzr requires the following dependencies to be installed:
 - [GNU Make](https://www.gnu.org/software/make/)
 - [`uv`](https://docs.astral.sh/uv/)
 - [VLC](https://www.videolan.org/vlc/)
+- [VHS](https://github.com/charmbracelet/vhs)
 
 !!! Note
 
