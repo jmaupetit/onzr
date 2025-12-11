@@ -816,6 +816,6 @@ def version():
 @require_server
 def openapi():
     """Get Onzr HTTP API OpenAPI schema."""
-    from onzr.server import app
+    from onzr.server import app  # noqa: PLC0415
 
     sys.stdout.write(f"{json.dumps(app.openapi())}\n")
