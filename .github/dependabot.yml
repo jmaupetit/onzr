@@ -4,3 +4,5 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Disabled as we use Renovate for this
+    open-pull-requests-limit: 0
