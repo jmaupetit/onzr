@@ -147,7 +147,7 @@ def configured_onzr(responses, app_configuration):
 @pytest.fixture
 def client(configured_onzr):
     """A test client configured for the server."""
-    from onzr import server
+    from onzr import server  # noqa: PLC0415
 
     def get_configured_onzr():
         return configured_onzr
@@ -164,7 +164,7 @@ def test_server(responses, settings, configured_onzr):
     This fixture is costly and should only be run for integration testing such as an
     API client without mocking the server.
     """
-    from onzr import server as onzr_server
+    from onzr import server as onzr_server  # noqa: PLC0415
 
     def get_configured_onzr():
         return configured_onzr
