@@ -2,6 +2,7 @@
 
 import logging
 from datetime import date
+from enum import IntEnum
 from typing import Annotated, Generator, Generic, List, Optional, TypeAlias, TypeVar
 
 from annotated_types import Ge, Gt
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Deezer type
 DeezerT = TypeVar("DeezerT")
+DeezerTab = TypeVar("DeezerTab")
 
 
 class BaseDeezerModel(BaseModel):
@@ -225,6 +227,85 @@ class BaseDeezerGWResponse(BaseModel, Generic[DeezerT]):
     results: DeezerT
 
 
+class DeezerGWUser(BaseDeezerModel):
+    """Deezer Gateway user."""
+
+    USER_ID: int
+    BLOG_NAME: str
+
+    def to_user(self):
+        """Convert to DeezerUser."""
+        return DeezerUser(id=self.USER_ID, name=self.BLOG_NAME)
+
+
+class PlaylistStatus(IntEnum):
+    """Playlist statuses."""
+
+    PUBLIC = 0
+    PRIVATE = 1
+    COLLABORATIVE = 2
+
+
+class DeezerGWPlaylist(BaseDeezerModel):
+    """Deezer Gateway playlist."""
+
+    PLAYLIST_ID: int
+    TITLE: str
+    STATUS: PlaylistStatus
+    NB_SONG: int
+    PARENT_USERNAME: Optional[str] = None
+    PARENT_USER_ID: Optional[int] = None
+    USER_ID: Optional[int] = None
+
+    def to_short(self, user: Optional[str] = None) -> PlaylistShort:
+        """Convert DeezerGWPlaylist to PlaylistShort."""
+        return PlaylistShort(
+            id=self.PLAYLIST_ID,
+            title=self.TITLE,
+            public=True if self.STATUS == PlaylistStatus.PUBLIC else False,
+            nb_tracks=self.NB_SONG,
+            user=(
+                self.PARENT_USERNAME if self.PARENT_USERNAME else user if user else None
+            ),
+        )
+
+
+class DeezerGWPlaylistResponse(BaseDeezerModel):
+    """Deezer Gateway playlist response."""
+
+    DATA: DeezerGWPlaylist
+    SONGS: DeezerAPIResponseCollection["DeezerSong"]
+
+    def to_short(self) -> PlaylistShort:
+        """Convert DeezerGWPlaylistResponse to PlaylistShort."""
+        playlist = self.DATA.to_short()
+        playlist.tracks = [s.to_short() for s in self.SONGS.data]
+        return playlist
+
+
+class DeezerUserData(BaseDeezerModel):
+    """Deezer User Data."""
+
+    USER: DeezerGWUser
+
+
+class DeezerUserProfilePageTab(BaseDeezerModel, Generic[DeezerTab]):
+    """Deezer user profile page tab."""
+
+    TAB: DeezerTab
+
+
+class DeezerUserProfilePagePlaylists(BaseDeezerModel):
+    """Deezer user profile page playlists."""
+
+    playlists: DeezerAPIResponseCollection[DeezerGWPlaylist]
+
+
+DeezerUserProfilePageTabPlaylists = DeezerUserProfilePageTab[
+    DeezerUserProfilePagePlaylists
+]
+
+
 class DeezerSong(BaseDeezerModel):
     """Deezer API Song."""
 
@@ -236,7 +317,7 @@ class DeezerSong(BaseDeezerModel):
     VERSION: Optional[str] = None
     ALB_TITLE: str
     ALB_PICTURE: str
-    PHYSICAL_RELEASE_DATE: Annotated[date, PlainSerializer(str)]
+    PHYSICAL_RELEASE_DATE: Annotated[Optional[date], PlainSerializer(str)] = None
     FILESIZE_MP3_128: Annotated[int, Ge(0), PlainSerializer(str)]
     FILESIZE_MP3_320: Annotated[int, Ge(0), PlainSerializer(str)]
     FILESIZE_FLAC: Annotated[int, Ge(0), PlainSerializer(str)]
@@ -269,6 +350,18 @@ class DeezerSong(BaseDeezerModel):
             token=song.TRACK_TOKEN,
             duration=song.DURATION,
             formats=[filesizes[size] for size in filesizes if getattr(song, size) > 0],
+        )
+
+    def to_short(self):
+        """Convert DeezerSong to ShortTrack."""
+        return TrackShort(
+            id=self.SNG_ID,
+            title=(
+                f"{self.SNG_TITLE} {self.VERSION}" if self.VERSION else self.SNG_TITLE
+            ),
+            album=self.ALB_TITLE,
+            artist=self.ART_NAME,
+            release_date=self.PHYSICAL_RELEASE_DATE,
         )
 
 

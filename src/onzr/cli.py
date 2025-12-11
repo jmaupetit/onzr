@@ -58,6 +58,8 @@ logging_config = {
 logging.basicConfig(**logging_config)  # type: ignore[arg-type]
 
 cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
+my = typer.Typer(name="my", no_args_is_help=True, pretty_exceptions_short=True)
+cli.add_typer(my, name="my", help="Explore your 💜 library.")
 console = Console()
 logger = logging.getLogger(__name__)
 
@@ -79,7 +81,7 @@ class ExitCodes(IntEnum):
     SERVER_DOWN = 40
 
 
-def get_deezer_client(quiet: bool = False) -> DeezerClient:
+def get_deezer_client(quiet: bool = False, fast: bool = True) -> DeezerClient:
     """Get Deezer client for simple API queries."""
     settings = get_settings()
 
@@ -89,7 +91,7 @@ def get_deezer_client(quiet: bool = False) -> DeezerClient:
     return DeezerClient(
         arl=settings.ARL,
         blowfish=settings.DEEZER_BLOWFISH_SECRET,
-        fast=True,
+        fast=fast,
         connection_pool_maxsize=settings.CONNECTION_POOL_MAXSIZE,
         always_fetch_release_date=settings.ALWAYS_FETCH_RELEASE_DATE,
     )
@@ -480,6 +482,30 @@ def mix(
         return
 
     print_collection_table(tracks, title="Onzr Mix tracks")
+
+
+@my.command("playlists")
+def my_playlists(
+    private: Annotated[
+        bool, typer.Option("--private", "-p", help="Restrict to private playlists.")
+    ] = False,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your playlists."""
+    if ids:
+        quiet = True
+
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+
+    playlists = deezer.user_playlists(private)
+    if ids:
+        print_collection_ids(playlists)
+        return
+
+    print_collection_table(playlists, title=f"{deezer.user.name}'s playlists")
 
 
 @cli.command()
