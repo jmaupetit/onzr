@@ -1,0 +1,1163 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://jmaupetit.github.io/onzr/tutorial/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../commands/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Tutorial - Onzr</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#install-onzr" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Onzr" class="md-header__button md-logo" aria-label="Onzr" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 20a1 1 0 0 0-1-1h-1v-2h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4v2h-1a1 1 0 0 0-1 1H2v2h7a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1h7v-2zm-5-6V6l5 4z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Onzr
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tutorial
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jmaupetit/onzr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jmaupetit/onzr
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Introduction
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tutorial
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../commands/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Command Line Interface
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../configuration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  HTTP API
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../code_of_conduct/" class="md-tabs__link">
+          
+  
+  
+  Contribute
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Onzr" class="md-nav__button md-logo" aria-label="Onzr" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 20a1 1 0 0 0-1-1h-1v-2h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4v2h-1a1 1 0 0 0-1 1H2v2h7a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1h7v-2zm-5-6V6l5 4z"/></svg>
+
+    </a>
+    Onzr
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jmaupetit/onzr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jmaupetit/onzr
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install-onzr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install Onzr
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install Onzr">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-onzr-in-your-user-space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install Onzr in your user space
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-onzr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configure Onzr
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-web-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run the web server
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search-albums-artists-and-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search albums, artists and tracks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add-tracks-to-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add tracks to queue
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enjoy-your-music" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enjoy your music
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#control-the-player" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control the player
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-playlists-on-the-fly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create playlists on-the-fly
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribute
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contribute
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../code_of_conduct/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contribute/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Playing with the code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Tutorial</h1>
+
+<p>In this tutorial, you will learn how to set up Onzr and the basic philosophy
+behind it.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>While following this tutorial, you will be invited to type shell commands.
+Every command appears in a code block as follow:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Hello world!&quot;</span>
+</span></code></pre></div>
+<p>You can copy or type them in your terminal and type return at the end of
+the instruction to execute them.</p>
+</div>
+<h2 id="install-onzr">Install Onzr</h2>
+<h3 id="requirements">Requirements</h3>
+<p>Onzr is a Python package, but it depends on <a href="https://www.videolan.org/vlc/">VLC media
+player</a> to play your music. You need to make
+sure it's installed on your machine; don't be afraid most (every?) operating
+systems are compatible.</p>
+<p><a href="https://www.python.org">Python</a> should also be installed in your machine. If
+you are using a UNIX-based operating system such as MacOS or GNU/Linux, it
+should already be installed. Make sure your version of python is at least
+Python <code>11.0</code> by typing the following command in your favorite terminal:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>--version
+</span></code></pre></div>
+<p>Example output may be something like: <code>Python 3.12.8</code></p>
+<h3 id="install-onzr-in-your-user-space">Install Onzr in your user space</h3>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Make sure <code>pip</code> is installed for your Python version by typing the following
+command in a terminal:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>--version
+</span></code></pre></div>
+<p>This command should not fail and the output may look like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip 25.1.1 from /home/julien/.local/lib/python3.12/site-packages/pip (python 3.12)
+</span></code></pre></div>
+<p>If <code>pip</code> is not installed, please follow the <a href="https://pip.pypa.io/en/stable/installation/">official
+documentation</a> to install it.</p>
+</div>
+<p>We will use the <code>pip</code> package manager to install <code>onzr</code> in your user space:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>onzr
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Use your preferred installation method</p>
+<p>In this tutorial, we invite you to install Onzr in your user space, but
+you can choose to install it globally (for all users), or using another package
+manager than Pip. It's up to you to choose the most convenient method to install
+a Python package in your machine.</p>
+</div>
+<p>Once installed, the <code>onzr</code> command can be called from your favorite terminal.
+You can test it by typing:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>onzr<span class="w"> </span>--help
+</span></code></pre></div>
+<h2 id="configure-onzr">Configure Onzr</h2>
+<p>A basic configuration file is required to run Onzr. It should be created once
+using the dedicated <code>init</code> command.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Before running this command, we invite you to get your <strong>ARL token</strong> that
+will be used to authenticate your requests to the Deezer API. This token
+value can be found stored in a session cookie once connected to
+<a href="https://www.deezer.com">deezer.com</a> using your favorite web browser (see
+<a href="https://github.com/nathom/streamrip/wiki/Finding-Your-Deezer-ARL-Cookie">detailed
+instructions</a>).</p>
+</div>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>onzr<span class="w"> </span>init
+</span></code></pre></div>
+<p>When prompted, copy/paste your ARL token and validate by pressing <span class="keys"><kbd class="key-enter">Enter</kbd></span></p>
+<p>That's it: Onzr is now configured 🎉 A configuration file (<code>settings.yaml</code>)
+should have been generated at the following path (depending on your OS):</p>
+<ul>
+<li><strong>MacOS</strong>: <code>~/Library/Application Support/onzr/settings.yaml</code></li>
+<li><strong>Windows</strong>: <code>%appdata%\watson\config</code>, which usually expands to <code>C:\Users\&lt;user&gt;\AppData\Roaming\onzr\settings.yaml</code></li>
+<li><strong>Linux</strong>: <code>~/.config/onzr/settings.yaml</code></li>
+</ul>
+<p>You can check the configuration path using the <code>config -p</code> command:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>onzr<span class="w"> </span>config<span class="w"> </span>-p
+</span></code></pre></div>
+<p>And the configuration content using:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>onzr<span class="w"> </span>config
+</span></code></pre></div>
+<p>You should see at least two defined settings:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">ARL</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;your-arl-token&quot;</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nt">DEEZER_BLOWFISH_SECRET</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;supersecret&quot;</span>
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Edit your configuration</p>
+<p>Feel free to customize Onzr's behavior by changing your settings such as the
+default audio quality:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">ARL</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;your-arl-token&quot;</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nt">DEEZER_BLOWFISH_SECRET</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;supersecret&quot;</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nt">QUALITY</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;FLAC&quot;</span>
+</span></code></pre></div>
+<p>Configuration can be edited using the <code>onzr config -e</code> command.</p>
+</div>
+<p>For a complete list of configurable settings and configuration tips, please
+refer to the <a href="../configuration/">configuration documentation</a>.</p>
+<h2 id="run-the-web-server">Run the web server</h2>
+<p>Onzr has been designed as a web server that streams and plays your music using
+FastAPI and VLC respectively. It provides an HTTP API to interact with it,
+<em>e.g.</em> control the player and the tracks queue.</p>
+<p>To use Onzr you should run the web server by using the <code>serve</code> command:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>onzr<span class="w"> </span>serve
+</span></code></pre></div>
+<p>If Onzr is properly installed and configured, you should see logs from the web
+server displayed in your terminal. And as it's running as a foreground process,
+you will need to start a new terminal to run new commands to act on it.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If you want to run the Onzr server as a background process, we recommend to
+lower the log-level so that it won't disturb your terminal flow:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>onzr<span class="w"> </span>serve<span class="w"> </span>--log-level<span class="w"> </span>error<span class="w"> </span><span class="p">&amp;</span>
+</span></code></pre></div>
+</div>
+<p>Make sure Onzr server is running by using the <code>state</code> command:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>onzr<span class="w"> </span>state
+</span></code></pre></div>
+<p>If the server is up and running, you should get a description of the server
+state. Meaning we can start playing with it and stream our favorite tracks.</p>
+<h2 id="search-albums-artists-and-tracks">Search albums, artists and tracks</h2>
+<p>Onzr CLI uses Deezer API to explore available music tracks. When beginning with
+Onzr, the first step is often a search. Let's say you want to explore
+Radiohead's discography. The first step is to get its artist identifier (ID):</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>onzr<span class="w"> </span>search<span class="w"> </span>--artist<span class="w"> </span>Radiohead
+</span></code></pre></div>
+<p>The command output should look like:</p>
+<p><img alt="onzr search --artist Radiohead" src="../img/tapes/tuto-search.gif" /></p>
+<p>The identifier we are interested in for Radiohead is <code>399</code>. We can then use
+this identifier to explore the artist top tracks:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>onzr<span class="w"> </span>artist<span class="w"> </span><span class="m">399</span>
+</span></code></pre></div>
+<p>The output should look like:</p>
+<p><img alt="onzr artist 399" src="../img/tapes/tuto-artist.gif" /></p>
+<p>In this top track list, we can find the track identifiers, title and album.</p>
+<div class="admonition tip">
+<p class="admonition-title">Pro tip for power users ™</p>
+<p>An alternative way to achieve the previous suite of commands is to leverage the
+power of UNIX shells by using the pipe operator (<code>|</code> character) that send the
+output of a command as input of another command (we say it is "piped" to the
+second command):</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>onzr<span class="w"> </span>search<span class="w"> </span>--artist<span class="w"> </span>Radiohead<span class="w"> </span>--ids<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="c1"># (1) \</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="c1"># (2) \</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span>onzr<span class="w"> </span>artist<span class="w"> </span>-<span class="w"> </span><span class="c1"># (3)</span>
+</span></code></pre></div>
+<ol>
+<li>Only display identifiers using the <code>--ids</code> option</li>
+<li>Restrict to the first match using <code>head</code> command</li>
+<li>Use the <code>-</code> special flag so that Onzr expects identifiers coming from the standard input</li>
+</ol>
+</div>
+<p>And if we want the artist discography, we can use the <code>--albums</code> option:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>onzr<span class="w"> </span>artist<span class="w"> </span>--albums<span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="m">399</span><span class="w"> </span><span class="c1"># (1)</span>
+</span></code></pre></div>
+<ol>
+<li>The <code>--limit</code> option is used here to avoid being limited to the 10 latest
+   albums (API default page size it <code>10</code>).</li>
+</ol>
+<p>The output should look like:</p>
+<p><img alt="onzr artist --albums --limit 20 399" src="../img/tapes/tuto-artist-albums.gif" /></p>
+<p>I hear you from here saying:</p>
+<blockquote>
+<p>— Ok that great, but we are here to listen to music, not get creepy identifiers!</p>
+</blockquote>
+<p>Loud and clear, let's continue to the next section to listen good music!</p>
+<h2 id="add-tracks-to-queue">Add tracks to queue</h2>
+<p>Onzr queue should be considered as a volatile playlist that you can modify
+on-the-fly. You may add tracks to the queue using the <code>add</code> command:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>onzr<span class="w"> </span>add<span class="w"> </span><span class="m">138539157</span>
+</span></code></pre></div>
+<p>In this case, we've added the track with the <code>138539157</code> identifier to the
+queue. Since you may not remember Deezer identifier from your favorite tracks,
+the <code>add</code> command is often the last command of a more complete pipeline,
+<em>e.g.</em>:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>onzr<span class="w"> </span>search<span class="w"> </span>--artist<span class="w"> </span><span class="s2">&quot;Radiohead&quot;</span><span class="w"> </span>--ids<span class="w"> </span>--first<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="c1"># (1) \</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">    </span>onzr<span class="w"> </span>artist<span class="w"> </span>--top<span class="w"> </span>--ids<span class="w"> </span>-<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="c1"># (2) \</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">    </span>onzr<span class="w"> </span>add<span class="w"> </span>-<span class="w"> </span><span class="c1"># (3)</span>
+</span></code></pre></div>
+<ol>
+<li>Note that we use the <code>--ids</code> option to only display artists identifiers</li>
+<li>Note that we use the <code>--ids</code> option to only display tracks identifiers</li>
+<li>Note that the <code>add</code> command also accepts the <code>-</code> special operator to read
+   identifiers from the standard input (<code>stdint</code>)</li>
+</ol>
+<p>In this case, we will add Radiohead's top-10 tracks to the queue. This is a
+classical pipeline.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If you want a fresh start and remove all queued tracks, use the <code>clear</code>
+command:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>onzr<span class="w"> </span>clear
+</span></code></pre></div>
+<p>Note that this will also stop the player.</p>
+</div>
+<h2 id="enjoy-your-music">Enjoy your music</h2>
+<p>Once you filled Onzr's queue, you can start playing it!</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>onzr<span class="w"> </span>play
+</span></code></pre></div>
+<p>By default, if the queue has just been filled and left untouched, the <code>play</code>
+command will start playing the first track. If the player is paused, it will
+resume playing.</p>
+<p>If you prefer playing a particular queued track, you can also start playing
+from its rank in the queue. To get the list of queued tracks, you can use the
+<code>queue</code> command, get the rank of your favorite track and then play it:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>onzr<span class="w"> </span>queue
+</span></code></pre></div>
+<p>The output should look like:</p>
+<p><img alt="onzr queue" src="../img/tapes/tuto-queue.gif" /></p>
+<p>If you want to start playing <em>Jigsaw Falling Into Place</em> use its rank:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>onzr<span class="w"> </span>play<span class="w"> </span>--rank<span class="w"> </span><span class="m">7</span>
+</span></code></pre></div>
+<h2 id="control-the-player">Control the player</h2>
+<p>As you may expect, there are few commands that do what they say to control the
+player:</p>
+<ul>
+<li><code>pause</code>: toggle pause</li>
+<li><code>next</code>: play next track in queue</li>
+<li><code>previous</code>: play previous track in queue</li>
+<li><code>stop</code>: stop the player without clearing the queue</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If you want to follow currenly played tracks in real-time you may use the
+<code>now</code> command:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>onzr<span class="w"> </span>now<span class="w"> </span>-f
+</span></code></pre></div>
+</div>
+<h2 id="create-playlists-on-the-fly">Create playlists on-the-fly</h2>
+<p>One last thing: the <code>mix</code> command is Onzr's secret sauce! This command can
+create playlists on the fly given a list of artists names. Let's see it in
+action:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>onzr<span class="w"> </span>mix<span class="w"> </span><span class="s2">&quot;avishai cohen&quot;</span><span class="w"> </span><span class="s2">&quot;go go penguin&quot;</span><span class="w"> </span><span class="s2">&quot;yom&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span><span class="w"> </span>--ids<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="c1"># (1) \</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">    </span>shuf<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="c1"># (2) \</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span>shuf<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span>onzr<span class="w"> </span>add<span class="w"> </span>-
+</span></code></pre></div>
+<ol>
+<li>Note that we use quotes for each artist (since they may have spaces or
+   special characters in their names)</li>
+<li>The <code>shuf</code> command shuffles standard input lines</li>
+</ol>
+<p>With this command we add 60 tracks to the queue (20 tracks per artist) in a
+random order. By default, we consider the <code>--limit</code> first artist's top-tracks
+(defaults to 10).</p>
+<p>So if you want to go deeper and discover artists inspired from the ones you
+choose, use the <code>--deep</code> option to get tracks from each artist's radio. There
+is a great chance that you discover new sounds:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>onzr<span class="w"> </span>mix<span class="w"> </span>--deep<span class="w"> </span><span class="s2">&quot;avishai cohen&quot;</span><span class="w"> </span><span class="s2">&quot;go go penguin&quot;</span><span class="w"> </span><span class="s2">&quot;yom&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span><span class="w"> </span>--ids<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">    </span>shuf<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">    </span>shuf<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="w">    </span>onzr<span class="w"> </span>add<span class="w"> </span>-
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The cool thing about this <code>mix --deep</code> command is that if you run it twice,
+you won't have the same mix, since artist's radio are randomly created.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "content.code.copy", "content.tabs.link", "navigation.tabs", "navigation.tabs.sticky", "toc.integrate"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>
