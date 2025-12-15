@@ -117,7 +117,7 @@ class OnzrTuiApp(App):
     def get_playlist_items(self) -> DataTable:
         """Create the playlist items table."""
         queue: QueuedTracks = self.client.queue_list()
-        table: DataTable = DataTable()
+        table: DataTable = DataTable(cursor_type="row")
 
         table.add_column("ID")
         table.add_column("Title")
