@@ -1,4 +1,5 @@
 """Onzr: TUI elements."""
+from functools import cache
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, HorizontalGroup, Vertical
@@ -17,15 +18,10 @@ from onzr import cli
 from onzr.client import OnzrClient
 from onzr.models import PlayingState, QueuedTracks
 
-
-def get_now_playing():
-    """Get the current playing status."""
-    client = OnzrClient()
-    playing_state: PlayingState = client.now_playing()
-    if playing_state.track is not None:
-        return playing_state.track.title
-    else:
-        return "Nothing"
+@cache
+def get_onzr_client():
+    """Get the onzr client."""
+    return OnzrClient()
 
 
 class PlayStatusWidget(Static):
@@ -43,21 +39,27 @@ class PlayControl(HorizontalGroup):
 
     now_playing_text = reactive("Nothing", layout=True)
 
+    def __init__(
+            self, client: OnzrClient
+    ):
+        super().__init__()
+        self.client = client
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Event handler called when a button is pressed."""
         button_id = event.button.id
 
         match button_id:
             case "play":
-                cli.play()
+                self.client.play()
             case "pause":
-                cli.pause()
+                self.client.pause()
             case "stop":
-                cli.stop()
+                self.client.stop()
             case "previous":
-                cli.previous()
+                self.client.previous()
             case "next":
-                cli.next()
+                self.client.next()
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a stopwatch."""
@@ -80,6 +82,7 @@ class OnzrTuiApp(App):
     """
 
     CSS_PATH = "tui.tcss"
+    client: OnzrClient = get_onzr_client()
 
     BINDINGS = [
         ("p", "show_tab('playlist-tab')", "Play list"),
@@ -94,7 +97,7 @@ class OnzrTuiApp(App):
 
     def update_status(self):
         """Update the text displayed in the status widget."""
-        self.query_one(PlayStatusWidget).now_playing_text = get_now_playing()
+        self.query_one(PlayStatusWidget).now_playing_text = self.get_now_playing()
 
     def compose(self) -> ComposeResult:
         """Compose the tui app with tabbed content."""
@@ -105,7 +108,7 @@ class OnzrTuiApp(App):
                     yield self.get_playlist_items()
                     with Container(classes="play-control"):
                         yield PlayStatusWidget(classes="play-status")
-                        yield PlayControl()
+                        yield PlayControl(self.client)
             with TabPane("Search", id="search-tab"):
                 yield Static("Search")
         # Footer to show keys
@@ -113,8 +116,7 @@ class OnzrTuiApp(App):
 
     def get_playlist_items(self) -> DataTable:
         """Create the playlist items table."""
-        client = OnzrClient()
-        queue: QueuedTracks = client.queue_list()
+        queue: QueuedTracks = self.client.queue_list()
         table: DataTable = DataTable()
 
         table.add_column("ID")
@@ -131,3 +133,11 @@ class OnzrTuiApp(App):
             )
 
         return table
+
+    def get_now_playing(self):
+        """Get the current playing status."""
+        playing_state: PlayingState = get_onzr_client().now_playing()
+        if playing_state.track is not None:
+            return playing_state.track.title
+        else:
+            return "Nothing"

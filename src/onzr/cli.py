@@ -757,7 +757,7 @@ def openapi():
 
 @cli.command()
 @require_server
-def tui():
+def player():
     """Start the TUI application."""
     from onzr.tui import OnzrTuiApp
 
