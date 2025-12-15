@@ -296,6 +296,7 @@ class DeezerClient(deezer.Deezer):
 
     def playlist(self, playlist_id: int) -> PlaylistShort:
         """Get playlist tracks."""
+        # Supposed it's a public playlist
         try:
             playlist = cast(
                 DeezerPlaylist,
@@ -303,6 +304,7 @@ class DeezerClient(deezer.Deezer):
                     DeezerPlaylist, self.api.get_playlist, playlist_id=playlist_id
                 ),
             ).to_short()
+        # Looks like it's a private playlist
         except PermissionException:
             # We've only the 10-first tracks of the playlist here
             playlist = cast(
