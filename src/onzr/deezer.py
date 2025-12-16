@@ -4,7 +4,8 @@ import functools
 import hashlib
 import logging
 from datetime import date
-from enum import IntEnum
+from enum import IntEnum, StrEnum
+from operator import attrgetter
 from pprint import pformat
 from queue import Queue as SyncQueue
 from threading import Thread
@@ -51,6 +52,13 @@ from .models.deezer import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class AlbumSortBy(StrEnum):
+    """Album list sort field."""
+
+    ARTIST = "artist"
+    TITLE = "title"
 
 
 class DeezerClient(deezer.Deezer):
@@ -443,7 +451,22 @@ class DeezerClient(deezer.Deezer):
                     user_id=self.user.id,
                 ),
             ),
-            key=lambda a: a.name,
+            key=attrgetter("name"),
+        )
+
+    def user_albums(self, sort_by: AlbumSortBy) -> List[AlbumShort]:
+        """Get logged in user favorite albums."""
+        return sorted(
+            cast(
+                List[AlbumShort],
+                self._api(
+                    DeezerAlbum,
+                    self.gw.get_user_albums,
+                    callback=lambda c: [a.to_short() for a in c],
+                    user_id=self.user.id,
+                ),
+            ),
+            key=attrgetter(sort_by),
         )
 
 
