@@ -4,7 +4,7 @@ import functools
 import hashlib
 import logging
 from datetime import date
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from pprint import pformat
 from queue import Queue as SyncQueue
 from threading import Thread
@@ -51,6 +51,13 @@ from .models.deezer import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class AlbumSortBy(StrEnum):
+    """Album list sort field."""
+
+    ARTIST = "artist"
+    TITLE = "title"
 
 
 class DeezerClient(deezer.Deezer):
@@ -161,6 +168,16 @@ class DeezerClient(deezer.Deezer):
 
         # Preserve collection ordering
         return sorted(new, key=lambda i: order[i.id])
+
+    @staticmethod
+    def _sort_key(field: str) -> Callable[[Any], tuple[bool, str]]:
+        """Case-insensitive sort key; items missing the field go last."""
+
+        def key(item: Any) -> tuple[bool, str]:
+            value = getattr(item, field)
+            return (not value, (value or "").casefold())
+
+        return key
 
     @staticmethod
     def _collection_to_short(collection: DeezerAPIResponseCollection) -> Collection:
@@ -441,7 +458,22 @@ class DeezerClient(deezer.Deezer):
                     user_id=self.user.id,
                 ),
             ),
-            key=lambda a: a.name,
+            key=self._sort_key("name"),
+        )
+
+    def user_albums(self, sort_by: AlbumSortBy) -> List[AlbumShort]:
+        """Get logged in user favorite albums."""
+        return sorted(
+            cast(
+                List[AlbumShort],
+                self._api(
+                    DeezerAlbum,
+                    self.gw.get_user_albums,
+                    callback=lambda c: [a.to_short() for a in c],
+                    user_id=self.user.id,
+                ),
+            ),
+            key=self._sort_key(sort_by),
         )
 
 
