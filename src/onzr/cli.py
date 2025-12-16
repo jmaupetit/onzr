@@ -5,13 +5,15 @@ import logging
 import logging.config
 import sys
 import time
+from contextlib import nullcontext
 from enum import IntEnum
 from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
+from itertools import chain
 from operator import attrgetter
 from pathlib import Path
-from random import randint, shuffle
-from typing import List, Set, cast
+from random import shuffle
+from typing import List, Optional, Set, cast
 
 import click
 import pendulum
@@ -36,7 +38,7 @@ from .config import (
     get_onzr_dir,
     get_settings,
 )
-from .deezer import AlbumSortBy, DeezerClient
+from .deezer import AlbumSortBy, DeezerClient, TrackSortBy
 from .models.core import (
     AlbumShort,
     ArtistShort,
@@ -135,7 +137,13 @@ def print_collection_table(
     theme = get_theme()
     table = Table(title=title)
 
-    sample = collection[randint(0, len(collection) - 1)]  # noqa: S311
+    # Iterators (e.g. favorite tracks) are fetched lazily: consume them once
+    items: List[ArtistShort | AlbumShort | TrackShort | PlaylistShort] = list(
+        collection
+    )
+    if not items:
+        return
+    sample = items[0]
     show_artist = (
         True
         if isinstance(sample, TrackShort)
@@ -171,10 +179,10 @@ def print_collection_table(
     # Sort albums by release date
     if isinstance(sample, AlbumShort) and sort:
         albums_with_release_date: Set[AlbumShort] = set(
-            filter(attrgetter("release_date"), collection)  # type: ignore[arg-type]
+            filter(attrgetter("release_date"), items)  # type: ignore[arg-type]
         )
         albums_without_release_date: List[AlbumShort] = list(
-            cast(Set[AlbumShort], set(collection)) - albums_with_release_date
+            cast(Set[AlbumShort], set(items)) - albums_with_release_date
         )
         sorted_collection: List[AlbumShort] = sorted(
             albums_with_release_date,
@@ -182,7 +190,7 @@ def print_collection_table(
             reverse=True,
         )
         sorted_collection.extend(albums_without_release_date)
-        collection = sorted_collection
+        items = list(sorted_collection)
 
     if isinstance(sample, PlaylistShort):
         table.add_column("Title", style=theme.title_color.as_hex())
@@ -190,9 +198,9 @@ def print_collection_table(
         table.add_column("# tracks", style="bold")
         table.add_column("User", style=theme.secondary_color.as_hex())
 
-    for rk, item in enumerate(collection):
+    for rk, item in enumerate(items, start=1):
         table.add_row(
-            str(rk + 1),
+            str(rk),
             *map(str, item.model_dump(exclude_none=True, exclude={"tracks"}).values()),
         )
 
@@ -318,7 +326,7 @@ def search(
         raise typer.Exit(code=ExitCodes.NOT_FOUND)
 
     if first:
-        results = results[:1]
+        results = cast(List[TrackShort], results)[:1]
 
     if ids:
         print_collection_ids(results)
@@ -478,7 +486,7 @@ def mix(
     for artist_ in artist:
         result = deezer.search(artist_, strict=True)
         # We expect the search engine to be relevant 🤞
-        artist_id = result[0].id
+        artist_id = cast(List[ArtistShort], result)[0].id
         tracks += cast(
             List[TrackShort],
             deezer.artist(artist_id, radio=deep, top=True, limit=limit),
@@ -562,6 +570,57 @@ def my_albums(
 
     with console.pager(styles=True):
         print_collection_table(albums, title=f"{deezer.user.name}'s albums", sort=False)
+
+
+@my.command("tracks")
+def my_tracks(
+    by: Annotated[
+        Optional[TrackSortBy],
+        typer.Option(
+            "--by",
+            "-b",
+            help="Sort by album, artist or title (default: most recent first).",
+        ),
+    ] = None,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your favorite tracks."""
+    if ids:
+        quiet = True
+
+    settings = get_settings()
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+    tracks = deezer.user_tracks(
+        page_size=settings.FAVORITE_SONGS_PAGINATE_BY, sort_by=by
+    )
+
+    # `user_tracks` returns a generator, always truthy: peek the first track
+    # to detect empty collections, and restore it for later consumption.
+    if (first := next(tracks, None)) is None:
+        console.print("No favorite tracks for user.")
+        return
+    tracks = chain([first], tracks)
+
+    if ids:
+        print_collection_ids(tracks)
+        return
+
+    # Fetching may take a while: show progress on stderr, stdout goes to the pager
+    status = (
+        nullcontext()
+        if quiet
+        else logging_console.status("Fetching your favorite tracks…")
+    )
+    with status:
+        fetched = list(tracks)
+
+    with console.pager(styles=True):
+        print_collection_table(
+            fetched, title=f"{deezer.user.name}'s tracks", sort=False
+        )
 
 
 @cli.command()
