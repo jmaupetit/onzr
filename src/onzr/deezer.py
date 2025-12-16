@@ -1,15 +1,17 @@
 """Onzr: deezer client."""
 
+import concurrent.futures
 import functools
 import hashlib
 import logging
+from collections.abc import Iterator
 from datetime import date
 from enum import IntEnum, StrEnum
 from operator import attrgetter
 from pprint import pformat
 from queue import Queue as SyncQueue
 from threading import Thread
-from typing import Any, Callable, Iterator, List, Optional, cast
+from typing import Any, Callable, List, Optional, cast
 
 import deezer
 import requests
@@ -57,6 +59,14 @@ logger = logging.getLogger(__name__)
 class AlbumSortBy(StrEnum):
     """Album list sort field."""
 
+    ARTIST = "artist"
+    TITLE = "title"
+
+
+class TrackSortBy(StrEnum):
+    """Track list sort field."""
+
+    ALBUM = "album"
     ARTIST = "artist"
     TITLE = "title"
 
@@ -468,6 +478,25 @@ class DeezerClient(deezer.Deezer):
             ),
             key=attrgetter(sort_by),
         )
+
+    def user_tracks(self) -> Iterator[TrackShort]:
+        """Get logged in user favorite tracks."""
+        # Get the favorite tracks playlist identifier
+        response = self.gw.get_user_favorite_ids(checksum=None, limit=10000, start=0)
+
+        # FIXME: Add a model for this
+        song_ids = [favorite["SNG_ID"] for favorite in response["data"]]
+
+        # Iterate by chunks as it may be big!
+        chunk_size = 100
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for c in range(0, len(song_ids), chunk_size):
+                future = executor.submit(
+                    self.gw.get_tracks, song_ids[c : c + chunk_size]
+                )
+                for song in future.result():
+                    yield DeezerSong.model_validate(song).to_short()
 
 
 class TrackStatus(IntEnum):
