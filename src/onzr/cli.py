@@ -9,7 +9,7 @@ from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
 from operator import attrgetter
 from pathlib import Path
-from random import shuffle
+from random import randint, shuffle
 from typing import List, Set, cast
 
 import click
@@ -36,7 +36,7 @@ from .config import (
     get_onzr_dir,
     get_settings,
 )
-from .deezer import DeezerClient
+from .deezer import AlbumSortBy, DeezerClient
 from .models.core import (
     AlbumShort,
     ArtistShort,
@@ -50,7 +50,7 @@ from .models.core import (
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging_config = {
-    "level": logging.DEBUG,
+    "level": logging.INFO,
     "format": FORMAT,
     "datefmt": "[%X]",
     "handlers": [RichHandler(console=logging_console)],
@@ -122,12 +122,14 @@ def print_collection_ids(collection: Collection):
         console.print(item.id)
 
 
-def print_collection_table(collection: Collection, title="Collection"):
+def print_collection_table(
+    collection: Collection, title="Collection", sort: bool = True
+):
     """Print a collection as a table."""
     theme = get_theme()
     table = Table(title=title)
 
-    sample = collection[0]
+    sample = collection[randint(0, len(collection) - 1)]
     show_artist = (
         True
         if isinstance(sample, TrackShort)
@@ -161,7 +163,7 @@ def print_collection_table(collection: Collection, title="Collection"):
         table.add_column("Released")
 
     # Sort albums by release date
-    if isinstance(sample, AlbumShort):
+    if isinstance(sample, AlbumShort) and sort:
         albums_with_release_date: Set[AlbumShort] = set(
             filter(attrgetter("release_date"), collection)  # type: ignore[arg-type]
         )
@@ -505,7 +507,8 @@ def my_playlists(
         print_collection_ids(playlists)
         return
 
-    print_collection_table(playlists, title=f"{deezer.user.name}'s playlists")
+    with console.pager(styles=True):
+        print_collection_table(playlists, title=f"{deezer.user.name}'s playlists")
 
 
 @my.command("artists")
@@ -526,7 +529,33 @@ def my_artists(
         print_collection_ids(artists)
         return
 
-    print_collection_table(artists, title=f"{deezer.user.name}'s artists")
+    with console.pager(styles=True):
+        print_collection_table(artists, title=f"{deezer.user.name}'s artists")
+
+
+@my.command("albums")
+def my_albums(
+    by: Annotated[
+        AlbumSortBy, typer.Option("--by", "-b", help="Sort by title or artist.")
+    ] = AlbumSortBy.TITLE,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your favorite albums."""
+    if ids:
+        quiet = True
+
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+
+    albums = deezer.user_albums(sort_by=by)
+    if ids:
+        print_collection_ids(albums)
+        return
+
+    with console.pager(styles=True):
+        print_collection_table(albums, title=f"{deezer.user.name}'s albums", sort=False)
 
 
 @cli.command()
