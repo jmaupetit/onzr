@@ -1,9 +1,18 @@
 """Onzr: deezer models."""
 
 import logging
-from datetime import date
+from datetime import date, datetime
 from enum import IntEnum
-from typing import Annotated, Generator, Generic, List, Optional, TypeAlias, TypeVar
+from typing import (
+    Annotated,
+    Generator,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    TypeAlias,
+    TypeVar,
+)
 
 from annotated_types import Ge, Gt
 from pydantic import BaseModel, PlainSerializer, PositiveInt
@@ -192,6 +201,17 @@ class BaseDeezerGWResponse(BaseModel, Generic[DeezerT]):
     results: DeezerT
 
 
+class BaseDeezerGWResults(BaseModel, Generic[DeezerT]):
+    """Deezer API Gateway response result base Model."""
+
+    data: list[DeezerT]
+    count: int
+    total: int
+    filtered_count: int
+    checksum: str
+    playlist_id: str
+
+
 class DeezerGWUser(BaseDeezerModel):
     """Deezer Gateway user."""
 
@@ -271,6 +291,14 @@ DeezerUserProfilePageTabPlaylists = DeezerUserProfilePageTab[
 ]
 
 
+class DeezerFavorite(BaseDeezerModel):
+    """Deezer API favorite (song)."""
+
+    SNG_ID: Annotated[int, PlainSerializer(str)]
+    DATE_FAVORITE: datetime
+    __TYPE__: Literal["song"]
+
+
 class DeezerSong(BaseDeezerModel):
     """Deezer API Song."""
 
@@ -331,3 +359,4 @@ class DeezerSong(BaseDeezerModel):
 
 
 DeezerSongResponse = BaseDeezerGWResponse[DeezerSong]
+DeezerFavoriteResponse = BaseDeezerGWResults[DeezerFavorite]

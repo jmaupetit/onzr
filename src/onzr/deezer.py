@@ -1,5 +1,6 @@
 """Onzr: deezer client."""
 
+import concurrent.futures
 import functools
 import hashlib
 import logging
@@ -37,6 +38,7 @@ from .models.deezer import (
     DeezerArtistRadioResponse,
     DeezerArtistResponse,
     DeezerArtistTopResponse,
+    DeezerFavoriteResponse,
     DeezerGWPlaylistResponse,
     DeezerPlaylist,
     DeezerSearchAlbumResponse,
@@ -57,6 +59,14 @@ logger = logging.getLogger(__name__)
 class AlbumSortBy(StrEnum):
     """Album list sort field."""
 
+    ARTIST = "artist"
+    TITLE = "title"
+
+
+class TrackSortBy(StrEnum):
+    """Track list sort field."""
+
+    ALBUM = "album"
     ARTIST = "artist"
     TITLE = "title"
 
@@ -137,7 +147,7 @@ class DeezerClient(deezer.Deezer):
                 DeezerAlbum, self._api(DeezerAlbum, self.api.get_album, album_id=id_)
             ).to_short()
 
-        sample = collection[0]
+        sample = next(iter(collection), None)
         if isinstance(sample, TrackShort):
             endpoint = get_track
         elif isinstance(sample, AlbumShort):
@@ -182,15 +192,17 @@ class DeezerClient(deezer.Deezer):
         model: (
             type[DeezerAlbum]
             | type[DeezerAlbumResponse]
-            | type[DeezerArtist]
             | type[DeezerArtistResponse]
+            | type[DeezerArtist]
+            | type[DeezerFavoriteResponse]
+            | type[DeezerFavoriteResponse]
             | type[DeezerGWPlaylistResponse]
             | type[DeezerPlaylist]
-            | type[DeezerUserProfilePageTabPlaylists]
             | type[DeezerSearchResponse]
             | type[DeezerSong]
             | type[DeezerTrack]
             | type[DeezerUserData]
+            | type[DeezerUserProfilePageTabPlaylists]
         ),
         endpoint: Callable,
         callback: Callable | None = None,
@@ -202,6 +214,7 @@ class DeezerClient(deezer.Deezer):
         | DeezerAlbumResponse
         | DeezerArtist
         | DeezerArtistResponse
+        | DeezerFavoriteResponse
         | DeezerPlaylist
         | DeezerSearchResponse
         | DeezerTrack
@@ -468,6 +481,52 @@ class DeezerClient(deezer.Deezer):
             ),
             key=attrgetter(sort_by),
         )
+
+    def user_tracks(self, page_size: int) -> Iterator[TrackShort]:
+        """Get logged in user favorite tracks."""
+        page: int = 0
+        total: int = cast(
+            DeezerFavoriteResponse,
+            self._api(
+                DeezerFavoriteResponse,
+                self.gw.get_user_favorite_ids,
+                callback=None,
+                checksum=None,
+                limit=1,
+                start=0,
+            ),
+        ).total
+        start: int = 0
+        while start <= total:
+            start = page * page_size
+            limit = (page + 1) * page_size
+
+            # Get the favorite tracks playlist identifier
+            song_ids = cast(
+                list[int],
+                self._api(
+                    DeezerFavoriteResponse,
+                    self.gw.get_user_favorite_ids,
+                    callback=lambda results: [s.SNG_ID for s in results.data],
+                    checksum=None,
+                    limit=limit,
+                    start=start,
+                ),
+            )
+            if not len(song_ids):
+                break
+
+            # Iterate by chunks as it may be big!
+            chunk_size = 100
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                for c in range(0, len(song_ids), chunk_size):
+                    future = executor.submit(
+                        self.gw.get_tracks, song_ids[c : c + chunk_size]
+                    )
+                    for song in future.result():
+                        yield DeezerSong.model_validate(song).to_short()
+            page += 1
 
 
 class TrackStatus(IntEnum):

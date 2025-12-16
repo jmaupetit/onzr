@@ -8,10 +8,11 @@ import time
 from enum import IntEnum
 from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
+from itertools import chain, tee
 from operator import attrgetter
 from pathlib import Path
 from random import randint, shuffle
-from typing import List, Set, cast
+from typing import Iterator, List, Set, cast
 
 import click
 import pendulum
@@ -51,7 +52,7 @@ FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging_config = {
     "version": 1,
-    "level": logging.INFO,
+    "level": logging.DEBUG,
     "format": FORMAT,
     "datefmt": "[%X]",
     "handlers": {
@@ -135,7 +136,14 @@ def print_collection_table(
     theme = get_theme()
     table = Table(title=title)
 
-    sample = collection[randint(0, len(collection) - 1)]  # noqa: S311
+    sample: ArtistShort | AlbumShort | TrackShort | PlaylistShort | None = None
+    if isinstance(collection, Iterator):
+        collection, collection_ = tee(collection, 2)
+        sample = next(collection_, None)
+    else:
+        if not len(collection):
+            return
+        sample = collection[randint(0, len(collection) - 1)]  # noqa: S311
     show_artist = (
         True
         if isinstance(sample, TrackShort)
@@ -190,11 +198,15 @@ def print_collection_table(
         table.add_column("# tracks", style="bold")
         table.add_column("User", style=theme.secondary_color.as_hex())
 
-    for rk, item in enumerate(collection):
-        table.add_row(
-            str(rk + 1),
-            *map(str, item.model_dump(exclude_none=True, exclude={"tracks"}).values()),
-        )
+    # Display long tables as soon as you can
+    with Live(table, refresh_per_second=4, vertical_overflow="visible"):
+        for rk, item in enumerate(collection):
+            table.add_row(
+                str(rk + 1),
+                *map(
+                    str, item.model_dump(exclude_none=True, exclude={"tracks"}).values()
+                ),
+            )
 
     console.print(table)
 
@@ -318,7 +330,7 @@ def search(
         raise typer.Exit(code=ExitCodes.NOT_FOUND)
 
     if first:
-        results = results[:1]
+        results = cast(List[TrackShort], results)[:1]
 
     if ids:
         print_collection_ids(results)
@@ -478,7 +490,7 @@ def mix(
     for artist_ in artist:
         result = deezer.search(artist_, strict=True)
         # We expect the search engine to be relevant 🤞
-        artist_id = result[0].id
+        artist_id = cast(List[ArtistShort], result)[0].id
         tracks += cast(
             List[TrackShort],
             deezer.artist(artist_id, radio=deep, top=True, limit=limit),
@@ -562,6 +574,36 @@ def my_albums(
 
     with console.pager(styles=True):
         print_collection_table(albums, title=f"{deezer.user.name}'s albums", sort=False)
+
+
+@my.command("tracks")
+def my_tracks(
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your favorite tracks."""
+    if ids:
+        quiet = True
+
+    settings = get_settings()
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+    tracks = deezer.user_tracks(page_size=settings.FAVORITE_SONGS_PAGINATE_BY)
+
+    # `user_tracks` returns a generator, always truthy: peek the first track
+    # to detect empty collections, and restore it for later consumption.
+    if (first := next(tracks, None)) is None:
+        console.print("No favorite tracks for user.")
+        return
+    tracks = chain([first], tracks)
+
+    if ids:
+        print_collection_ids(tracks)
+        return
+
+    with console.pager(styles=True):
+        print_collection_table(tracks, title=f"{deezer.user.name}'s tracks", sort=False)
 
 
 @cli.command()
