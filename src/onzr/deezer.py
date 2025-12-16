@@ -431,6 +431,21 @@ class DeezerClient(deezer.Deezer):
         )
         return list(filter(lambda p: not p.public, playlists)) if private else playlists
 
+    def user_artists(self) -> List[ArtistShort]:
+        """Get logged in user favorite artists."""
+        return sorted(
+            cast(
+                List[ArtistShort],
+                self._api(
+                    DeezerArtist,
+                    self.gw.get_user_artists,
+                    callback=lambda c: [a.to_short() for a in c],
+                    user_id=self.user.id,
+                ),
+            ),
+            key=lambda a: a.name,
+        )
+
 
 class TrackStatus(IntEnum):
     """Track statuses."""
