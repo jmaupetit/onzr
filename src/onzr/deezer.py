@@ -61,6 +61,14 @@ class AlbumSortBy(StrEnum):
     TITLE = "title"
 
 
+class TrackSortBy(StrEnum):
+    """Track list sort field."""
+
+    ALBUM = "album"
+    ARTIST = "artist"
+    TITLE = "title"
+
+
 class DeezerClient(deezer.Deezer):
     """A wrapper for the Deezer API client."""
 
@@ -468,6 +476,16 @@ class DeezerClient(deezer.Deezer):
             ),
             key=attrgetter(sort_by),
         )
+
+    def user_tracks(self, sort_by: Optional[TrackSortBy] = None) -> PlaylistShort:
+        """Get logged in user favorite tracks."""
+        # Get the favorite tracks playlist identifier
+        response = self.gw.get_user_favorite_ids(checksum=None, limit=0, start=0)
+        playlist_id = response["playlist_id"]
+        playlist = self.playlist(playlist_id)
+        if playlist.tracks and sort_by:
+            playlist.tracks = sorted(playlist.tracks, key=attrgetter(sort_by))
+        return playlist
 
 
 class TrackStatus(IntEnum):

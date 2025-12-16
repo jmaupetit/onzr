@@ -118,7 +118,9 @@ class DeezerPlaylist(BaseDeezerModel):
             user=(
                 self.creator.name
                 if self.creator
-                else self.user.name if self.user else None
+                else self.user.name
+                if self.user
+                else None
             ),
             tracks=(
                 [track.to_short() for track in self.tracks.data]
