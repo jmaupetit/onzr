@@ -61,6 +61,14 @@ class AlbumSortBy(StrEnum):
     TITLE = "title"
 
 
+class TrackSortBy(StrEnum):
+    """Track list sort field."""
+
+    ALBUM = "album"
+    ARTIST = "artist"
+    TITLE = "title"
+
+
 class DeezerClient(deezer.Deezer):
     """A wrapper for the Deezer API client."""
 
@@ -468,6 +476,23 @@ class DeezerClient(deezer.Deezer):
             ),
             key=attrgetter(sort_by),
         )
+
+    def user_tracks(self, sort_by: Optional[TrackSortBy] = None) -> List[TrackShort]:
+        """Get logged in user favorite tracks."""
+        tracks = cast(
+            List[TrackShort],
+            self._api(
+                DeezerTrack,
+                self.gw.get_user_tracks,
+                callback=lambda c: [a.to_short() for a in c],
+                user_id=self.user.id,
+                # FIXME: this has no effect at all, we always get 25 tracks
+                limit=10,
+            ),
+        )
+        if sort_by:
+            return sorted(tracks, key=attrgetter(sort_by))
+        return tracks
 
 
 class TrackStatus(IntEnum):

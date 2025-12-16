@@ -10,7 +10,7 @@ from importlib.metadata import version as import_lib_version
 from operator import attrgetter
 from pathlib import Path
 from random import randint, shuffle
-from typing import List, Set, cast
+from typing import List, Optional, Set, cast
 
 import click
 import pendulum
@@ -36,7 +36,7 @@ from .config import (
     get_onzr_dir,
     get_settings,
 )
-from .deezer import AlbumSortBy, DeezerClient
+from .deezer import AlbumSortBy, DeezerClient, TrackSortBy
 from .models.core import (
     AlbumShort,
     ArtistShort,
@@ -556,6 +556,32 @@ def my_albums(
 
     with console.pager(styles=True):
         print_collection_table(albums, title=f"{deezer.user.name}'s albums", sort=False)
+
+
+@my.command("tracks")
+def my_tracks(
+    by: Annotated[
+        Optional[TrackSortBy],
+        typer.Option("--by", "-b", help="Sort by title, album or artist."),
+    ] = None,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your favorite albums."""
+    if ids:
+        quiet = True
+
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+
+    tracks = deezer.user_tracks(sort_by=by)
+    if ids:
+        print_collection_ids(tracks)
+        return
+
+    with console.pager(styles=True):
+        print_collection_table(tracks, title=f"{deezer.user.name}'s tracks", sort=False)
 
 
 @cli.command()
