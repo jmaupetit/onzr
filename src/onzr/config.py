@@ -74,6 +74,7 @@ class Settings(BaseSettings):
     CONNECTION_POOL_MAXSIZE: int = 10
     DEEZER_BLOWFISH_SECRET: str
     QUALITY: StreamQuality = StreamQuality.MP3_128
+    FAVORITE_SONGS_PAGINATE_BY: int = 10000
 
     # Player
     # How long should we wait before getting player status after player control action?
