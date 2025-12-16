@@ -50,7 +50,7 @@ from .models.core import (
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging_config = {
-    "level": logging.INFO,
+    "level": logging.DEBUG,
     "format": FORMAT,
     "datefmt": "[%X]",
     "handlers": [RichHandler(console=logging_console)],
@@ -506,6 +506,27 @@ def my_playlists(
         return
 
     print_collection_table(playlists, title=f"{deezer.user.name}'s playlists")
+
+
+@my.command("artists")
+def my_artists(
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your favorite artists."""
+    if ids:
+        quiet = True
+
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+
+    artists = deezer.user_artists()
+    if ids:
+        print_collection_ids(artists)
+        return
+
+    print_collection_table(artists, title=f"{deezer.user.name}'s artists")
 
 
 @cli.command()
