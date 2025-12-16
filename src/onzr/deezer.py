@@ -19,6 +19,7 @@ from pydantic import HttpUrl
 from .exceptions import DeezerTrackException
 from .models.core import (
     AlbumShort,
+    ArtistShort,
     Collection,
     PlaylistShort,
     StreamQuality,
@@ -29,6 +30,7 @@ from .models.deezer import (
     DeezerAdvancedSearchResponse,
     DeezerAlbum,
     DeezerAlbumResponse,
+    DeezerAPIResponseCollection,
     DeezerArtist,
     DeezerArtistAlbumsResponse,
     DeezerArtistRadioResponse,
@@ -46,10 +48,6 @@ from .models.deezer import (
     DeezerUser,
     DeezerUserData,
     DeezerUserProfilePageTabPlaylists,
-    to_albums,
-    to_artists,
-    to_playlists,
-    to_tracks,
 )
 
 logger = logging.getLogger(__name__)
@@ -164,6 +162,13 @@ class DeezerClient(deezer.Deezer):
         # Preserve collection ordering
         return sorted(new, key=lambda i: order[i.id])
 
+    @staticmethod
+    def _collection_to_short(
+        collection: DeezerAPIResponseCollection, *args, **kwargs
+    ) -> Collection:
+        """Convert API response collection to a collection."""
+        return [item.to_short() for item in collection.data]
+
     def _api(
         self,
         model: (
@@ -227,47 +232,38 @@ class DeezerClient(deezer.Deezer):
         results: Collection = []
 
         if radio:
-            results = list(
-                to_tracks(
-                    cast(
-                        DeezerArtistRadioResponse,
-                        self._api(
-                            DeezerArtistRadioResponse,
-                            self.api.get_artist_radio,
-                            artist_id=artist.id,
-                            limit=limit,
-                        ),
-                    )
-                )
+            results = cast(
+                List[TrackShort],
+                self._api(
+                    DeezerArtistRadioResponse,
+                    self.api.get_artist_radio,
+                    callback=self._collection_to_short,
+                    artist_id=artist.id,
+                    limit=limit,
+                ),
             )
+
         elif top:
-            results = list(
-                to_tracks(
-                    cast(
-                        DeezerArtistTopResponse,
-                        self._api(
-                            DeezerArtistTopResponse,
-                            self.api.get_artist_top,
-                            artist_id=artist.id,
-                            limit=limit,
-                        ),
-                    )
-                )
+            results = cast(
+                List[TrackShort],
+                self._api(
+                    DeezerArtistTopResponse,
+                    self.api.get_artist_top,
+                    callback=self._collection_to_short,
+                    artist_id=artist.id,
+                    limit=limit,
+                ),
             )
         elif albums:
-            results = list(
-                to_albums(
-                    cast(
-                        DeezerArtistAlbumsResponse,
-                        self._api(
-                            DeezerArtistAlbumsResponse,
-                            self.api.get_artist_albums,
-                            artist_id=artist.id,
-                            limit=limit,
-                        ),
-                    ),
-                    artist=artist,
-                )
+            results = cast(
+                List[AlbumShort],
+                self._api(
+                    DeezerArtistAlbumsResponse,
+                    self.api.get_artist_albums,
+                    callback=lambda c: self._collection_to_short(c, artist=artist),
+                    artist_id=artist.id,
+                    limit=limit,
+                ),
             )
         else:
             raise ValueError(
@@ -346,72 +342,58 @@ class DeezerClient(deezer.Deezer):
             logger.error(msg)
             raise ValueError(msg)
         elif len(criteria) > 1:
-            results = list(
-                to_tracks(
-                    cast(
-                        DeezerAdvancedSearchResponse,
-                        self._api(
-                            DeezerAdvancedSearchResponse,
-                            self.api.advanced_search,
-                            artist=artist,
-                            album=album,
-                            track=track,
-                            strict=strict,
-                        ),
-                    )
-                )
+            results = cast(
+                List[TrackShort],
+                self._api(
+                    DeezerAdvancedSearchResponse,
+                    self.api.advanced_search,
+                    callback=self._collection_to_short,
+                    artist=artist,
+                    album=album,
+                    track=track,
+                    strict=strict,
+                ),
             )
         elif artist:
-            results = list(
-                to_artists(
-                    cast(
-                        DeezerSearchArtistResponse,
-                        self._api(
-                            DeezerSearchArtistResponse,
-                            self.api.search_artist,
-                            query=artist,
-                        ),
-                    )
-                )
+            results = cast(
+                List[ArtistShort],
+                self._api(
+                    DeezerSearchArtistResponse,
+                    self.api.search_artist,
+                    callback=self._collection_to_short,
+                    query=artist,
+                ),
             )
         elif album:
-            results = list(
-                to_albums(
-                    cast(
-                        DeezerSearchAlbumResponse,
-                        self._api(
-                            DeezerSearchAlbumResponse,
-                            self.api.search_album,
-                            query=album,
-                        ),
-                    )
-                )
+            results = cast(
+                List[AlbumShort],
+                self._api(
+                    DeezerSearchAlbumResponse,
+                    self.api.search_album,
+                    callback=self._collection_to_short,
+                    query=album,
+                ),
             )
+
         elif track:
-            results = list(
-                to_tracks(
-                    cast(
-                        DeezerSearchTrackResponse,
-                        self._api(
-                            DeezerSearchTrackResponse,
-                            self.api.search_track,
-                            query=track,
-                        ),
-                    ),
-                )
+            results = cast(
+                List[TrackShort],
+                self._api(
+                    DeezerSearchTrackResponse,
+                    self.api.search_track,
+                    callback=self._collection_to_short,
+                    query=track,
+                ),
             )
         elif playlist:
-            results = list(
-                to_playlists(
-                    cast(
-                        DeezerSearchPlaylistResponse,
-                        self._api(
-                            DeezerSearchPlaylistResponse,
-                            self.api.search_playlist,
-                            query=playlist,
-                        ),
-                    ),
-                )
+            results = cast(
+                List[PlaylistShort],
+                self._api(
+                    DeezerSearchPlaylistResponse,
+                    self.api.search_playlist,
+                    callback=self._collection_to_short,
+                    query=playlist,
+                ),
             )
 
         if (self.always_fetch_release_date or fetch_release_date) and not artist:

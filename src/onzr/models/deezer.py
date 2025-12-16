@@ -152,6 +152,17 @@ class DeezerAlbumResponse(BaseDeezerAPIResponse):
                 release_date=self.release_date,
             )
 
+    def to_short(self, artist: Optional[ArtistShort] = None) -> AlbumShort:
+        """Get AlbumShort."""
+        return AlbumShort(
+            id=self.id,
+            title=self.title,
+            release_date=self.release_date,
+            artist=(
+                artist.name if artist else self.artist.name if self.artist else None
+            ),
+        )
+
 
 DeezerArtistTopResponse = DeezerAPIResponseCollection[DeezerTrack]
 DeezerArtistRadioResponse = DeezerAPIResponseCollection[DeezerTrack]
@@ -171,52 +182,6 @@ DeezerSearchResponse: TypeAlias = (
     | DeezerSearchPlaylistResponse
     | DeezerSearchTrackResponse
 )
-
-
-# Helpers
-def to_tracks(
-    collection: (
-        DeezerArtistTopResponse
-        | DeezerArtistRadioResponse
-        | DeezerAdvancedSearchResponse
-        | DeezerSearchTrackResponse
-    ),
-) -> Generator[TrackShort, None, None]:
-    """Convert deezer API response tracks collection to short tracks."""
-    for track in collection.data:
-        yield track.to_short()
-
-
-def to_albums(
-    collection: DeezerArtistAlbumsResponse | DeezerSearchAlbumResponse,
-    artist: Optional[ArtistShort] = None,
-) -> Generator[AlbumShort, None, None]:
-    """Get tracks collection iterator."""
-    for album in collection.data:
-        yield AlbumShort(
-            id=album.id,
-            title=album.title,
-            release_date=album.release_date,
-            artist=(
-                artist.name if artist else album.artist.name if album.artist else None
-            ),
-        )
-
-
-def to_artists(
-    collection: DeezerSearchArtistResponse,
-) -> Generator[ArtistShort, None, None]:
-    """Get artists collection iterator."""
-    for artist in collection.data:
-        yield artist.to_short()
-
-
-def to_playlists(
-    collection: DeezerSearchPlaylistResponse,
-) -> Generator[PlaylistShort, None, None]:
-    """Get playlists collection iterator."""
-    for playlist in collection.data:
-        yield playlist.to_short()
 
 
 # Deezer API Gateway models
