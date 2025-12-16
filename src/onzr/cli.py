@@ -569,7 +569,7 @@ def my_tracks(
         bool, typer.Option("--ids", "-i", help="Show only result IDs.")
     ] = False,
 ):
-    """Get your favorite albums."""
+    """Get your favorite tracks."""
     if ids:
         quiet = True
 
