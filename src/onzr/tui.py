@@ -40,10 +40,11 @@ class PlayControl(HorizontalGroup):
     now_playing_text = reactive("Nothing", layout=True)
 
     def __init__(
-            self, client: OnzrClient
+            self, client: OnzrClient, playlist: DataTable
     ):
         super().__init__()
         self.client = client
+        self.playlist = playlist
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Event handler called when a button is pressed."""
@@ -51,7 +52,12 @@ class PlayControl(HorizontalGroup):
 
         match button_id:
             case "play":
-                self.client.play()
+                if self.playlist.row_count == 0:
+                    return
+                row_key, _ = self.playlist.coordinate_to_cell_key(self.playlist.cursor_coordinate)
+                if row_key is None:
+                    return
+                self.client.play(rank=self.playlist.cursor_coordinate.row)
             case "pause":
                 self.client.pause()
             case "stop":
@@ -83,6 +89,7 @@ class OnzrTuiApp(App):
 
     CSS_PATH = "tui.tcss"
     client: OnzrClient = get_onzr_client()
+    playlist: DataTable = None
 
     BINDINGS = [
         ("p", "show_tab('playlist-tab')", "Play list"),
@@ -108,31 +115,28 @@ class OnzrTuiApp(App):
                     yield self.get_playlist_items()
                     with Container(classes="play-control"):
                         yield PlayStatusWidget(classes="play-status")
-                        yield PlayControl(self.client)
+                        yield PlayControl(self.client, self.playlist)
             with TabPane("Search", id="search-tab"):
                 yield Static("Search")
         # Footer to show keys
         yield Footer()
 
-    def get_playlist_items(self) -> DataTable:
+    def get_playlist_items(self)-> DataTable:
         """Create the playlist items table."""
         queue: QueuedTracks = self.client.queue_list()
-        table: DataTable = DataTable(cursor_type="row")
-
-        table.add_column("ID")
-        table.add_column("Title")
-        table.add_column("Artist")
-        table.add_column("Album")
-
+        self.playlist = DataTable(cursor_type="row")
+        self.playlist.add_column("ID")
+        self.playlist.add_column("Title")
+        self.playlist.add_column("Artist")
+        self.playlist.add_column("Album")
         for qtrack in queue.tracks:
-            table.add_row(
+            self.playlist.add_row(
                 qtrack.track.id,
                 qtrack.track.title,
                 qtrack.track.artist,
                 qtrack.track.album,
             )
-
-        return table
+        return self.playlist
 
     def get_now_playing(self):
         """Get the current playing status."""
