@@ -1,4 +1,5 @@
 """Onzr: TUI elements."""
+
 from functools import cache
 
 from textual.app import App, ComposeResult
@@ -14,9 +15,9 @@ from textual.widgets import (
     TabPane,
 )
 
-from onzr import cli
 from onzr.client import OnzrClient
 from onzr.models import PlayingState, QueuedTracks
+
 
 @cache
 def get_onzr_client():
@@ -39,9 +40,13 @@ class PlayControl(HorizontalGroup):
 
     now_playing_text = reactive("Nothing", layout=True)
 
-    def __init__(
-            self, client: OnzrClient, playlist: DataTable
-    ):
+    def __init__(self, client: OnzrClient, playlist: DataTable):
+        """Initialize the PlayControl with a client and playlist.
+
+        Args:
+            client: The OnzrClient instance to use for making API calls
+            playlist: The DataTable containing the playlist items
+        """
         super().__init__()
         self.client = client
         self.playlist = playlist
@@ -54,7 +59,9 @@ class PlayControl(HorizontalGroup):
             case "play":
                 if self.playlist.row_count == 0:
                     return
-                row_key, _ = self.playlist.coordinate_to_cell_key(self.playlist.cursor_coordinate)
+                row_key, _ = self.playlist.coordinate_to_cell_key(
+                    self.playlist.cursor_coordinate
+                )
                 if row_key is None:
                     return
                 self.client.play(rank=self.playlist.cursor_coordinate.row)
@@ -115,13 +122,13 @@ class OnzrTuiApp(App):
                     yield self.get_playlist_items()
                     with Container(classes="play-control"):
                         yield PlayStatusWidget(classes="play-status")
-                        yield PlayControl(self.client, self.playlist)
+                        yield PlayControl(self.client, self.playlist, id="play-control")
             with TabPane("Search", id="search-tab"):
                 yield Static("Search")
         # Footer to show keys
         yield Footer()
 
-    def get_playlist_items(self)-> DataTable:
+    def get_playlist_items(self) -> DataTable:
         """Create the playlist items table."""
         queue: QueuedTracks = self.client.queue_list()
         self.playlist = DataTable(cursor_type="row")
