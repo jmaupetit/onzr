@@ -21,14 +21,14 @@ classifiers = [
 ]
 dependencies = [
     "deezer-py>=1.3.7,<2",
-    "fastapi>=0.124.4,<0.125",
+    "fastapi>=0.128,<0.129",
     "pendulum>=3.1.0",
     "pycryptodomex>=3.21.0,<4",
     "pydantic-extra-types>=2.10.6",
     "pydantic-settings>=2.9.1,<3",
     "python-vlc>=3.0.21203,<4",
-    "typer>=0.20,<0.21",
-    "uvicorn[standard]>=0.38,<0.39",
+    "typer>=0.21,<0.22",
+    "uvicorn[standard]>=0.40,<0.41",
 ]
 
 [project.urls]
@@ -39,7 +39,7 @@ onzr = "onzr.cli:cli"
 
 [dependency-groups]
 dev = [
-    "black>=25.1.0,<26",
+    "black>=26.1,<27",
     "httpx>=0.28.1",
     "mkdocs-material>=9.6.21",
     "mypy>=1.15.0,<2",
