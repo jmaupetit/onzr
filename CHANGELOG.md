@@ -8,6 +8,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed 
+
+#### Dependencies
+
+- Upgrade `fastapi` to `0.128.0`
+- Upgrade `typer` to `0.21.1`
+- Upgrade `uvicorn` to `0.40.0`
+
 ## [0.6.0] - 2025-12-12
 
 ### Added
