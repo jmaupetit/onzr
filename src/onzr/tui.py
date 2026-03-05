@@ -16,8 +16,7 @@ from textual.widgets import (
 )
 
 from onzr.client import OnzrClient
-from onzr.models import PlayingState, QueuedTracks
-
+from onzr.models.core import QueuedTracks, PlayingState
 
 @cache
 def get_onzr_client():
@@ -40,14 +39,15 @@ class PlayControl(HorizontalGroup):
 
     now_playing_text = reactive("Nothing", layout=True)
 
-    def __init__(self, client: OnzrClient, playlist: DataTable):
+    def __init__(self, client: OnzrClient, playlist: DataTable, **kwargs):
         """Initialize the PlayControl with a client and playlist.
 
         Args:
             client: The OnzrClient instance to use for making API calls
             playlist: The DataTable containing the playlist items
+            **kwargs: Additional arguments passed to the parent HorizontalGroup
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.client = client
         self.playlist = playlist
 
