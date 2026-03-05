@@ -16,7 +16,8 @@ from textual.widgets import (
 )
 
 from onzr.client import OnzrClient
-from onzr.models.core import QueuedTracks, PlayingState
+from onzr.models.core import PlayingState, QueuedTracks
+
 
 @cache
 def get_onzr_client():
@@ -96,7 +97,7 @@ class OnzrTuiApp(App):
 
     CSS_PATH = "tui.tcss"
     client: OnzrClient = get_onzr_client()
-    playlist: DataTable = None
+    playlist: DataTable | None = None
 
     BINDINGS = [
         ("p", "show_tab('playlist-tab')", "Play list"),
@@ -119,10 +120,11 @@ class OnzrTuiApp(App):
         with TabbedContent(initial="playlist-tab"):
             with TabPane("Play list", id="playlist-tab"):
                 with Vertical():
-                    yield self.get_playlist_items()
+                    playlist_table = self.get_playlist_items()
+                    yield playlist_table
                     with Container(classes="play-control"):
                         yield PlayStatusWidget(classes="play-status")
-                        yield PlayControl(self.client, self.playlist, id="play-control")
+                        yield PlayControl(self.client, playlist_table, id="play-control")
             with TabPane("Search", id="search-tab"):
                 yield Static("Search")
         # Footer to show keys
