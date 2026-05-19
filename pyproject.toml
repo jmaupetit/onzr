@@ -21,14 +21,14 @@ classifiers = [
 ]
 dependencies = [
     "deezer-py>=1.3.7,<2",
-    "fastapi>=0.128,<0.129",
+    "fastapi>=0.136,<0.137",
     "pendulum>=3.1.0",
     "pycryptodomex>=3.21.0,<4",
     "pydantic-extra-types>=2.10.6",
     "pydantic-settings>=2.9.1,<3",
     "python-vlc>=3.0.21203,<4",
-    "typer>=0.21,<0.22",
-    "uvicorn[standard]>=0.40,<0.41",
+    "typer>=0.25,<0.26",
+    "uvicorn[standard]>=0.46,<0.47",
 ]
 
 [project.urls]
@@ -42,13 +42,13 @@ dev = [
     "black>=26.1,<27",
     "httpx>=0.28.1",
     "mkdocs-material>=9.6.21",
-    "mypy>=1.15.0,<2",
+    "mypy>=2.1,<3",
     "neoteroi-mkdocs>=1.1.3",
     "polyfactory>=2.22.2",
     "pytest>=9.0.1,<10",
     "pytest-coverage>=0.0,<0.1",
     "pytest-responses>=0.5.1",
-    "ruff>=0.14.8,<0.15",
+    "ruff==0.15.12",
     "types-pyyaml>=6.0.12.20250516,<7",
     "types-requests>=2.32.0.20250306,<3",
 ]

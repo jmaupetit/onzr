@@ -2,6 +2,7 @@
 
 import json
 import logging
+import logging.config
 import sys
 import time
 from enum import IntEnum
@@ -19,7 +20,6 @@ import uvicorn
 import yaml
 from rich.console import Console, Group
 from rich.live import Live
-from rich.logging import RichHandler
 from rich.progress_bar import ProgressBar
 from rich.prompt import Prompt
 from rich.syntax import Syntax
@@ -50,12 +50,18 @@ from .models.core import (
 FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging_config = {
+    "version": 1,
     "level": logging.INFO,
     "format": FORMAT,
     "datefmt": "[%X]",
-    "handlers": [RichHandler(console=logging_console)],
+    "handlers": {
+        "console": {
+            "class": "rich.logging.RichHandler",
+            "console": logging_console,
+        }
+    },
 }
-logging.basicConfig(**logging_config)  # type: ignore[arg-type]
+logging.config.dictConfig(logging_config)
 
 cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
 console = Console()
@@ -781,7 +787,7 @@ def serve(
 
     level = LOG_LEVELS[log_level]
     logging_config.update({"level": level})
-    logging.basicConfig(**logging_config, force=True)  # type: ignore[arg-type]
+    logging.config.dictConfig(logging_config)
 
     settings = get_settings()
     config = uvicorn.Config(
