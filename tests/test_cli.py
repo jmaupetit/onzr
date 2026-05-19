@@ -57,8 +57,7 @@ def test_openapi_command(test_server, configured_cli_runner):
     result = configured_cli_runner.invoke(cli, ["openapi"])
     assert result.exit_code == ExitCodes.OK
 
-    # FIXME: a server log is captured as stdout (row 1)
-    schema = json.loads(result.stdout.split("\n")[1])
+    schema = json.loads(result.stdout)
     assert "openapi" in schema
 
 
