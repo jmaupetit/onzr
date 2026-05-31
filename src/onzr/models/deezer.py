@@ -71,7 +71,7 @@ class DeezerAlbum(BaseDeezerModel):
 class DeezerTrack(BaseDeezerModel):
     """Deezer API track."""
 
-    id: PositiveInt
+    id: int
     title: str
     album: DeezerAlbum
     artist: DeezerArtist
@@ -118,9 +118,7 @@ class DeezerPlaylist(BaseDeezerModel):
             user=(
                 self.creator.name
                 if self.creator
-                else self.user.name
-                if self.user
-                else None
+                else self.user.name if self.user else None
             ),
             tracks=(
                 [track.to_short() for track in self.tracks.data]
@@ -276,7 +274,7 @@ DeezerUserProfilePageTabPlaylists = DeezerUserProfilePageTab[
 class DeezerSong(BaseDeezerModel):
     """Deezer API Song."""
 
-    SNG_ID: Annotated[int, Gt(0), PlainSerializer(str)]
+    SNG_ID: Annotated[int, PlainSerializer(str)]
     TRACK_TOKEN: str
     DURATION: Annotated[int, Gt(0), PlainSerializer(str)]
     ART_NAME: str

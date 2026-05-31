@@ -370,7 +370,7 @@ def test_mix_command(configured_cli_runner, monkeypatch):
 
 def test_add_command(test_server, responses, configured_cli_runner):
     """Test the `onzr add` command."""
-    track_ids = [1, 2, 3]
+    track_ids = [1, 2, -3]
     for track_id in track_ids:
         responses.post(
             "http://www.deezer.com/ajax/gw-light.php",
@@ -380,7 +380,7 @@ def test_add_command(test_server, responses, configured_cli_runner):
             ).model_dump(),
         )
 
-    result = configured_cli_runner.invoke(cli, ["add", "1", "2", "3"])
+    result = configured_cli_runner.invoke(cli, ["add", "--", "1", "2", "-3"])
     assert result.exit_code == ExitCodes.OK
     assert "Added 3 track(s) to queue" in result.stdout
 
