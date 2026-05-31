@@ -80,7 +80,7 @@ class DeezerAlbum(BaseDeezerModel):
 class DeezerTrack(BaseDeezerModel):
     """Deezer API track."""
 
-    id: PositiveInt
+    id: int
     title: str
     album: DeezerAlbum
     artist: DeezerArtist
@@ -302,7 +302,7 @@ class DeezerFavorite(BaseDeezerModel):
 class DeezerSong(BaseDeezerModel):
     """Deezer API Song."""
 
-    SNG_ID: Annotated[int, Gt(0), PlainSerializer(str)]
+    SNG_ID: Annotated[int, PlainSerializer(str)]
     TRACK_TOKEN: str
     DURATION: Annotated[int, Gt(0), PlainSerializer(str)]
     ART_NAME: str
