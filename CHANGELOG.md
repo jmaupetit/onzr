@@ -14,7 +14,7 @@ and this project adheres to
 
 - Upgrade `fastapi` to `0.136`
 - Upgrade `typer` to `0.25`
-- Upgrade `uvicorn` to `0.46`
+- Upgrade `uvicorn` to `0.48`
 
 ## [0.6.0] - 2025-12-12
 
