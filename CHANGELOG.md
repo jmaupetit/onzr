@@ -13,8 +13,8 @@ and this project adheres to
 #### Dependencies
 
 - Upgrade `fastapi` to `0.136`
-- Upgrade `typer` to `0.25`
-- Upgrade `uvicorn` to `0.48`
+- Upgrade `typer` to `0.26`
+- Upgrade `uvicorn` to `0.49`
 
 ## [0.6.0] - 2025-12-12
 
