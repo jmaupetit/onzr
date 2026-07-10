@@ -12,7 +12,7 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `fastapi` to `0.136`
+- Upgrade `fastapi` to `0.139`
 - Upgrade `typer` to `0.26`
 - Upgrade `uvicorn` to `0.49`
 
