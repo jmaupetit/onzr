@@ -8,13 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Changed 
+### Changed
 
 #### Dependencies
 
 - Upgrade `fastapi` to `0.139`
-- Upgrade `typer` to `0.26`
-- Upgrade `uvicorn` to `0.49`
+- Upgrade `typer` to `0.27`
+- Upgrade `uvicorn` to `0.51`
 
 ## [0.6.0] - 2025-12-12
 
@@ -26,10 +26,10 @@ and this project adheres to
 - Add the `ALWAYS_FETCH_RELEASE_DATE` configuration setting
 - CLI: add the `playlist` command
 - CLI: add the `search` command `--playlist/-p` option
-- CLI: add track/album release date to outputs for the `search` 
+- CLI: add track/album release date to outputs for the `search`
   and `artist` commands using the `-r/--release` option
 
-### Changed 
+### Changed
 
 - Fetch track details in separated threads (when requested)
 
@@ -130,6 +130,7 @@ and this project adheres to
 - Implement a draft CLI using VLC
 
 [unreleased]: https://github.com/jmaupetit/onzr/compare/v0.6.0...main
+
 [0.6.0] https://github.com/jmaupetit/onzr/compare/v0.5.2...v0.6.0
 [0.5.2] https://github.com/jmaupetit/onzr/compare/v0.5.1...v0.5.2
 [0.5.1] https://github.com/jmaupetit/onzr/compare/v0.5.0...v0.5.1
