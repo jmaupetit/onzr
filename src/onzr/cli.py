@@ -825,3 +825,13 @@ def openapi():
     from onzr.server import app  # noqa: PLC0415
 
     sys.stdout.write(f"{json.dumps(app.openapi())}\n")
+
+
+@cli.command()
+@require_server
+def player():
+    """Start the TUI application."""
+    from onzr.tui import OnzrTuiApp
+
+    app = OnzrTuiApp()
+    app.run()

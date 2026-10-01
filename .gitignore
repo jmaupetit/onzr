@@ -48,3 +48,4 @@ venv.bak/
 # -- Tools
 .coverage
 site
+.idea/
