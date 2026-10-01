@@ -27,6 +27,11 @@ class DeezerSongFactory(ModelFactory[DeezerSong]):
     """DeezerSong factory."""
 
     @classmethod
+    def PHYSICAL_RELEASE_DATE(cls) -> str:
+        """Always generate a release date."""
+        return cls.__faker__.date()
+
+    @classmethod
     def FILESIZE_MP3_128(cls) -> PositiveInt:
         """Force FILESIZE_MP3_128 to be at least 100."""
         return cls.__random__.randint(100, 10000)
