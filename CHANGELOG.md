@@ -8,6 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add support for user data
+- Add `my` command and related sub-commands:
+  - `my playlist`
+  - `my artists`
+  - `my albums`
+  - `my tracks`
+
 ### Changed
 
 #### Dependencies

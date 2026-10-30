@@ -8,10 +8,11 @@ import time
 from enum import IntEnum
 from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
+from itertools import tee
 from operator import attrgetter
 from pathlib import Path
-from random import shuffle
-from typing import List, Set, cast
+from random import randint, shuffle
+from typing import Iterator, List, Set, cast
 
 import click
 import pendulum
@@ -36,7 +37,7 @@ from .config import (
     get_onzr_dir,
     get_settings,
 )
-from .deezer import DeezerClient
+from .deezer import AlbumSortBy, DeezerClient
 from .models.core import (
     AlbumShort,
     ArtistShort,
@@ -51,7 +52,7 @@ FORMAT = "%(message)s"
 logging_console = Console(stderr=True)
 logging_config = {
     "version": 1,
-    "level": logging.INFO,
+    "level": logging.DEBUG,
     "format": FORMAT,
     "datefmt": "[%X]",
     "handlers": {
@@ -64,6 +65,8 @@ logging_config = {
 logging.config.dictConfig(logging_config)
 
 cli = typer.Typer(name="onzr", no_args_is_help=True, pretty_exceptions_short=True)
+my = typer.Typer(name="my", no_args_is_help=True, pretty_exceptions_short=True)
+cli.add_typer(my, name="my", help="Explore your 💜 library.")
 console = Console()
 logger = logging.getLogger(__name__)
 
@@ -85,7 +88,7 @@ class ExitCodes(IntEnum):
     SERVER_DOWN = 40
 
 
-def get_deezer_client(quiet: bool = False) -> DeezerClient:
+def get_deezer_client(quiet: bool = False, fast: bool = True) -> DeezerClient:
     """Get Deezer client for simple API queries."""
     settings = get_settings()
 
@@ -95,7 +98,7 @@ def get_deezer_client(quiet: bool = False) -> DeezerClient:
     return DeezerClient(
         arl=settings.ARL,
         blowfish=settings.DEEZER_BLOWFISH_SECRET,
-        fast=True,
+        fast=fast,
         connection_pool_maxsize=settings.CONNECTION_POOL_MAXSIZE,
         always_fetch_release_date=settings.ALWAYS_FETCH_RELEASE_DATE,
     )
@@ -126,12 +129,18 @@ def print_collection_ids(collection: Collection):
         console.print(item.id)
 
 
-def print_collection_table(collection: Collection, title="Collection"):
+def print_collection_table(
+    collection: Collection, title="Collection", sort: bool = True
+):
     """Print a collection as a table."""
     theme = get_theme()
     table = Table(title=title)
 
-    sample = collection[0]
+    if isinstance(collection, Iterator):
+        collection, collection_ = tee(collection, 2)
+        sample = next(collection_)
+    else:
+        sample = collection[randint(0, len(collection) - 1)]  # noqa: S311
     show_artist = (
         True
         if isinstance(sample, TrackShort)
@@ -165,7 +174,7 @@ def print_collection_table(collection: Collection, title="Collection"):
         table.add_column("Released")
 
     # Sort albums by release date
-    if isinstance(sample, AlbumShort):
+    if isinstance(sample, AlbumShort) and sort:
         albums_with_release_date: Set[AlbumShort] = set(
             filter(attrgetter("release_date"), collection)  # type: ignore[arg-type]
         )
@@ -186,11 +195,15 @@ def print_collection_table(collection: Collection, title="Collection"):
         table.add_column("# tracks", style="bold")
         table.add_column("User", style=theme.secondary_color.as_hex())
 
-    for rk, item in enumerate(collection):
-        table.add_row(
-            str(rk + 1),
-            *map(str, item.model_dump(exclude_none=True, exclude={"tracks"}).values()),
-        )
+    # Display long tables as soon as you can
+    with Live(table, refresh_per_second=4, vertical_overflow="visible"):
+        for rk, item in enumerate(collection):
+            table.add_row(
+                str(rk + 1),
+                *map(
+                    str, item.model_dump(exclude_none=True, exclude={"tracks"}).values()
+                ),
+            )
 
     console.print(table)
 
@@ -488,6 +501,104 @@ def mix(
     print_collection_table(tracks, title="Onzr Mix tracks")
 
 
+@my.command("playlists")
+def my_playlists(
+    private: Annotated[
+        bool, typer.Option("--private", "-p", help="Restrict to private playlists.")
+    ] = False,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your playlists."""
+    if ids:
+        quiet = True
+
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+
+    playlists = deezer.user_playlists(private)
+    if ids:
+        print_collection_ids(playlists)
+        return
+
+    with console.pager(styles=True):
+        print_collection_table(playlists, title=f"{deezer.user.name}'s playlists")
+
+
+@my.command("artists")
+def my_artists(
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your favorite artists."""
+    if ids:
+        quiet = True
+
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+
+    artists = deezer.user_artists()
+    if ids:
+        print_collection_ids(artists)
+        return
+
+    with console.pager(styles=True):
+        print_collection_table(artists, title=f"{deezer.user.name}'s artists")
+
+
+@my.command("albums")
+def my_albums(
+    by: Annotated[
+        AlbumSortBy, typer.Option("--by", "-b", help="Sort by title or artist.")
+    ] = AlbumSortBy.TITLE,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your favorite albums."""
+    if ids:
+        quiet = True
+
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+
+    albums = deezer.user_albums(sort_by=by)
+    if ids:
+        print_collection_ids(albums)
+        return
+
+    with console.pager(styles=True):
+        print_collection_table(albums, title=f"{deezer.user.name}'s albums", sort=False)
+
+
+@my.command("tracks")
+def my_tracks(
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
+    ids: Annotated[
+        bool, typer.Option("--ids", "-i", help="Show only result IDs.")
+    ] = False,
+):
+    """Get your favorite tracks."""
+    if ids:
+        quiet = True
+
+    deezer = get_deezer_client(quiet=quiet, fast=True)
+    tracks = deezer.user_tracks()
+
+    if not tracks:
+        console.print("No favorite tracks for user.")
+        return
+
+    if ids:
+        print_collection_ids(tracks)
+        return
+
+    with console.pager(styles=True):
+        print_collection_table(tracks, title=f"{deezer.user.name}'s tracks", sort=False)
+
+
 @cli.command()
 @require_server
 def add(track_ids: List[str]):
@@ -737,9 +848,9 @@ def stop():
     _print_player_control(control)
 
 
-@cli.command()
+@cli.command("next")
 @require_server
-def next():
+def next_():
     """Play next track in queue."""
     control = _client_request("next")
     _print_player_control(control)
