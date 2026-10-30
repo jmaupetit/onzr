@@ -855,9 +855,9 @@ def stop():
     _print_player_control(control)
 
 
-@cli.command()
+@cli.command("next")
 @require_server
-def next():
+def next_():
     """Play next track in queue."""
     control = _client_request("next")
     _print_player_control(control)
