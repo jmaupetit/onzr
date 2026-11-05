@@ -12,6 +12,10 @@ from onzr.models.deezer import (
     DeezerArtistAlbumsResponse,
     DeezerArtistRadioResponse,
     DeezerArtistTopResponse,
+    DeezerFavorite,
+    DeezerFavoriteResponse,
+    DeezerGWPlaylist,
+    DeezerGWPlaylistResponse,
     DeezerPlaylist,
     DeezerSearchAlbumResponse,
     DeezerSearchArtistResponse,
@@ -20,6 +24,8 @@ from onzr.models.deezer import (
     DeezerSong,
     DeezerSongResponse,
     DeezerTrack,
+    DeezerUserData,
+    DeezerUserProfilePageTabPlaylists,
 )
 
 
@@ -59,6 +65,37 @@ class DeezerAlbumResponseFactory(ModelFactory[DeezerAlbumResponse]):
 
 class DeezerSongResponseFactory(ModelFactory[DeezerSongResponse]):
     """DeezerSongResponse factory."""
+
+
+class DeezerUserDataFactory(ModelFactory[DeezerUserData]):
+    """DeezerUserData factory."""
+
+
+class DeezerGWPlaylistFactory(ModelFactory[DeezerGWPlaylist]):
+    """DeezerGWPlaylist factory."""
+
+
+class DeezerGWPlaylistResponseFactory(ModelFactory[DeezerGWPlaylistResponse]):
+    """DeezerGWPlaylistResponse factory."""
+
+
+class DeezerUserProfilePageTabPlaylistsFactory(
+    ModelFactory[DeezerUserProfilePageTabPlaylists]
+):
+    """DeezerUserProfilePageTabPlaylists factory."""
+
+
+class DeezerFavoriteFactory(ModelFactory[DeezerFavorite]):
+    """DeezerFavorite factory."""
+
+    @classmethod
+    def __TYPE__(cls) -> str:
+        """Deezer favorites are always songs here."""
+        return "song"
+
+
+class DeezerFavoriteResponseFactory(ModelFactory[DeezerFavoriteResponse]):
+    """DeezerFavoriteResponse factory."""
 
 
 class DeezerArtistAlbumsResponseFactory(ModelFactory[DeezerArtistAlbumsResponse]):

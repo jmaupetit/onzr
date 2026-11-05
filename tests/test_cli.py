@@ -6,6 +6,7 @@ import re
 from os import stat
 from pathlib import Path
 from time import sleep
+from typing import Iterator
 from unittest.mock import MagicMock, patch
 
 import click
@@ -18,7 +19,7 @@ import onzr
 from onzr.cli import ExitCodes, cli
 from onzr.deezer import DeezerClient
 from onzr.exceptions import OnzrConfigurationError
-from onzr.models.core import Collection
+from onzr.models.core import Collection, TrackShort
 from tests.factories import (
     AlbumShortFactory,
     ArtistShortFactory,
@@ -366,6 +367,165 @@ def test_mix_command(configured_cli_runner, monkeypatch):
     assert sorted(result.stdout.split()) == sorted(
         [f"{t.id}" for t in deep_collection] * 2
     )
+
+
+@pytest.fixture
+def my_playlists_collection():
+    """Favorite playlists collection."""
+    return PlaylistShortFactory.batch(
+        2,
+        user="John Doe",
+        tracks=TrackShortFactory.batch(2),
+    )
+
+
+def test_my_playlists_command(
+    configured_cli_runner, monkeypatch, my_playlists_collection
+):
+    """Test the `onzr my playlists` command."""
+
+    def user_playlists(*args, **kwargs) -> Collection:
+        """Monkeypatch user_playlists."""
+        return my_playlists_collection
+
+    def user(*args, **kwargs):
+        """Monkeypatch user property."""
+
+        class FakeUser:
+            id = 666
+            name = "John Doe"
+
+        return FakeUser()
+
+    monkeypatch.setattr(DeezerClient, "user_playlists", user_playlists)
+    monkeypatch.setattr(DeezerClient, "user", property(user))
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "playlists"])
+    assert result.exit_code == ExitCodes.OK
+
+    # Display only playlist ids
+    result = configured_cli_runner.invoke(cli, ["my", "playlists", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{p.id}\n" for p in my_playlists_collection])
+    assert result.stdout == expected
+
+
+def test_my_artists_command(configured_cli_runner, monkeypatch):
+    """Test the `onzr my artists` command."""
+    artists = ArtistShortFactory.batch(2)
+
+    def user_artists(*args, **kwargs) -> Collection:
+        """Monkeypatch user_artists."""
+        return artists
+
+    def user(*args, **kwargs):
+        """Monkeypatch user property."""
+
+        class FakeUser:
+            id = 666
+            name = "John Doe"
+
+        return FakeUser()
+
+    monkeypatch.setattr(DeezerClient, "user_artists", user_artists)
+    monkeypatch.setattr(DeezerClient, "user", property(user))
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "artists"])
+    assert result.exit_code == ExitCodes.OK
+
+    # Display only artist ids
+    result = configured_cli_runner.invoke(cli, ["my", "artists", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{a.id}\n" for a in artists])
+    assert result.stdout == expected
+
+
+def test_my_albums_command(configured_cli_runner, monkeypatch):
+    """Test the `onzr my albums` command."""
+    albums = AlbumShortFactory.batch(2)
+
+    def user_albums(*args, **kwargs) -> Collection:
+        """Monkeypatch user_albums."""
+        return albums
+
+    def user(*args, **kwargs):
+        """Monkeypatch user property."""
+
+        class FakeUser:
+            id = 666
+            name = "John Doe"
+
+        return FakeUser()
+
+    monkeypatch.setattr(DeezerClient, "user_albums", user_albums)
+    monkeypatch.setattr(DeezerClient, "user", property(user))
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "albums"])
+    assert result.exit_code == ExitCodes.OK
+
+    # Display only album ids
+    result = configured_cli_runner.invoke(cli, ["my", "albums", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{a.id}\n" for a in albums])
+    assert result.stdout == expected
+
+
+def test_my_tracks_command(configured_cli_runner, monkeypatch):
+    """Test the `onzr my tracks` command."""
+    tracks = TrackShortFactory.batch(2)
+
+    def user_tracks(*args, **kwargs) -> Iterator[TrackShort]:
+        """Monkeypatch user_tracks."""
+        yield from tracks
+
+    def user(*args, **kwargs):
+        """Monkeypatch user property."""
+
+        class FakeUser:
+            id = 666
+            name = "John Doe"
+
+        return FakeUser()
+
+    monkeypatch.setattr(DeezerClient, "user_tracks", user_tracks)
+    monkeypatch.setattr(DeezerClient, "user", property(user))
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "tracks"])
+    assert result.exit_code == ExitCodes.OK
+
+    # Display only track ids
+    result = configured_cli_runner.invoke(cli, ["my", "tracks", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{t.id}\n" for t in tracks])
+    assert result.stdout == expected
+
+
+def test_my_tracks_command_with_no_favorite_track(configured_cli_runner, monkeypatch):
+    """Test the `onzr my tracks` command when user has no favorite tracks."""
+
+    def user_tracks(*args, **kwargs) -> Iterator[TrackShort]:
+        """Monkeypatch user_tracks."""
+        yield from []
+
+    def user(*args, **kwargs):
+        """Monkeypatch user property."""
+
+        class FakeUser:
+            id = 666
+            name = "John Doe"
+
+        return FakeUser()
+
+    monkeypatch.setattr(DeezerClient, "user_tracks", user_tracks)
+    monkeypatch.setattr(DeezerClient, "user", property(user))
+
+    result = configured_cli_runner.invoke(cli, ["my", "tracks"])
+    assert result.exit_code == ExitCodes.OK
+    assert "No favorite tracks for user." in result.stdout
 
 
 def test_add_command(test_server, responses, configured_cli_runner):
