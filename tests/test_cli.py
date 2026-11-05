@@ -190,6 +190,8 @@ def test_search_command(configured_cli_runner, monkeypatch, option, results):
 
     result = configured_cli_runner.invoke(cli, ["search", f"--{option}", "foo"])
     assert result.exit_code == ExitCodes.OK
+    # The table is printed once
+    assert result.stdout.count("Search results") == 1
 
     # Test ids option
     result = configured_cli_runner.invoke(
@@ -366,6 +368,116 @@ def test_mix_command(configured_cli_runner, monkeypatch):
     assert sorted(result.stdout.split()) == sorted(
         [f"{t.id}" for t in deep_collection] * 2
     )
+
+
+def test_my_playlists_command(configured_cli_runner, monkeypatch, deezer_user):
+    """Test the `onzr my playlists` command."""
+    playlists = PlaylistShortFactory.batch(
+        2, user=deezer_user.name, tracks=TrackShortFactory.batch(2)
+    )
+    monkeypatch.setattr(
+        DeezerClient, "user_playlists", lambda *args, **kwargs: playlists
+    )
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "playlists"])
+    assert result.exit_code == ExitCodes.OK
+    assert f"{deezer_user.name}'s playlists" in result.stdout
+
+    # Display only playlist ids
+    result = configured_cli_runner.invoke(cli, ["my", "playlists", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{p.id}\n" for p in playlists])
+    assert result.stdout == expected
+
+
+def test_my_artists_command(configured_cli_runner, monkeypatch, deezer_user):
+    """Test the `onzr my artists` command."""
+    artists = ArtistShortFactory.batch(2)
+
+    monkeypatch.setattr(DeezerClient, "user_artists", lambda *args, **kwargs: artists)
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "artists"])
+    assert result.exit_code == ExitCodes.OK
+    # The table is printed once
+    assert result.stdout.count(f"{deezer_user.name}'s artists") == 1
+
+    # Display only artist ids
+    result = configured_cli_runner.invoke(cli, ["my", "artists", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{a.id}\n" for a in artists])
+    assert result.stdout == expected
+
+
+def test_my_albums_command(configured_cli_runner, monkeypatch, deezer_user):
+    """Test the `onzr my albums` command."""
+    albums = AlbumShortFactory.batch(2)
+
+    monkeypatch.setattr(DeezerClient, "user_albums", lambda *args, **kwargs: albums)
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "albums"])
+    assert result.exit_code == ExitCodes.OK
+    # The table is printed once
+    assert result.stdout.count(f"{deezer_user.name}'s albums") == 1
+
+    # Display only album ids
+    result = configured_cli_runner.invoke(cli, ["my", "albums", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{a.id}\n" for a in albums])
+    assert result.stdout == expected
+
+
+def test_my_tracks_command(configured_cli_runner, monkeypatch, deezer_user):
+    """Test the `onzr my tracks` command."""
+    tracks = TrackShortFactory.batch(2)
+
+    monkeypatch.setattr(
+        DeezerClient, "user_tracks", lambda *args, **kwargs: iter(tracks)
+    )
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "tracks"])
+    assert result.exit_code == ExitCodes.OK
+    # The table is printed once, with all tracks
+    assert result.stdout.count(f"{deezer_user.name}'s tracks") == 1
+    assert all(str(t.id) in result.stdout for t in tracks)
+
+    # Display only track ids
+    result = configured_cli_runner.invoke(cli, ["my", "tracks", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{t.id}\n" for t in tracks])
+    assert result.stdout == expected
+
+
+@pytest.mark.parametrize("by", ["album", "artist", "title"])
+def test_my_tracks_command_sort_by(configured_cli_runner, monkeypatch, deezer_user, by):
+    """Test the `onzr my tracks --by` option."""
+    calls = []
+
+    def user_tracks(*args, **kwargs):
+        calls.append(kwargs)
+        return iter(TrackShortFactory.batch(1))
+
+    monkeypatch.setattr(DeezerClient, "user_tracks", user_tracks)
+
+    result = configured_cli_runner.invoke(cli, ["my", "tracks", "--by", by])
+    assert result.exit_code == ExitCodes.OK
+    assert calls[-1]["sort_by"] == by
+
+    # Invalid sort field
+    result = configured_cli_runner.invoke(cli, ["my", "tracks", "--by", "foo"])
+    assert result.exit_code != ExitCodes.OK
+
+
+def test_my_tracks_command_with_no_favorite_track(configured_cli_runner, monkeypatch):
+    """Test the `onzr my tracks` command when user has no favorite tracks."""
+    monkeypatch.setattr(DeezerClient, "user_tracks", lambda *args, **kwargs: iter([]))
+
+    result = configured_cli_runner.invoke(cli, ["my", "tracks"])
+    assert result.exit_code == ExitCodes.OK
+    assert "No favorite tracks for user." in result.stdout
 
 
 def test_add_command(test_server, responses, configured_cli_runner):
