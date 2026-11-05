@@ -13,6 +13,7 @@ from onzr.models.core import (
     ServerState,
 )
 
+from .conftest import wait_for_requests
 from .factories import DeezerSongFactory, DeezerSongResponseFactory
 
 
@@ -33,6 +34,10 @@ def test_queue_add(test_server, responses):
     assert client.queue_add([str(t) for t in track_ids]) == ServerMessage(
         message="Added 3 track(s) to queue"
     )
+
+    # Track informations are fetched by the server in background threads:
+    # wait for the mocked requests to be executed before leaving the test.
+    wait_for_requests(responses)
 
 
 def test_queue_clear(test_server, configured_onzr, track):

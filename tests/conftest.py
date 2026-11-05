@@ -6,6 +6,7 @@ import logging
 import tempfile
 import threading
 from pathlib import Path
+from time import sleep, time
 from typing import Generator
 
 import pytest
@@ -13,7 +14,6 @@ import requests
 import uvicorn
 import yaml
 from fastapi.testclient import TestClient
-from requests.exceptions import ConnectionError
 from typer.testing import CliRunner
 
 import onzr
@@ -23,6 +23,20 @@ from onzr.deezer import DeezerClient, Track
 from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
 
 logger = logging.getLogger(__name__)
+
+
+def wait_for_requests(mock, timeout: float = 5.0) -> None:
+    """Wait until all requests registered in the mock have been executed.
+
+    This is useful to wait for requests made in background threads (e.g. track
+    informations fetched by the server) before giving the control back to the
+    `responses` fixture, which asserts all registered mocks have been fired.
+    """
+    deadline = time() + timeout
+    while any(response.call_count == 0 for response in mock.registered()):
+        if time() > deadline:
+            return
+        sleep(0.01)
 
 
 @pytest.fixture
@@ -192,8 +206,9 @@ def test_server(responses, settings, configured_onzr):
     while (attempt := attempt + 1) <= max:
         try:
             requests.get(settings.SERVER_BASE_URL, timeout=0.1)
-        except ConnectionError:
-            pass
+            break
+        except requests.RequestException:
+            sleep(0.1)
 
     yield thread
 

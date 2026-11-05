@@ -16,6 +16,13 @@ from onzr.models.core import (
     TrackInfo,
     TrackShort,
 )
+from onzr.models.deezer import (
+    DeezerAPIResponseCollection,
+    DeezerGWPlaylist,
+    DeezerGWUser,
+    DeezerSong,
+    DeezerUserProfilePagePlaylists,
+)
 from tests.factories import (
     AlbumShortFactory,
     ArtistShortFactory,
@@ -26,6 +33,10 @@ from tests.factories import (
     DeezerArtistFactory,
     DeezerArtistRadioResponseFactory,
     DeezerArtistTopResponseFactory,
+    DeezerFavoriteFactory,
+    DeezerFavoriteResponseFactory,
+    DeezerGWPlaylistFactory,
+    DeezerGWPlaylistResponseFactory,
     DeezerPlaylistFactory,
     DeezerSearchAlbumResponseFactory,
     DeezerSearchArtistResponseFactory,
@@ -34,6 +45,8 @@ from tests.factories import (
     DeezerSongFactory,
     DeezerSongResponseFactory,
     DeezerTrackFactory,
+    DeezerUserDataFactory,
+    DeezerUserProfilePageTabPlaylistsFactory,
     TrackShortFactory,
 )
 
@@ -204,6 +217,230 @@ def test_deezer_client_playlist(responses, deezer_client):
     playlist = deezer_client.playlist(playlist_id=playlist_id)
     assert isinstance(playlist, PlaylistShort)
     assert playlist.id == playlist_id
+
+
+def test_deezer_client_private_playlist(responses, deezer_client):
+    """Test the DeezerClient `playlist` method with a private playlist.
+
+    Private playlists are not accessible using the standard API: a PermissionException
+    is raised. Then a fallback on the gateway API allows us to get playlist details
+    and its tracks.
+    """
+    playlist_id = 666
+
+    # First call: standard API raises a permission error
+    responses.get(
+        f"https://api.deezer.com/playlist/{playlist_id}",
+        status=200,
+        json={"error": {"code": 200, "type": "Exception", "message": "no permission"}},
+    )
+    # Second call: gateway API provides playlist details (10 first tracks)
+    payload = DeezerGWPlaylistResponseFactory.build(
+        DATA=DeezerGWPlaylistFactory.build(
+            PLAYLIST_ID=playlist_id, TITLE="Private playlist", STATUS=1
+        ),
+        SONGS=DeezerAPIResponseCollection[DeezerSong](data=[]),
+    )
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={"error": {}, "results": json.loads(payload.model_dump_json())},
+    )
+    # Third call: gateway API provides all playlist tracks
+    payload = DeezerSongFactory.build(SNG_ID=1, VERSION=None)
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={
+            "error": {},
+            "results": {"data": [json.loads(payload.model_dump_json())]},
+        },
+    )
+
+    playlist = deezer_client.playlist(playlist_id=playlist_id)
+    assert isinstance(playlist, PlaylistShort)
+    assert playlist.id == playlist_id
+    assert playlist.public is False
+    assert [t.id for t in playlist.tracks] == [1]
+
+
+def test_deezer_client_user(responses, deezer_client):
+    """Test the DeezerClient `user` property."""
+    user_id = 666
+    payload = DeezerUserDataFactory.build(
+        USER=DeezerGWUser(USER_ID=user_id, BLOG_NAME="onzr")
+    )
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={"error": {}, "results": json.loads(payload.model_dump_json())},
+    )
+    user = deezer_client.user
+    assert user.id == user_id
+    assert user.name == "onzr"
+
+
+def test_deezer_client_user_playlists(responses, deezer_client):
+    """Test the DeezerClient `user_playlists` method."""
+    # Get logged in user: the user name is used as a fallback for playlist owner
+    payload = DeezerUserDataFactory.build(
+        USER=DeezerGWUser(USER_ID=666, BLOG_NAME="onzr")
+    )
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={"error": {}, "results": json.loads(payload.model_dump_json())},
+    )
+    playlists = DeezerUserProfilePageTabPlaylistsFactory.build(
+        TAB=DeezerUserProfilePagePlaylists(
+            playlists=DeezerAPIResponseCollection[DeezerGWPlaylist](
+                data=[
+                    DeezerGWPlaylistFactory.build(
+                        PLAYLIST_ID=1,
+                        TITLE="Public",
+                        STATUS=0,
+                        PARENT_USERNAME=None,
+                    ),
+                    DeezerGWPlaylistFactory.build(
+                        PLAYLIST_ID=2,
+                        TITLE="Private",
+                        STATUS=1,
+                        PARENT_USERNAME=None,
+                    ),
+                ]
+            )
+        )
+    )
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={"error": {}, "results": json.loads(playlists.model_dump_json())},
+    )
+
+    playlists = deezer_client.user_playlists()
+    assert [p.id for p in playlists] == [1, 2]
+    assert [p.user for p in playlists] == ["onzr", "onzr"]
+
+    private_playlists = deezer_client.user_playlists(private=True)
+    assert [p.id for p in private_playlists] == [2]
+
+
+def test_deezer_client_user_artists(responses, deezer_client):
+    """Test the DeezerClient `user_artists` method."""
+    payload = DeezerUserDataFactory.build(
+        USER=DeezerGWUser(USER_ID=666, BLOG_NAME="onzr")
+    )
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={"error": {}, "results": json.loads(payload.model_dump_json())},
+    )
+    # The gateway user artists response follows the user profile page format
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={
+            "error": {},
+            "results": {
+                "TAB": {
+                    "artists": {
+                        "data": [
+                            {"ART_ID": 2, "ART_NAME": "Zed", "NB_FAN": 1},
+                            {"ART_ID": 1, "ART_NAME": "Alice", "NB_FAN": 2},
+                        ]
+                    }
+                }
+            },
+        },
+    )
+
+    artists = deezer_client.user_artists()
+    # Ensure artists are sorted by name
+    assert [a.name for a in artists] == ["Alice", "Zed"]
+
+
+def test_deezer_client_user_albums(responses, deezer_client):
+    """Test the DeezerClient `user_albums` method."""
+    payload = DeezerUserDataFactory.build(
+        USER=DeezerGWUser(USER_ID=666, BLOG_NAME="onzr")
+    )
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={"error": {}, "results": json.loads(payload.model_dump_json())},
+    )
+    # The gateway user albums response follows the user profile page format
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={
+            "error": {},
+            "results": {
+                "TAB": {
+                    "albums": {
+                        "data": [
+                            {
+                                "ALB_ID": 2,
+                                "ALB_TITLE": "Zed",
+                                "ALB_PICTURE": "pic",
+                                "ART_ID": 2,
+                                "ART_NAME": "Zed",
+                                "EXPLICIT_ALBUM_CONTENT": {"EXPLICIT_LYRICS_STATUS": 0},
+                            },
+                            {
+                                "ALB_ID": 1,
+                                "ALB_TITLE": "Alice",
+                                "ALB_PICTURE": "pic",
+                                "ART_ID": 1,
+                                "ART_NAME": "Alice",
+                                "EXPLICIT_ALBUM_CONTENT": {"EXPLICIT_LYRICS_STATUS": 0},
+                            },
+                        ]
+                    }
+                }
+            },
+        },
+    )
+
+    albums = deezer_client.user_albums(sort_by="title")
+    # Ensure albums are sorted by title
+    assert [a.title for a in albums] == ["Alice", "Zed"]
+
+
+def test_deezer_client_user_tracks(responses, deezer_client):
+    """Test the DeezerClient `user_tracks` method."""
+    # The total number of favorites is fetched first, then each page is
+    # fetched separately: the same response is registered twice.
+    song_ids = DeezerFavoriteResponseFactory.build(
+        data=[DeezerFavoriteFactory.build(SNG_ID=1)],
+        total=1,
+    )
+    for _ in range(2):
+        responses.post(
+            "http://www.deezer.com/ajax/gw-light.php",
+            status=200,
+            json={"error": {}, "results": json.loads(song_ids.model_dump_json())},
+        )
+    # The `get_tracks` gateway method requires a list of songs
+    payload = DeezerSongFactory.build(SNG_ID=1, VERSION=None)
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={
+            "error": {},
+            "results": {"data": [json.loads(payload.model_dump_json())]},
+        },
+    )
+    # An empty page stops pagination
+    payload = DeezerFavoriteResponseFactory.build(data=[])
+    responses.post(
+        "http://www.deezer.com/ajax/gw-light.php",
+        status=200,
+        json={"error": {}, "results": json.loads(payload.model_dump_json())},
+    )
+
+    tracks = list(deezer_client.user_tracks(page_size=1))
+    assert [t.id for t in tracks] == [1]
 
 
 def test_deezer_client_search(responses, deezer_client):

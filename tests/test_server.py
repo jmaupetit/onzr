@@ -1,5 +1,6 @@
 """Onzr server tests."""
 
+import json
 from io import BytesIO
 from time import sleep
 from unittest.mock import patch
@@ -8,6 +9,7 @@ from fastapi import status
 
 from onzr.models.core import PlayingState
 
+from .conftest import wait_for_requests
 from .factories import DeezerSongFactory, DeezerSongResponseFactory
 
 
@@ -28,15 +30,32 @@ def test_queue_add_empty(client, responses, configured_onzr):
 def test_queue_add(client, responses, configured_onzr):
     """Test the POST /queue/ endpoint."""
     track_ids = [1, 2, 3]
-    for track_id in track_ids:
-        responses.post(
-            "http://www.deezer.com/ajax/gw-light.php",
-            status=200,
-            json=DeezerSongResponseFactory.build(
-                error={},
-                results=DeezerSongFactory.build(SNG_ID=track_id, FALLBACK=None),
-            ).model_dump(),
+
+    def song_data(request):
+        """Serve the song matching the requested track id.
+
+        Track informations are fetched concurrently in background threads,
+        making the request order unpredictable: the response is built from
+        the requested `SNG_ID` instead of relying on the mock registration
+        order.
+        """
+        sng_id = json.loads(request.body)["SNG_ID"]
+        payload = DeezerSongResponseFactory.build(
+            error={},
+            results=DeezerSongFactory.build(SNG_ID=sng_id, FALLBACK=None),
         )
+        return (
+            200,
+            {},
+            json.dumps({"error": {}, "results": json.loads(payload.model_dump_json())}),
+        )
+
+    responses.add_callback(
+        responses.POST,
+        "http://www.deezer.com/ajax/gw-light.php",
+        callback=song_data,
+        content_type="application/json",
+    )
 
     assert len(configured_onzr.queue.tracks) == 0
 
@@ -44,6 +63,11 @@ def test_queue_add(client, responses, configured_onzr):
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["message"] == f"Added {len(track_ids)} track(s) to queue"
+
+    # Track informations are fetched in background threads: wait for the
+    # mocked requests to be executed before leaving the test.
+    wait_for_requests(responses)
+
     assert len(configured_onzr.queue.tracks) == len(track_ids)
     for track, expected in zip(configured_onzr.queue.tracks, track_ids, strict=True):
         assert track.track_id == expected
