@@ -1,7 +1,6 @@
 """Tests configuration."""
 
 import importlib
-import json
 import logging
 import tempfile
 import threading
@@ -14,12 +13,14 @@ import requests
 import uvicorn
 import yaml
 from fastapi.testclient import TestClient
+from responses import matchers
 from typer.testing import CliRunner
 
 import onzr
 from onzr import cli, config
 from onzr.core import Onzr
 from onzr.deezer import DeezerClient, Track
+from onzr.models.deezer import DeezerUser
 from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
 
 logger = logging.getLogger(__name__)
@@ -87,33 +88,48 @@ def configured_cli_runner(app_configuration):
 
 
 @pytest.fixture
-def deezer_client(responses, settings):
-    """Configured DeezerClient instance."""
+def deezer_user(responses) -> DeezerUser:
+    """Logged in Deezer user.
+
+    Mock the `deezer.getUserData` gateway call used both to login and to get the
+    logged in user. As `responses` drops an already fired response when a later
+    registered one also matches the request, other gateway calls mocked in tests
+    should also match their gateway method.
+    """
+    user = DeezerUser(id=666, name="onzr")
     responses.post(
         "http://www.deezer.com/ajax/gw-light.php",
-        body=json.dumps(
-            {
-                "error": {},
-                "results": {
-                    "checkForm": "secret_token",
-                    "USER": {
-                        "USER_ID": 666,
-                        "MULTI_ACCOUNT": {"ENABLED": False},
-                        "BLOG_NAME": "onzr",
-                        "OPTIONS": {
-                            "license_token": "fake",
-                            "web_hq": True,
-                            "web_lossless": True,
-                            "license_country": "FR",
-                        },
-                        "SETTING": {"global": {}},
+        json={
+            "error": {},
+            "results": {
+                "checkForm": "secret_token",
+                "USER": {
+                    "USER_ID": user.id,
+                    "MULTI_ACCOUNT": {"ENABLED": False},
+                    "BLOG_NAME": user.name,
+                    "OPTIONS": {
+                        "license_token": "fake",
+                        "web_hq": True,
+                        "web_lossless": True,
+                        "license_country": "FR",
                     },
+                    "SETTING": {"global": {}},
                 },
-            }
-        ),
+            },
+        },
         status=200,
-        content_type="application/json",
+        match=[
+            matchers.query_param_matcher(
+                {"method": "deezer.getUserData"}, strict_match=False
+            )
+        ],
     )
+    return user
+
+
+@pytest.fixture
+def deezer_client(deezer_user, settings):
+    """Configured DeezerClient instance."""
     client = DeezerClient(
         arl=settings.ARL,
         blowfish=settings.DEEZER_BLOWFISH_SECRET,
@@ -124,33 +140,8 @@ def deezer_client(responses, settings):
 
 
 @pytest.fixture
-def configured_onzr(responses, app_configuration):
+def configured_onzr(deezer_user, app_configuration):
     """Onzr core instance with an initialized Deezer client."""
-    responses.post(
-        "http://www.deezer.com/ajax/gw-light.php",
-        body=json.dumps(
-            {
-                "error": {},
-                "results": {
-                    "checkForm": "secret_token",
-                    "USER": {
-                        "USER_ID": 666,
-                        "MULTI_ACCOUNT": {"ENABLED": False},
-                        "BLOG_NAME": "onzr",
-                        "OPTIONS": {
-                            "license_token": "fake",
-                            "web_hq": True,
-                            "web_lossless": True,
-                            "license_country": "FR",
-                        },
-                        "SETTING": {"global": {}},
-                    },
-                },
-            }
-        ),
-        status=200,
-        content_type="application/json",
-    )
     instance = Onzr()
 
     yield instance

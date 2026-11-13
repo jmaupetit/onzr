@@ -6,6 +6,7 @@ from time import sleep
 
 import pytest
 from pydantic import HttpUrl
+from responses import matchers
 
 from onzr.deezer import DeezerClient, StreamQuality, Track, TrackStatus
 from onzr.exceptions import DeezerTrackException
@@ -19,7 +20,6 @@ from onzr.models.core import (
 from onzr.models.deezer import (
     DeezerAPIResponseCollection,
     DeezerGWPlaylist,
-    DeezerGWUser,
     DeezerSong,
     DeezerUserProfilePagePlaylists,
 )
@@ -45,9 +45,12 @@ from tests.factories import (
     DeezerSongFactory,
     DeezerSongResponseFactory,
     DeezerTrackFactory,
-    DeezerUserDataFactory,
     DeezerUserProfilePageTabPlaylistsFactory,
     TrackShortFactory,
+)
+
+PAGE_PROFILE_MATCHER = matchers.query_param_matcher(
+    {"method": "deezer.pageProfile"}, strict_match=False
 )
 
 
@@ -264,33 +267,14 @@ def test_deezer_client_private_playlist(responses, deezer_client):
     assert [t.id for t in playlist.tracks] == [1]
 
 
-def test_deezer_client_user(responses, deezer_client):
+def test_deezer_client_user(deezer_client, deezer_user):
     """Test the DeezerClient `user` property."""
-    user_id = 666
-    payload = DeezerUserDataFactory.build(
-        USER=DeezerGWUser(USER_ID=user_id, BLOG_NAME="onzr")
-    )
-    responses.post(
-        "http://www.deezer.com/ajax/gw-light.php",
-        status=200,
-        json={"error": {}, "results": json.loads(payload.model_dump_json())},
-    )
-    user = deezer_client.user
-    assert user.id == user_id
-    assert user.name == "onzr"
+    assert deezer_client.user == deezer_user
 
 
-def test_deezer_client_user_playlists(responses, deezer_client):
+def test_deezer_client_user_playlists(responses, deezer_client, deezer_user):
     """Test the DeezerClient `user_playlists` method."""
-    # Get logged in user: the user name is used as a fallback for playlist owner
-    payload = DeezerUserDataFactory.build(
-        USER=DeezerGWUser(USER_ID=666, BLOG_NAME="onzr")
-    )
-    responses.post(
-        "http://www.deezer.com/ajax/gw-light.php",
-        status=200,
-        json={"error": {}, "results": json.loads(payload.model_dump_json())},
-    )
+    # The user name is used as a fallback for playlist owner
     playlists = DeezerUserProfilePageTabPlaylistsFactory.build(
         TAB=DeezerUserProfilePagePlaylists(
             playlists=DeezerAPIResponseCollection[DeezerGWPlaylist](
@@ -314,12 +298,13 @@ def test_deezer_client_user_playlists(responses, deezer_client):
     responses.post(
         "http://www.deezer.com/ajax/gw-light.php",
         status=200,
+        match=[PAGE_PROFILE_MATCHER],
         json={"error": {}, "results": json.loads(playlists.model_dump_json())},
     )
 
     playlists = deezer_client.user_playlists()
     assert [p.id for p in playlists] == [1, 2]
-    assert [p.user for p in playlists] == ["onzr", "onzr"]
+    assert [p.user for p in playlists] == [deezer_user.name, deezer_user.name]
 
     private_playlists = deezer_client.user_playlists(private=True)
     assert [p.id for p in private_playlists] == [2]
@@ -327,18 +312,11 @@ def test_deezer_client_user_playlists(responses, deezer_client):
 
 def test_deezer_client_user_artists(responses, deezer_client):
     """Test the DeezerClient `user_artists` method."""
-    payload = DeezerUserDataFactory.build(
-        USER=DeezerGWUser(USER_ID=666, BLOG_NAME="onzr")
-    )
-    responses.post(
-        "http://www.deezer.com/ajax/gw-light.php",
-        status=200,
-        json={"error": {}, "results": json.loads(payload.model_dump_json())},
-    )
     # The gateway user artists response follows the user profile page format
     responses.post(
         "http://www.deezer.com/ajax/gw-light.php",
         status=200,
+        match=[PAGE_PROFILE_MATCHER],
         json={
             "error": {},
             "results": {
@@ -361,18 +339,11 @@ def test_deezer_client_user_artists(responses, deezer_client):
 
 def test_deezer_client_user_albums(responses, deezer_client):
     """Test the DeezerClient `user_albums` method."""
-    payload = DeezerUserDataFactory.build(
-        USER=DeezerGWUser(USER_ID=666, BLOG_NAME="onzr")
-    )
-    responses.post(
-        "http://www.deezer.com/ajax/gw-light.php",
-        status=200,
-        json={"error": {}, "results": json.loads(payload.model_dump_json())},
-    )
     # The gateway user albums response follows the user profile page format
     responses.post(
         "http://www.deezer.com/ajax/gw-light.php",
         status=200,
+        match=[PAGE_PROFILE_MATCHER],
         json={
             "error": {},
             "results": {
