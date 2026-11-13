@@ -455,6 +455,8 @@ class DeezerClient(deezer.Deezer):
                 ],
                 user_id=self.user.id,
                 tab="playlists",
+                # -1: no limit (the server currently ignores "nb" anyway)
+                limit=-1,
             ),
         )
         return list(filter(lambda p: not p.public, playlists)) if private else playlists
@@ -469,6 +471,7 @@ class DeezerClient(deezer.Deezer):
                     self.gw.get_user_artists,
                     callback=lambda c: [a.to_short() for a in c],
                     user_id=self.user.id,
+                    limit=-1,
                 ),
             ),
             key=self._sort_key("name"),
@@ -484,6 +487,7 @@ class DeezerClient(deezer.Deezer):
                     self.gw.get_user_albums,
                     callback=lambda c: [a.to_short() for a in c],
                     user_id=self.user.id,
+                    limit=-1,
                 ),
             ),
             key=self._sort_key(sort_by),
