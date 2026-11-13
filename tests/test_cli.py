@@ -368,9 +368,95 @@ def test_mix_command(configured_cli_runner, monkeypatch):
     )
 
 
+def test_my_playlists_command(configured_cli_runner, monkeypatch, deezer_user):
+    """Test the `onzr my playlists` command."""
+    playlists = PlaylistShortFactory.batch(
+        2, user=deezer_user.name, tracks=TrackShortFactory.batch(2)
+    )
+    monkeypatch.setattr(
+        DeezerClient, "user_playlists", lambda *args, **kwargs: playlists
+    )
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "playlists"])
+    assert result.exit_code == ExitCodes.OK
+    assert f"{deezer_user.name}'s playlists" in result.stdout
+
+    # Display only playlist ids
+    result = configured_cli_runner.invoke(cli, ["my", "playlists", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{p.id}\n" for p in playlists])
+    assert result.stdout == expected
+
+
+def test_my_artists_command(configured_cli_runner, monkeypatch, deezer_user):
+    """Test the `onzr my artists` command."""
+    artists = ArtistShortFactory.batch(2)
+
+    monkeypatch.setattr(DeezerClient, "user_artists", lambda *args, **kwargs: artists)
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "artists"])
+    assert result.exit_code == ExitCodes.OK
+    assert f"{deezer_user.name}'s artists" in result.stdout
+
+    # Display only artist ids
+    result = configured_cli_runner.invoke(cli, ["my", "artists", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{a.id}\n" for a in artists])
+    assert result.stdout == expected
+
+
+def test_my_albums_command(configured_cli_runner, monkeypatch, deezer_user):
+    """Test the `onzr my albums` command."""
+    albums = AlbumShortFactory.batch(2)
+
+    monkeypatch.setattr(DeezerClient, "user_albums", lambda *args, **kwargs: albums)
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "albums"])
+    assert result.exit_code == ExitCodes.OK
+    assert f"{deezer_user.name}'s albums" in result.stdout
+
+    # Display only album ids
+    result = configured_cli_runner.invoke(cli, ["my", "albums", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{a.id}\n" for a in albums])
+    assert result.stdout == expected
+
+
+def test_my_tracks_command(configured_cli_runner, monkeypatch, deezer_user):
+    """Test the `onzr my tracks` command."""
+    tracks = TrackShortFactory.batch(2)
+
+    monkeypatch.setattr(
+        DeezerClient, "user_tracks", lambda *args, **kwargs: iter(tracks)
+    )
+
+    # Standard run
+    result = configured_cli_runner.invoke(cli, ["my", "tracks"])
+    assert result.exit_code == ExitCodes.OK
+    assert f"{deezer_user.name}'s tracks" in result.stdout
+
+    # Display only track ids
+    result = configured_cli_runner.invoke(cli, ["my", "tracks", "--ids"])
+    assert result.exit_code == ExitCodes.OK
+    expected = "".join([f"{t.id}\n" for t in tracks])
+    assert result.stdout == expected
+
+
+def test_my_tracks_command_with_no_favorite_track(configured_cli_runner, monkeypatch):
+    """Test the `onzr my tracks` command when user has no favorite tracks."""
+    monkeypatch.setattr(DeezerClient, "user_tracks", lambda *args, **kwargs: iter([]))
+
+    result = configured_cli_runner.invoke(cli, ["my", "tracks"])
+    assert result.exit_code == ExitCodes.OK
+    assert "No favorite tracks for user." in result.stdout
+
+
 def test_add_command(test_server, responses, configured_cli_runner):
     """Test the `onzr add` command."""
-    track_ids = [1, 2, 3]
+    track_ids = [1, 2, -3]
     for track_id in track_ids:
         responses.post(
             "http://www.deezer.com/ajax/gw-light.php",
@@ -380,7 +466,7 @@ def test_add_command(test_server, responses, configured_cli_runner):
             ).model_dump(),
         )
 
-    result = configured_cli_runner.invoke(cli, ["add", "1", "2", "3"])
+    result = configured_cli_runner.invoke(cli, ["add", "--", "1", "2", "-3"])
     assert result.exit_code == ExitCodes.OK
     assert "Added 3 track(s) to queue" in result.stdout
 
