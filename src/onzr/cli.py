@@ -89,7 +89,7 @@ class ExitCodes(IntEnum):
     SERVER_DOWN = 40
 
 
-def get_deezer_client(quiet: bool = False, fast: bool = True) -> DeezerClient:
+def get_deezer_client(quiet: bool = False) -> DeezerClient:
     """Get Deezer client for simple API queries."""
     settings = get_settings()
 
@@ -99,7 +99,7 @@ def get_deezer_client(quiet: bool = False, fast: bool = True) -> DeezerClient:
     return DeezerClient(
         arl=settings.ARL,
         blowfish=settings.DEEZER_BLOWFISH_SECRET,
-        fast=fast,
+        fast=True,
         connection_pool_maxsize=settings.CONNECTION_POOL_MAXSIZE,
         always_fetch_release_date=settings.ALWAYS_FETCH_RELEASE_DATE,
     )
@@ -514,7 +514,7 @@ def my_playlists(
     if ids:
         quiet = True
 
-    deezer = get_deezer_client(quiet=quiet, fast=True)
+    deezer = get_deezer_client(quiet=quiet)
 
     playlists = deezer.user_playlists(private)
     if ids:
@@ -536,7 +536,7 @@ def my_artists(
     if ids:
         quiet = True
 
-    deezer = get_deezer_client(quiet=quiet, fast=True)
+    deezer = get_deezer_client(quiet=quiet)
 
     artists = deezer.user_artists()
     if ids:
@@ -561,7 +561,7 @@ def my_albums(
     if ids:
         quiet = True
 
-    deezer = get_deezer_client(quiet=quiet, fast=True)
+    deezer = get_deezer_client(quiet=quiet)
 
     albums = deezer.user_albums(sort_by=by)
     if ids:
@@ -592,7 +592,7 @@ def my_tracks(
         quiet = True
 
     settings = get_settings()
-    deezer = get_deezer_client(quiet=quiet, fast=True)
+    deezer = get_deezer_client(quiet=quiet)
     tracks = deezer.user_tracks(
         page_size=settings.FAVORITE_SONGS_PAGINATE_BY, sort_by=by
     )
