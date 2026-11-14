@@ -214,7 +214,7 @@ class DeezerGWUser(BaseDeezerModel):
     USER_ID: int
     BLOG_NAME: str
 
-    def to_user(self):
+    def to_user(self) -> DeezerUser:
         """Convert to DeezerUser."""
         return DeezerUser(id=self.USER_ID, name=self.BLOG_NAME)
 
@@ -340,7 +340,7 @@ class DeezerSong(BaseDeezerModel):
             formats=[filesizes[size] for size in filesizes if getattr(song, size) > 0],
         )
 
-    def to_short(self):
+    def to_short(self) -> TrackShort:
         """Convert DeezerSong to ShortTrack."""
         return TrackShort(
             id=self.SNG_ID,
