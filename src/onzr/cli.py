@@ -13,7 +13,7 @@ from itertools import chain
 from operator import attrgetter
 from pathlib import Path
 from random import shuffle
-from typing import List, Optional, Set, cast
+from typing import List, NoReturn, Optional, Set, cast
 
 import click
 import pendulum
@@ -128,6 +128,14 @@ def print_collection_ids(collection: Collection):
     """Print a collection as ids."""
     for item in collection:
         console.print(item.id)
+
+
+def exit_not_found(message: str, quiet: bool = False) -> NoReturn:
+    """Print a "not found" message (unless quiet) and exit."""
+    if not quiet:
+        theme = get_theme()
+        console.print(f"❌ [{theme.alert_color}]{message}[/{theme.alert_color}]")
+    raise typer.Exit(code=ExitCodes.NOT_FOUND)
 
 
 def print_collection_table(
@@ -312,7 +320,6 @@ def search(
     if ids:
         quiet = True
     deezer = get_deezer_client(quiet=quiet)
-    theme = get_theme()
 
     if not quiet:
         console.print("🔍 start searching…")
@@ -322,8 +329,7 @@ def search(
         raise typer.Exit(code=ExitCodes.INVALID_ARGUMENTS) from err
 
     if not results:
-        console.print(f"❌ [{theme.alert_color}]No match found[/{theme.alert_color}]")
-        raise typer.Exit(code=ExitCodes.NOT_FOUND)
+        exit_not_found("No match found", quiet)
 
     if first:
         results = cast(List[TrackShort], results)[:1]
@@ -517,6 +523,11 @@ def my_playlists(
     deezer = get_deezer_client(quiet=quiet)
 
     playlists = deezer.user_playlists(private)
+    if not playlists:
+        exit_not_found(
+            "No private playlists found" if private else "No playlists found", quiet
+        )
+
     if ids:
         print_collection_ids(playlists)
         return
@@ -539,6 +550,9 @@ def my_artists(
     deezer = get_deezer_client(quiet=quiet)
 
     artists = deezer.user_artists()
+    if not artists:
+        exit_not_found("No favorite artists found", quiet)
+
     if ids:
         print_collection_ids(artists)
         return
@@ -564,6 +578,9 @@ def my_albums(
     deezer = get_deezer_client(quiet=quiet)
 
     albums = deezer.user_albums(sort_by=by)
+    if not albums:
+        exit_not_found("No favorite albums found", quiet)
+
     if ids:
         print_collection_ids(albums)
         return
@@ -600,8 +617,7 @@ def my_tracks(
     # `user_tracks` returns a generator, always truthy: peek the first track
     # to detect empty collections, and restore it for later consumption.
     if (first := next(tracks, None)) is None:
-        console.print("No favorite tracks for user.")
-        return
+        exit_not_found("No favorite tracks found", quiet)
     tracks = chain([first], tracks)
 
     if ids:
