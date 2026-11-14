@@ -1,5 +1,6 @@
 """Onzr deezer tests."""
 
+import concurrent.futures
 import datetime
 import json
 from time import sleep
@@ -73,10 +74,28 @@ def test_deezer_client_init():
     assert client.arl == "fake"
     assert client.blowfish == "fake"
     expected = 15
-    assert client.session.adapters["https://"]._pool_maxsize == expected
+    assert client.connection_pool_maxsize == expected
+    # Both the standard API (https) and the gateway API (http) use the pool
+    for url in ("https://api.deezer.com", "http://www.deezer.com"):
+        assert client.session.get_adapter(url) is client.adapter
+    assert client.adapter._pool_maxsize == expected
 
 
-def test_deezer_client_collection_details(responses, deezer_client):
+@pytest.fixture
+def executor_workers(monkeypatch):
+    """Record the `max_workers` of thread pools created by the Deezer client."""
+    workers = []
+    executor_class = concurrent.futures.ThreadPoolExecutor
+
+    def executor(*args, **kwargs):
+        workers.append(kwargs.get("max_workers"))
+        return executor_class(*args, **kwargs)
+
+    monkeypatch.setattr("onzr.deezer.concurrent.futures.ThreadPoolExecutor", executor)
+    return workers
+
+
+def test_deezer_client_collection_details(responses, deezer_client, executor_workers):
     """Test the DeezerClient `_collection_details` method."""
     # Tracks
     tracks = [TrackShortFactory.build(id=i) for i in range(1, 11)]
@@ -89,6 +108,8 @@ def test_deezer_client_collection_details(responses, deezer_client):
     tracks = deezer_client._collection_details(tracks)
     # Ensure order is preserved
     assert [t.id for t in tracks] == list(range(1, 11))
+    # Ensure concurrency is bounded by the connection pool size
+    assert executor_workers == [deezer_client.connection_pool_maxsize]
 
     # Albums
     albums = [AlbumShortFactory.build(id=i) for i in range(1, 11)]
@@ -101,6 +122,22 @@ def test_deezer_client_collection_details(responses, deezer_client):
     albums = deezer_client._collection_details(albums)
     # Ensure order is preserved
     assert [t.id for t in albums] == list(range(1, 11))
+
+    # Items that cannot be fetched are dropped
+    tracks = [TrackShortFactory.build(id=i) for i in (1, 42, 3)]
+    for track_id in (1, 3):
+        responses.get(
+            f"https://api.deezer.com/track/{track_id}",
+            status=200,
+            json=json.loads(DeezerTrackFactory.build(id=track_id).model_dump_json()),
+        )
+    responses.get(
+        "https://api.deezer.com/track/42",
+        status=200,
+        json={"error": {"code": 800, "type": "DataException", "message": "no data"}},
+    )
+    tracks = deezer_client._collection_details(tracks)
+    assert [t.id for t in tracks] == [1, 3]
 
     # Artists
     artists = [ArtistShortFactory.build(id=i) for i in range(1, 11)]
@@ -410,7 +447,7 @@ def test_deezer_client_user_albums(responses, deezer_client):
     assert [a.artist for a in albums] == ["Alice", "dEUS", "Zed", ""]
 
 
-def test_deezer_client_user_tracks(responses, deezer_client):
+def test_deezer_client_user_tracks(responses, deezer_client, executor_workers):
     """Test the DeezerClient `user_tracks` method."""
     gw_url = "http://www.deezer.com/ajax/gw-light.php"
 
@@ -464,6 +501,8 @@ def test_deezer_client_user_tracks(responses, deezer_client):
         if c.request.params["method"] != "deezer.getUserData"
     ]
     assert methods == ["song.getFavoriteIds", "song.getListData"] * 2
+    # One bounded thread pool per page
+    assert executor_workers == [deezer_client.connection_pool_maxsize] * 2
 
 
 @pytest.mark.parametrize(

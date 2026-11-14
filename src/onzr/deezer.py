@@ -7,7 +7,6 @@ import logging
 from datetime import date
 from enum import IntEnum, StrEnum
 from pprint import pformat
-from queue import Queue as SyncQueue
 from threading import Thread
 from typing import Any, Callable, Iterator, List, Optional, TypeVar, overload
 
@@ -89,11 +88,14 @@ class DeezerClient(deezer.Deezer):
         """
         super().__init__()
 
-        # Set allowed maximal concurrent connections
+        # Set allowed maximal concurrent connections (and threads using them). The
+        # gateway API uses http while the standard API uses https.
+        self.connection_pool_maxsize = connection_pool_maxsize
         self.adapter = requests.adapters.HTTPAdapter(
             pool_maxsize=connection_pool_maxsize
         )
         self.session.mount("https://", self.adapter)
+        self.session.mount("http://", self.adapter)
 
         self.arl = arl
         self.blowfish = blowfish
@@ -127,15 +129,11 @@ class DeezerClient(deezer.Deezer):
     ) -> Collection:
         """Add detailled informations to collection.
 
-        Detailled informations are fetched using separated threads to speed up response
-        time for large collections.
+        Detailled informations are fetched in parallel (up to the connection pool size)
+        to speed up response time for large collections. Items that cannot be fetched
+        are dropped. Collection ordering is preserved.
         """
-        queue: SyncQueue = SyncQueue()
-        threads = []
-        order = {}
-        endpoint: Callable[[int], TrackShort] | Callable[[int], AlbumShort] | None = (
-            None
-        )
+        endpoint: Callable[[int], TrackShort] | Callable[[int], AlbumShort]
 
         def get_track(id_: int) -> TrackShort:
             return self._api(DeezerTrack, self.api.get_track, song_id=id_).to_short()
@@ -153,28 +151,21 @@ class DeezerClient(deezer.Deezer):
             logger.error(msg)
             raise ValueError(msg)
 
-        # Start threads
-        # FIXME: mypy cannot reliably guess types when using enumerate
-        for position, item in enumerate(collection):
-            order[item.id] = position  # type: ignore[attr-defined]
-            t = Thread(
-                target=lambda q, id_: q.put(endpoint(id_)),
-                args=(queue, item.id),  # type: ignore[attr-defined]
-            )
-            t.start()
-            threads.append(t)
+        def fetch(id_: int) -> TrackShort | AlbumShort | None:
+            try:
+                return endpoint(id_)
+            except Exception as err:
+                logger.warning(f"Cannot fetch details for item {id_}: {err}")
+                return None
 
-        # Join threads
-        for t in threads:
-            t.join()
+        ids = [item.id for item in collection]
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.connection_pool_maxsize
+        ) as executor:
+            # map() preserves the input order
+            details = list(executor.map(fetch, ids))
 
-        # Get updated collection
-        new = []
-        while not queue.empty():
-            new.append(queue.get())
-
-        # Preserve collection ordering
-        return sorted(new, key=lambda i: order[i.id])
+        return [item for item in details if item is not None]  # type: ignore[return-value]
 
     @staticmethod
     def _sort_key(field: str) -> Callable[[Any], tuple[bool, str]]:
@@ -462,7 +453,9 @@ class DeezerClient(deezer.Deezer):
                 song_ids[c : c + chunk_size]
                 for c in range(0, len(song_ids), chunk_size)
             ]
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.connection_pool_maxsize
+            ) as executor:
                 for songs in executor.map(self.gw.get_tracks, chunks):
                     for song in songs:
                         yield DeezerSong.model_validate(song).to_short()
