@@ -168,6 +168,14 @@ def test_search_command_with_no_match(configured_cli_runner, monkeypatch, option
 
     result = configured_cli_runner.invoke(cli, ["search", f"--{option}", "foo"])
     assert result.exit_code == ExitCodes.NOT_FOUND
+    assert "No match found" in result.stdout
+
+    # Nothing is printed when only ids are expected
+    result = configured_cli_runner.invoke(
+        cli, ["search", f"--{option}", "foo", "--ids"]
+    )
+    assert result.exit_code == ExitCodes.NOT_FOUND
+    assert result.stdout == ""
 
 
 @pytest.mark.parametrize(
@@ -471,13 +479,40 @@ def test_my_tracks_command_sort_by(configured_cli_runner, monkeypatch, deezer_us
     assert result.exit_code != ExitCodes.OK
 
 
-def test_my_tracks_command_with_no_favorite_track(configured_cli_runner, monkeypatch):
-    """Test the `onzr my tracks` command when user has no favorite tracks."""
-    monkeypatch.setattr(DeezerClient, "user_tracks", lambda *args, **kwargs: iter([]))
+@pytest.mark.parametrize(
+    "command,method,empty,message",
+    (
+        (["playlists"], "user_playlists", [], "No playlists found"),
+        (
+            ["playlists", "--private"],
+            "user_playlists",
+            [],
+            "No private playlists found",
+        ),
+        (["artists"], "user_artists", [], "No favorite artists found"),
+        (["albums"], "user_albums", [], "No favorite albums found"),
+        (["tracks"], "user_tracks", iter([]), "No favorite tracks found"),
+    ),
+)
+def test_my_commands_with_no_result(
+    configured_cli_runner, monkeypatch, command, method, empty, message
+):
+    """Test `onzr my` commands when the user library is empty."""
+    monkeypatch.setattr(DeezerClient, method, lambda *args, **kwargs: empty)
 
-    result = configured_cli_runner.invoke(cli, ["my", "tracks"])
-    assert result.exit_code == ExitCodes.OK
-    assert "No favorite tracks for user." in result.stdout
+    result = configured_cli_runner.invoke(cli, ["my", *command])
+    assert result.exit_code == ExitCodes.NOT_FOUND
+    assert message in result.stdout
+
+    # Nothing is printed when only ids are expected
+    monkeypatch.setattr(
+        DeezerClient,
+        method,
+        lambda *args, **kwargs: iter([]) if method == "user_tracks" else [],
+    )
+    result = configured_cli_runner.invoke(cli, ["my", *command, "--ids"])
+    assert result.exit_code == ExitCodes.NOT_FOUND
+    assert result.stdout == ""
 
 
 def test_add_command(test_server, responses, configured_cli_runner):

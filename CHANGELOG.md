@@ -19,6 +19,9 @@ and this project adheres to
 
 ### Changed
 
+- `search` command prints nothing when no match is found with the `--ids`
+  option
+
 #### Dependencies
 
 - Upgrade `fastapi` to `0.139`
