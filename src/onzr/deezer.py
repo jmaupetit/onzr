@@ -9,13 +9,13 @@ from enum import IntEnum, StrEnum
 from pprint import pformat
 from queue import Queue as SyncQueue
 from threading import Thread
-from typing import Any, Callable, Iterator, List, Optional, cast
+from typing import Any, Callable, Iterator, List, Optional, TypeVar, overload
 
 import deezer
 import requests
 from Cryptodome.Cipher import Blowfish
 from deezer.errors import PermissionException
-from pydantic import HttpUrl
+from pydantic import BaseModel, HttpUrl
 
 from .exceptions import DeezerTrackException
 from .models.core import (
@@ -31,11 +31,9 @@ from .models.deezer import (
     DeezerAdvancedSearchResponse,
     DeezerAlbum,
     DeezerAlbumResponse,
-    DeezerAPIResponseCollection,
     DeezerArtist,
     DeezerArtistAlbumsResponse,
     DeezerArtistRadioResponse,
-    DeezerArtistResponse,
     DeezerArtistTopResponse,
     DeezerFavoriteResponse,
     DeezerGWPlaylistResponse,
@@ -43,7 +41,6 @@ from .models.deezer import (
     DeezerSearchAlbumResponse,
     DeezerSearchArtistResponse,
     DeezerSearchPlaylistResponse,
-    DeezerSearchResponse,
     DeezerSearchTrackResponse,
     DeezerSong,
     DeezerTrack,
@@ -53,6 +50,10 @@ from .models.deezer import (
 )
 
 logger = logging.getLogger(__name__)
+
+# API proxy model and callback return types
+_M = TypeVar("_M", bound=BaseModel)
+_R = TypeVar("_R")
 
 
 class AlbumSortBy(StrEnum):
@@ -137,14 +138,10 @@ class DeezerClient(deezer.Deezer):
         )
 
         def get_track(id_: int) -> TrackShort:
-            return cast(
-                DeezerTrack, self._api(DeezerTrack, self.api.get_track, song_id=id_)
-            ).to_short()
+            return self._api(DeezerTrack, self.api.get_track, song_id=id_).to_short()
 
         def get_album(id_: int) -> AlbumShort:
-            return cast(
-                DeezerAlbum, self._api(DeezerAlbum, self.api.get_album, album_id=id_)
-            ).to_short()
+            return self._api(DeezerAlbum, self.api.get_album, album_id=id_).to_short()
 
         sample = next(iter(collection), None)
         if isinstance(sample, TrackShort):
@@ -189,58 +186,56 @@ class DeezerClient(deezer.Deezer):
 
         return key
 
-    @staticmethod
-    def _collection_to_short(collection: DeezerAPIResponseCollection) -> Collection:
-        """Convert API response collection to a collection."""
-        return [item.to_short() for item in collection.data]
+    @overload
+    def _api(
+        self,
+        model: type[_M],
+        endpoint: Callable[..., Any],
+        *,
+        callback: None = None,
+        **kwargs: Any,
+    ) -> _M: ...
+
+    @overload
+    def _api(
+        self,
+        model: type[_M],
+        endpoint: Callable[..., Any],
+        *,
+        callback: Callable[[_M], _R],
+        **kwargs: Any,
+    ) -> _R: ...
 
     def _api(
         self,
-        model: (
-            type[DeezerAlbum]
-            | type[DeezerAlbumResponse]
-            | type[DeezerArtistResponse]
-            | type[DeezerArtist]
-            | type[DeezerFavoriteResponse]
-            | type[DeezerFavoriteResponse]
-            | type[DeezerGWPlaylistResponse]
-            | type[DeezerPlaylist]
-            | type[DeezerSearchResponse]
-            | type[DeezerSong]
-            | type[DeezerTrack]
-            | type[DeezerUserData]
-            | type[DeezerUserProfilePageTabPlaylists]
-        ),
-        endpoint: Callable,
-        callback: Callable | None = None,
-        *args,
-        **kwargs,
-    ) -> (
-        Any
-        | DeezerAlbum
-        | DeezerAlbumResponse
-        | DeezerArtist
-        | DeezerArtistResponse
-        | DeezerFavoriteResponse
-        | DeezerPlaylist
-        | DeezerSearchResponse
-        | DeezerTrack
-        | DeezerUser
-        | List[PlaylistShort]
-    ):
+        model: type[_M],
+        endpoint: Callable[..., Any],
+        *,
+        callback: Callable[[_M], _R] | None = None,
+        **kwargs: Any,
+    ) -> _M | _R:
         """An API proxy that validates response using the input model."""
-        logger.debug(f"Will query {endpoint=} to {model=} with {args=}/{kwargs=}")
+        logger.debug(f"Will query {endpoint=} to {model=} with {kwargs=}")
 
-        response = endpoint(*args, **kwargs)
+        response = endpoint(**kwargs)
         logger.debug(pformat(response, sort_dicts=True))
 
-        instance = (
-            model(**response)
-            if not isinstance(response, List)
-            else [model(**item) for item in response]
-        )
+        instance = model.model_validate(response)
         logger.debug(f"{instance=}")
         return callback(instance) if callback else instance
+
+    def _api_list(
+        self, model: type[_M], endpoint: Callable[..., Any], **kwargs: Any
+    ) -> List[_M]:
+        """An API proxy that validates list responses using the input model."""
+        logger.debug(f"Will query {endpoint=} to list of {model=} with {kwargs=}")
+
+        response = endpoint(**kwargs)
+        logger.debug(pformat(response, sort_dicts=True))
+
+        instances = [model.model_validate(item) for item in response]
+        logger.debug(f"{instances=}")
+        return instances
 
     def artist(
         self,
@@ -252,46 +247,36 @@ class DeezerClient(deezer.Deezer):
         fetch_release_date: bool = False,
     ) -> Collection:
         """Get artist tracks."""
-        artist = cast(
-            DeezerArtist,
-            self._api(DeezerArtist, self.api.get_artist, artist_id=artist_id),
+        artist = self._api(
+            DeezerArtist, self.api.get_artist, artist_id=artist_id
         ).to_short()
         logger.debug(f"{artist=}")
         results: Collection = []
 
         if radio:
-            results = cast(
-                List[TrackShort],
-                self._api(
-                    DeezerArtistRadioResponse,
-                    self.api.get_artist_radio,
-                    callback=self._collection_to_short,
-                    artist_id=artist.id,
-                    limit=limit,
-                ),
+            results = self._api(
+                DeezerArtistRadioResponse,
+                self.api.get_artist_radio,
+                callback=lambda c: [i.to_short() for i in c.data],
+                artist_id=artist.id,
+                limit=limit,
             )
 
         elif top:
-            results = cast(
-                List[TrackShort],
-                self._api(
-                    DeezerArtistTopResponse,
-                    self.api.get_artist_top,
-                    callback=self._collection_to_short,
-                    artist_id=artist.id,
-                    limit=limit,
-                ),
+            results = self._api(
+                DeezerArtistTopResponse,
+                self.api.get_artist_top,
+                callback=lambda c: [i.to_short() for i in c.data],
+                artist_id=artist.id,
+                limit=limit,
             )
         elif albums:
-            results = cast(
-                List[AlbumShort],
-                self._api(
-                    DeezerArtistAlbumsResponse,
-                    self.api.get_artist_albums,
-                    callback=lambda c: [a.to_short(artist=artist) for a in c.data],
-                    artist_id=artist.id,
-                    limit=limit,
-                ),
+            results = self._api(
+                DeezerArtistAlbumsResponse,
+                self.api.get_artist_albums,
+                callback=lambda c: [a.to_short(artist=artist) for a in c.data],
+                artist_id=artist.id,
+                limit=limit,
             )
         else:
             raise ValueError(
@@ -306,49 +291,37 @@ class DeezerClient(deezer.Deezer):
     def album(self, album_id: int) -> List[TrackShort]:
         """Get album tracks."""
         return list(
-            cast(
-                DeezerAlbumResponse,
-                self._api(DeezerAlbumResponse, self.api.get_album, album_id=album_id),
+            self._api(
+                DeezerAlbumResponse, self.api.get_album, album_id=album_id
             ).get_tracks()
         )
 
     def track(self, track_id: int) -> TrackShort:
         """Get track info."""
-        return cast(
-            DeezerTrack, self._api(DeezerTrack, self.api.get_track, song_id=track_id)
-        ).to_short()
+        return self._api(DeezerTrack, self.api.get_track, song_id=track_id).to_short()
 
     def playlist(self, playlist_id: int) -> PlaylistShort:
         """Get playlist tracks."""
         # Supposed it's a public playlist
         try:
-            playlist = cast(
-                DeezerPlaylist,
-                self._api(
-                    DeezerPlaylist, self.api.get_playlist, playlist_id=playlist_id
-                ),
+            playlist = self._api(
+                DeezerPlaylist, self.api.get_playlist, playlist_id=playlist_id
             ).to_short()
         # Looks like it's a private playlist
         except PermissionException:
             # We've only the 10-first tracks of the playlist here
-            playlist = cast(
+            playlist = self._api(
                 DeezerGWPlaylistResponse,
-                self._api(
-                    DeezerGWPlaylistResponse,
-                    self.gw.get_playlist,
-                    playlist_id=playlist_id,
-                ),
+                self.gw.get_playlist,
+                playlist_id=playlist_id,
             ).to_short()
             # Get all playlist tracks
-            playlist.tracks = cast(
-                List[TrackShort],
-                self._api(
-                    DeezerSong,
-                    self.gw.get_playlist_tracks,
-                    callback=lambda x: [s.to_short() for s in x],
-                    playlist_id=playlist_id,
-                ),
-            )
+            playlist.tracks = [
+                s.to_short()
+                for s in self._api_list(
+                    DeezerSong, self.gw.get_playlist_tracks, playlist_id=playlist_id
+                )
+            ]
 
         return playlist
 
@@ -370,58 +343,43 @@ class DeezerClient(deezer.Deezer):
             logger.error(msg)
             raise ValueError(msg)
         elif len(criteria) > 1:
-            results = cast(
-                List[TrackShort],
-                self._api(
-                    DeezerAdvancedSearchResponse,
-                    self.api.advanced_search,
-                    callback=self._collection_to_short,
-                    artist=artist,
-                    album=album,
-                    track=track,
-                    strict=strict,
-                ),
+            results = self._api(
+                DeezerAdvancedSearchResponse,
+                self.api.advanced_search,
+                callback=lambda c: [i.to_short() for i in c.data],
+                artist=artist,
+                album=album,
+                track=track,
+                strict=strict,
             )
         elif artist:
-            results = cast(
-                List[ArtistShort],
-                self._api(
-                    DeezerSearchArtistResponse,
-                    self.api.search_artist,
-                    callback=self._collection_to_short,
-                    query=artist,
-                ),
+            results = self._api(
+                DeezerSearchArtistResponse,
+                self.api.search_artist,
+                callback=lambda c: [i.to_short() for i in c.data],
+                query=artist,
             )
         elif album:
-            results = cast(
-                List[AlbumShort],
-                self._api(
-                    DeezerSearchAlbumResponse,
-                    self.api.search_album,
-                    callback=self._collection_to_short,
-                    query=album,
-                ),
+            results = self._api(
+                DeezerSearchAlbumResponse,
+                self.api.search_album,
+                callback=lambda c: [i.to_short() for i in c.data],
+                query=album,
             )
 
         elif track:
-            results = cast(
-                List[TrackShort],
-                self._api(
-                    DeezerSearchTrackResponse,
-                    self.api.search_track,
-                    callback=self._collection_to_short,
-                    query=track,
-                ),
+            results = self._api(
+                DeezerSearchTrackResponse,
+                self.api.search_track,
+                callback=lambda c: [i.to_short() for i in c.data],
+                query=track,
             )
         elif playlist:
-            results = cast(
-                List[PlaylistShort],
-                self._api(
-                    DeezerSearchPlaylistResponse,
-                    self.api.search_playlist,
-                    callback=self._collection_to_short,
-                    query=playlist,
-                ),
+            results = self._api(
+                DeezerSearchPlaylistResponse,
+                self.api.search_playlist,
+                callback=lambda c: [i.to_short() for i in c.data],
+                query=playlist,
             )
 
         if (self.always_fetch_release_date or fetch_release_date) and not artist:
@@ -433,65 +391,41 @@ class DeezerClient(deezer.Deezer):
     def user(self) -> DeezerUser:
         """Get logged in user."""
         if self._user is None:
-            self._user = cast(
-                DeezerUser,
-                self._api(
-                    DeezerUserData,
-                    self.gw.get_user_data,
-                    callback=lambda r: r.USER.to_user(),
-                ),
+            self._user = self._api(
+                DeezerUserData,
+                self.gw.get_user_data,
+                callback=lambda r: r.USER.to_user(),
             )
         return self._user
 
     def user_playlists(self, private: bool = False) -> List[PlaylistShort]:
         """Get logged in user public and private playlists."""
-        playlists = cast(
-            List[PlaylistShort],
-            self._api(
-                DeezerUserProfilePageTabPlaylists,
-                self.gw.get_user_profile_page,
-                callback=lambda r: [
-                    p.to_short(user=self.user.name) for p in r.TAB.playlists.data
-                ],
-                user_id=self.user.id,
-                tab="playlists",
-                # -1: no limit (the server currently ignores "nb" anyway)
-                limit=-1,
-            ),
+        playlists = self._api(
+            DeezerUserProfilePageTabPlaylists,
+            self.gw.get_user_profile_page,
+            callback=lambda r: [
+                p.to_short(user=self.user.name) for p in r.TAB.playlists.data
+            ],
+            user_id=self.user.id,
+            tab="playlists",
+            # -1: no limit (the server currently ignores "nb" anyway)
+            limit=-1,
         )
         return list(filter(lambda p: not p.public, playlists)) if private else playlists
 
     def user_artists(self) -> List[ArtistShort]:
         """Get logged in user favorite artists."""
-        return sorted(
-            cast(
-                List[ArtistShort],
-                self._api(
-                    DeezerArtist,
-                    self.gw.get_user_artists,
-                    callback=lambda c: [a.to_short() for a in c],
-                    user_id=self.user.id,
-                    limit=-1,
-                ),
-            ),
-            key=self._sort_key("name"),
+        artists = self._api_list(
+            DeezerArtist, self.gw.get_user_artists, user_id=self.user.id, limit=-1
         )
+        return sorted((a.to_short() for a in artists), key=self._sort_key("name"))
 
     def user_albums(self, sort_by: AlbumSortBy) -> List[AlbumShort]:
         """Get logged in user favorite albums."""
-        return sorted(
-            cast(
-                List[AlbumShort],
-                self._api(
-                    DeezerAlbum,
-                    self.gw.get_user_albums,
-                    callback=lambda c: [a.to_short() for a in c],
-                    user_id=self.user.id,
-                    limit=-1,
-                ),
-            ),
-            key=self._sort_key(sort_by),
+        albums = self._api_list(
+            DeezerAlbum, self.gw.get_user_albums, user_id=self.user.id, limit=-1
         )
+        return sorted((a.to_short() for a in albums), key=self._sort_key(sort_by))
 
     def user_tracks(
         self, page_size: int, sort_by: Optional[TrackSortBy] = None
@@ -512,15 +446,12 @@ class DeezerClient(deezer.Deezer):
         chunk_size = 100
         start = 0
         while True:
-            favorites = cast(
+            favorites = self._api(
                 DeezerFavoriteResponse,
-                self._api(
-                    DeezerFavoriteResponse,
-                    self.gw.get_user_favorite_ids,
-                    checksum=None,
-                    limit=page_size,
-                    start=start,
-                ),
+                self.gw.get_user_favorite_ids,
+                checksum=None,
+                limit=page_size,
+                start=start,
             )
             song_ids = [f.SNG_ID for f in favorites.data]
             if not song_ids:
