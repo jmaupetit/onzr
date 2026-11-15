@@ -2,9 +2,10 @@
 
 import json
 import logging
+import pydoc
 import re
 from contextlib import contextmanager
-from os import stat
+from os import getenv, stat
 from pathlib import Path
 from time import sleep
 from unittest.mock import MagicMock, patch
@@ -417,6 +418,35 @@ def test_my_artists_command(configured_cli_runner, monkeypatch, deezer_user):
     assert result.exit_code == ExitCodes.OK
     expected = "".join([f"{a.id}\n" for a in artists])
     assert result.stdout == expected
+
+
+@pytest.mark.parametrize(
+    "env,expected",
+    [({}, "-R"), ({"PAGER": "more"}, None), ({"LESS": "FRX"}, "FRX")],
+)
+def test_pager_keeps_colors(
+    configured_cli_runner, monkeypatch, deezer_user, env, expected
+):
+    """Test the pager keeps colors, unless the user configured their pager."""
+    monkeypatch.delenv("LESS", raising=False)
+    monkeypatch.delenv("PAGER", raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+
+    # Record the LESS environment variable when the pager is called
+    less = []
+    monkeypatch.setattr(pydoc, "pager", lambda content: less.append(getenv("LESS")))
+    monkeypatch.setattr(
+        DeezerClient,
+        "user_artists",
+        lambda *args, **kwargs: ArtistShortFactory.batch(2),
+    )
+
+    result = configured_cli_runner.invoke(cli, ["my", "artists"])
+    assert result.exit_code == ExitCodes.OK
+    assert less == [expected]
+    # The environment is restored
+    assert getenv("LESS") == env.get("LESS")
 
 
 def test_my_albums_command(configured_cli_runner, monkeypatch, deezer_user):

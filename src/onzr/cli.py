@@ -3,9 +3,10 @@
 import json
 import logging
 import logging.config
+import os
 import sys
 import time
-from contextlib import AbstractContextManager, nullcontext
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from enum import IntEnum
 from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
@@ -130,6 +131,24 @@ def print_collection_ids(collection: Iterable[CollectionItem]):
     """Print a collection as ids."""
     for item in collection:
         console.print(item.id)
+
+
+@contextmanager
+def pager() -> Iterator[None]:
+    """Page console output, keeping colors.
+
+    The default pager (`less`) displays color codes as-is unless the `-R` flag is
+    set: use it when the user did not configure their pager (`PAGER` or `LESS`).
+    """
+    configured = "PAGER" in os.environ or "LESS" in os.environ
+    if not configured:
+        os.environ["LESS"] = "-R"
+    try:
+        with console.pager(styles=True):
+            yield
+    finally:
+        if not configured:
+            del os.environ["LESS"]
 
 
 def progress(message: str, quiet: bool = False) -> AbstractContextManager:
@@ -548,7 +567,7 @@ def my_playlists(
         print_collection_ids(playlists)
         return
 
-    with console.pager(styles=True):
+    with pager():
         print_collection_table(
             playlists, title=f"{deezer.user.name}'s playlists", quiet=quiet
         )
@@ -575,7 +594,7 @@ def my_artists(
         print_collection_ids(artists)
         return
 
-    with console.pager(styles=True):
+    with pager():
         print_collection_table(
             artists, title=f"{deezer.user.name}'s artists", quiet=quiet
         )
@@ -605,7 +624,7 @@ def my_albums(
         print_collection_ids(albums)
         return
 
-    with console.pager(styles=True):
+    with pager():
         print_collection_table(
             albums, title=f"{deezer.user.name}'s albums", sort=False, quiet=quiet
         )
@@ -654,7 +673,7 @@ def my_tracks(
     if not fetched:
         exit_not_found("No favorite tracks found", quiet)
 
-    with console.pager(styles=True):
+    with pager():
         print_collection_table(
             fetched, title=f"{deezer.user.name}'s tracks", sort=False, quiet=quiet
         )
@@ -698,7 +717,7 @@ def queue():
         )
         raise typer.Exit(0)
 
-    with console.pager(styles=True):
+    with pager():
         for qt in queue.tracks:
             track_infos = (
                 f"[white][bold]{qt.position + 1:-3d}[/] "
