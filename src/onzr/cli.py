@@ -13,7 +13,7 @@ from itertools import chain
 from operator import attrgetter
 from pathlib import Path
 from random import shuffle
-from typing import List, NoReturn, Optional, Set, cast
+from typing import Iterator, List, NoReturn, Optional, Set, cast
 
 import click
 import pendulum
@@ -610,18 +610,21 @@ def my_tracks(
 
     settings = get_settings()
     deezer = get_deezer_client(quiet=quiet)
-    tracks = deezer.user_tracks(
-        page_size=settings.FAVORITE_SONGS_PAGINATE_BY, sort_by=by
-    )
 
-    # `user_tracks` returns a generator, always truthy: peek the first track
-    # to detect empty collections, and restore it for later consumption.
-    if (first := next(tracks, None)) is None:
-        exit_not_found("No favorite tracks found", quiet)
-    tracks = chain([first], tracks)
+    def fetch() -> Iterator[TrackShort]:
+        # Sorting fetches all tracks during the call, else tracks are fetched lazily
+        return deezer.user_tracks(
+            page_size=settings.FAVORITE_SONGS_PAGINATE_BY, sort_by=by
+        )
 
+    # Stream ids as soon as they are fetched (unless sorted)
     if ids:
-        print_collection_ids(tracks)
+        tracks = fetch()
+        # `tracks` is an iterator, always truthy: peek the first track to detect
+        # empty collections, and restore it for later consumption.
+        if (first := next(tracks, None)) is None:
+            exit_not_found("No favorite tracks found", quiet)
+        print_collection_ids(chain([first], tracks))
         return
 
     # Fetching may take a while: show progress on stderr, stdout goes to the pager
@@ -631,7 +634,9 @@ def my_tracks(
         else logging_console.status("Fetching your favorite tracks…")
     )
     with status:
-        fetched = list(tracks)
+        fetched = list(fetch())
+    if not fetched:
+        exit_not_found("No favorite tracks found", quiet)
 
     with console.pager(styles=True):
         print_collection_table(

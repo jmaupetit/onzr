@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+from contextlib import contextmanager
 from os import stat
 from pathlib import Path
 from time import sleep
@@ -457,6 +458,50 @@ def test_my_tracks_command(configured_cli_runner, monkeypatch, deezer_user):
     assert result.exit_code == ExitCodes.OK
     expected = "".join([f"{t.id}\n" for t in tracks])
     assert result.stdout == expected
+
+
+@pytest.mark.parametrize("by", [None, "title"])
+def test_my_tracks_command_status(configured_cli_runner, monkeypatch, deezer_user, by):
+    """Test the `onzr my tracks` command shows progress while fetching tracks."""
+    status = {"active": False, "entered": 0}
+    fetched_while_active = []
+
+    @contextmanager
+    def fake_status(*args, **kwargs):
+        status["entered"] += 1
+        status["active"] = True
+        try:
+            yield
+        finally:
+            status["active"] = False
+
+    def user_tracks(*args, **kwargs):
+        # Tracks are fetched (or sorted) when the generator is consumed or during
+        # the call: both should happen while the status is displayed
+        fetched_while_active.append(status["active"])
+
+        def tracks():
+            fetched_while_active.append(status["active"])
+            yield from TrackShortFactory.batch(2)
+
+        return tracks()
+
+    monkeypatch.setattr(onzr.cli.logging_console, "status", fake_status)
+    monkeypatch.setattr(DeezerClient, "user_tracks", user_tracks)
+
+    args = ["my", "tracks"] + (["--by", by] if by else [])
+    result = configured_cli_runner.invoke(cli, args)
+    assert result.exit_code == ExitCodes.OK
+    assert status["entered"] == 1
+    assert fetched_while_active == [True, True]
+
+    # No status in quiet mode
+    status["entered"] = 0
+    fetched_while_active.clear()
+    result = configured_cli_runner.invoke(cli, [*args, "--quiet"])
+    assert result.exit_code == ExitCodes.OK
+    assert status["entered"] == 0
+    assert fetched_while_active == [False, False]
 
 
 @pytest.mark.parametrize("by", ["album", "artist", "title"])
