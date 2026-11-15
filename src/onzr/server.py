@@ -70,7 +70,7 @@ async def stream_track(
     onzr: Annotated[Onzr, Depends(get_onzr)],
     rank: Annotated[int, Path(title="Track queue rank")],
 ) -> StreamingResponse:
-    """Stream Deezer track given its identifer."""
+    """Stream Deezer track given its identifier."""
     if onzr.queue.is_empty:
         raise HTTPException(
             status_code=status.HTTP_204_NO_CONTENT, detail="Queue is empty."

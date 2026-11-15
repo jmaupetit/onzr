@@ -36,7 +36,7 @@ def test_queue_add(client, configured_onzr, song_data, wait_for_requests):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["message"] == f"Added {len(track_ids)} track(s) to queue"
 
-    # Track informations are fetched in background threads: wait for the
+    # Track information are fetched in background threads: wait for the
     # mocked requests to be executed before leaving the test.
     wait_for_requests()
 

@@ -34,7 +34,7 @@ def test_queue_add(test_server, responses, wait_for_requests):
         message="Added 3 track(s) to queue"
     )
 
-    # Track informations are fetched by the server in background threads:
+    # Track information are fetched by the server in background threads:
     # wait for the mocked requests to be executed before leaving the test.
     wait_for_requests()
 
