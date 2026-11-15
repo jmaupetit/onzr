@@ -460,6 +460,34 @@ def test_my_tracks_command(configured_cli_runner, monkeypatch, deezer_user):
     assert result.stdout == expected
 
 
+@pytest.mark.parametrize(
+    "n_tracks,quiet,expected",
+    [(2, False, []), (3, False, ["Rendering table…"]), (3, True, [])],
+)
+def test_print_collection_table_status(
+    capsys, monkeypatch, settings, n_tracks, quiet, expected
+):
+    """Test the rendering status displayed for large tables."""
+    messages = []
+
+    @contextmanager
+    def fake_status(message, *args, **kwargs):
+        messages.append(message)
+        yield
+
+    monkeypatch.setattr(onzr.cli.logging_console, "status", fake_status)
+    monkeypatch.setattr(settings, "CLI_TABLE_RENDERING_STATUS_MIN_ROWS", 3)
+
+    tracks = TrackShortFactory.batch(n_tracks)
+    onzr.cli.print_collection_table(tracks, title="Tracks", quiet=quiet)
+
+    assert messages == expected
+    # The table is fully printed, once
+    output = capsys.readouterr().out
+    assert output.count("Tracks") == 1
+    assert all(str(t.id) in output for t in tracks)
+
+
 @pytest.mark.parametrize("by", [None, "title"])
 def test_my_tracks_command_status(configured_cli_runner, monkeypatch, deezer_user, by):
     """Test the `onzr my tracks` command shows progress while fetching tracks."""

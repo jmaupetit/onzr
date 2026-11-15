@@ -68,6 +68,10 @@ class Settings(BaseSettings):
         alert_color=Color("red"),
     )
 
+    # CLI
+    # Tables with fewer rows render fast enough not to display a rendering status
+    CLI_TABLE_RENDERING_STATUS_MIN_ROWS: int = 1000
+
     # Deezer
     ARL: str
     ALWAYS_FETCH_RELEASE_DATE: bool = False
