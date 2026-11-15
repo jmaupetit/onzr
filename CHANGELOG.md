@@ -11,22 +11,34 @@ and this project adheres to
 ### Added
 
 - Add support for user data
-- Add `my` command and related sub-commands:
-  - `my playlists`
+- Add private playlists support (`playlist` command)
+- Add the `FAVORITE_SONGS_PAGINATE_BY` configuration setting
+- Add the `CLI_TABLE_RENDERING_STATUS_MIN_ROWS` configuration setting
+- CLI: add the `my` command and related sub-commands:
+  - `my playlists` (`--private/-p` option to list private playlists only)
   - `my artists`
-  - `my albums`
-  - `my tracks`
+  - `my albums` (`--by/-b` option to sort by title or artist)
+  - `my tracks` (`--by/-b` option to sort by album, artist or title)
+- CLI: display a status while rendering large tables
 
 ### Changed
 
-- `search` command prints nothing when no match is found with the `--ids`
-  option
+- Fetch track details (release dates) using a thread pool bounded by the
+  `CONNECTION_POOL_MAXSIZE` setting (instead of one thread per track)
+- CLI: the `search` command prints nothing when no match is found with the
+  `--ids` option
 
 #### Dependencies
 
 - Upgrade `fastapi` to `0.139`
 - Upgrade `typer` to `0.27`
 - Upgrade `uvicorn` to `0.51`
+
+### Fixed
+
+- Support user-uploaded tracks (negative track ids)
+- Apply the `CONNECTION_POOL_MAXSIZE` setting to Deezer gateway API requests
+- CLI: keep colors in the pager (`queue` command) when no pager is configured
 
 ## [0.6.0] - 2025-12-12
 
