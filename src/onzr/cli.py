@@ -5,7 +5,7 @@ import logging
 import logging.config
 import sys
 import time
-from contextlib import nullcontext
+from contextlib import AbstractContextManager, nullcontext
 from enum import IntEnum
 from functools import cache, wraps
 from importlib.metadata import version as import_lib_version
@@ -24,6 +24,7 @@ from rich.console import Console, Group
 from rich.live import Live
 from rich.progress_bar import ProgressBar
 from rich.prompt import Prompt
+from rich.segment import Segments
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
@@ -130,6 +131,14 @@ def print_collection_ids(collection: Collection):
         console.print(item.id)
 
 
+def progress(message: str, quiet: bool = False) -> AbstractContextManager:
+    """Display a progress status on stderr (unless quiet).
+
+    The status is displayed on stderr so that stdout stays clean (pager, ids).
+    """
+    return nullcontext() if quiet else logging_console.status(message)
+
+
 def exit_not_found(message: str, quiet: bool = False) -> NoReturn:
     """Print a "not found" message (unless quiet) and exit."""
     if not quiet:
@@ -139,7 +148,7 @@ def exit_not_found(message: str, quiet: bool = False) -> NoReturn:
 
 
 def print_collection_table(
-    collection: Collection, title="Collection", sort: bool = True
+    collection: Collection, title="Collection", sort: bool = True, quiet: bool = False
 ):
     """Print a collection as a table."""
     theme = get_theme()
@@ -212,7 +221,13 @@ def print_collection_table(
             *map(str, item.model_dump(exclude_none=True, exclude={"tracks"}).values()),
         )
 
-    console.print(table)
+    # Rendering large tables takes a while (column widths depend on all rows): render
+    # while displaying a status, then print the rendered table, so that stdout is not
+    # written while the status is displayed.
+    min_rows = get_settings().CLI_TABLE_RENDERING_STATUS_MIN_ROWS
+    with progress("Rendering table…", quiet or len(items) < min_rows):
+        rendered = Segments(list(console.render(table)))
+    console.print(rendered)
 
 
 @cli.command()
@@ -338,7 +353,7 @@ def search(
         print_collection_ids(results)
         return
 
-    print_collection_table(results, title="Search results")
+    print_collection_table(results, title="Search results", quiet=quiet)
 
 
 @cli.command()
@@ -399,7 +414,7 @@ def artist(
         print_collection_ids(collection)
         return
 
-    print_collection_table(collection, title="Artist collection")
+    print_collection_table(collection, title="Artist collection", quiet=quiet)
 
 
 @cli.command()
@@ -426,7 +441,7 @@ def album(
         print_collection_ids(collection)
         return
 
-    print_collection_table(collection, title="Album tracks")
+    print_collection_table(collection, title="Album tracks", quiet=quiet)
 
 
 @cli.command()
@@ -458,7 +473,9 @@ def playlist(
         return
 
     print_collection_table(
-        playlist.tracks, title=f"« {playlist.title} » by {playlist.user or '?'}"
+        playlist.tracks,
+        title=f"« {playlist.title} » by {playlist.user or '?'}",
+        quiet=quiet,
     )
 
 
@@ -503,7 +520,7 @@ def mix(
         print_collection_ids(tracks)
         return
 
-    print_collection_table(tracks, title="Onzr Mix tracks")
+    print_collection_table(tracks, title="Onzr Mix tracks", quiet=quiet)
 
 
 @my.command("playlists")
@@ -533,7 +550,9 @@ def my_playlists(
         return
 
     with console.pager(styles=True):
-        print_collection_table(playlists, title=f"{deezer.user.name}'s playlists")
+        print_collection_table(
+            playlists, title=f"{deezer.user.name}'s playlists", quiet=quiet
+        )
 
 
 @my.command("artists")
@@ -558,7 +577,9 @@ def my_artists(
         return
 
     with console.pager(styles=True):
-        print_collection_table(artists, title=f"{deezer.user.name}'s artists")
+        print_collection_table(
+            artists, title=f"{deezer.user.name}'s artists", quiet=quiet
+        )
 
 
 @my.command("albums")
@@ -586,7 +607,9 @@ def my_albums(
         return
 
     with console.pager(styles=True):
-        print_collection_table(albums, title=f"{deezer.user.name}'s albums", sort=False)
+        print_collection_table(
+            albums, title=f"{deezer.user.name}'s albums", sort=False, quiet=quiet
+        )
 
 
 @my.command("tracks")
@@ -627,20 +650,14 @@ def my_tracks(
         print_collection_ids(chain([first], tracks))
         return
 
-    # Fetching may take a while: show progress on stderr, stdout goes to the pager
-    status = (
-        nullcontext()
-        if quiet
-        else logging_console.status("Fetching your favorite tracks…")
-    )
-    with status:
+    with progress("Fetching your favorite tracks…", quiet):
         fetched = list(fetch())
     if not fetched:
         exit_not_found("No favorite tracks found", quiet)
 
     with console.pager(styles=True):
         print_collection_table(
-            fetched, title=f"{deezer.user.name}'s tracks", sort=False
+            fetched, title=f"{deezer.user.name}'s tracks", sort=False, quiet=quiet
         )
 
 
