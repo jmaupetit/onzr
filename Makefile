@@ -54,6 +54,7 @@ run: ## run onzr server in development mode
 lint: ## lint all sources
 lint: \
   lint-black \
+  lint-codespell \
   lint-ruff \
   lint-mypy
 .PHONY: lint
@@ -67,6 +68,16 @@ lint-black-check: ## check python sources with black
 	@echo 'lint:black check started…'
 	uv run black --check src/onzr tests
 .PHONY: lint-black-check
+
+lint-codespell: ## check spelling with codespell
+	@echo 'lint:codespell started…'
+	uv run codespell
+.PHONY: lint-codespell
+
+lint-codespell-fix: ## check and fix spelling with codespell
+	@echo 'lint:codespell-fix started…'
+	uv run codespell --write-changes
+.PHONY: lint-codespell-fix
 
 lint-ruff: ## lint python sources with ruff
 	@echo 'lint:ruff started…'

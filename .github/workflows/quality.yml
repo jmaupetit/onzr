@@ -52,6 +52,8 @@ jobs:
           enable-cache: true
       - name: Lint with Black
         run: make lint-black-check
+      - name: Lint with Codespell
+        run: make lint-codespell
       - name: Lint with Ruff
         run: make lint-ruff
       - name: Lint with MyPy
