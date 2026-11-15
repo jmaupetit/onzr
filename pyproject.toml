@@ -40,6 +40,7 @@ onzr = "onzr.cli:cli"
 [dependency-groups]
 dev = [
     "black>=26.1,<27",
+    "codespell>=2.4,<3",
     "httpx>=0.28.1",
     "mkdocs-material>=9.6.21",
     "mypy>=2.1,<3",
@@ -56,6 +57,10 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.codespell]
+skip = "*.lock,*.gif,*.json,./site,./.venv,./.git,./.*_cache"
+check-hidden = true
 
 [tool.coverage.run]
 omit = []
