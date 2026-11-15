@@ -63,15 +63,15 @@ Default: `MP3_128`
 ### `CONNECTION_POOL_MAXSIZE`
 
 Setup the HTTP requests connection pool maximal size, _e.g._ the maximal number
-of concurrent requests (and threads) used to fetch track informations.
+of concurrent requests (and threads) used to fetch track information.
 Increasing this value will speed up response time when querying a lot of track
-informations for a huge playlist, tracks search or favorite tracks.
+information for a huge playlist, tracks search or favorite tracks.
 
 Default: `10`
 
 !!! Warning 
 
-    Set this configuration to a reasonnable value: not higher than 30. Deewer
+    Set this configuration to a reasonable value: not higher than 30. Deewer
     will rate-limit you in either way.
 
 ---

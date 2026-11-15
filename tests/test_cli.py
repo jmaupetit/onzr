@@ -74,7 +74,7 @@ def test_init_command_without_input(cli_runner, settings_file):
     # Base configuration exists but without ARL setting
     assert settings_file.exists() is True
 
-    # Dist file and its initial copy hould be identical
+    # Dist file and its initial copy should be identical
     dist = Path(onzr.__file__).parent / Path(f"{settings_file.name}.dist")
     assert dist.exists()
     assert dist.read_text() == settings_file.read_text()
@@ -627,7 +627,7 @@ def test_add_command(
     result = configured_cli_runner.invoke(cli, ["add", "--", "1", "2", "-3"])
     assert result.exit_code == ExitCodes.OK
     assert "Added 3 track(s) to queue" in result.stdout
-    # Track informations are fetched by the server in background threads
+    # Track information are fetched by the server in background threads
     wait_for_requests()
     assert [t.track_id for t in configured_onzr.queue.tracks] == track_ids
 

@@ -145,7 +145,7 @@ class QueuedTracks(BaseModel):
 
 
 class PlayerState(BaseModel):
-    """Detailled player state."""
+    """Detailed player state."""
 
     state: str
     length: int = 0

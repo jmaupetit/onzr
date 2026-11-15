@@ -32,7 +32,7 @@ def wait_for_requests(responses) -> Callable[..., None]:
     """Wait until all requests registered in the `responses` mock have been executed.
 
     This is useful to wait for requests made in background threads (e.g. track
-    informations fetched by the server) before giving the control back to the
+    information fetched by the server) before giving the control back to the
     `responses` fixture, which asserts all registered mocks have been fired.
     """
 
@@ -50,7 +50,7 @@ def wait_for_requests(responses) -> Callable[..., None]:
 def song_data(responses) -> None:
     """Mock the `song.getData` gateway call, serving the requested track.
 
-    Track informations are fetched concurrently in background threads (e.g. by the
+    Track information are fetched concurrently in background threads (e.g. by the
     server when adding tracks to the queue), making the request order unpredictable:
     the response is built from the requested `SNG_ID` instead of relying on the mock
     registration order.

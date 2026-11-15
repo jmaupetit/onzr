@@ -313,7 +313,7 @@ player:
 
 !!! Tip
 
-    If you want to follow currenly played tracks in real-time you may use the
+    If you want to follow currently played tracks in real-time you may use the
     `now` command:
 
     ```sh

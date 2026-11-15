@@ -83,7 +83,7 @@ class DeezerClient(deezer.Deezer):
     ) -> None:
         """Instantiate the Deezer API client.
 
-        Fast login is useful to quicky access some API endpoints such as "search" but
+        Fast login is useful to quickly access some API endpoints such as "search" but
         won't work if you need to stream tracks.
         """
         super().__init__()
@@ -127,9 +127,9 @@ class DeezerClient(deezer.Deezer):
         self,
         collection: Collection,
     ) -> Collection:
-        """Add detailled informations to collection.
+        """Add detailed information to collection.
 
-        Detailled informations are fetched in parallel (up to the connection pool size)
+        Detailed information are fetched in parallel (up to the connection pool size)
         to speed up response time for large collections. Items that cannot be fetched
         are dropped. Collection ordering is preserved.
         """

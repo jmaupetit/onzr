@@ -250,7 +250,7 @@ def print_collection_table(
 
 @cli.command()
 def init():
-    """Intialize onzr player."""
+    """Initialize onzr player."""
     console.print("⚙️ Initializing onzr…")
 
     app_dir = get_onzr_dir()
@@ -961,7 +961,7 @@ def serve(
 ):
     """Run onzr http server."""
     theme = get_theme()
-    # Typer does not support complex types such as Litteral, so let's check log_level
+    # Typer does not support complex types such as Literal, so let's check log_level
     # validity by ourselves.
     allowed_levels: list[str] = ["debug", "info", "warning", "error", "critical"]
     if log_level not in allowed_levels:
