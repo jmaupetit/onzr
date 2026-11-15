@@ -63,9 +63,9 @@ Default: `MP3_128`
 ### `CONNECTION_POOL_MAXSIZE`
 
 Setup the HTTP requests connection pool maximal size, _e.g._ the maximal number
-of allowed concurrent requests for a session. Increasing this value will speed
-up response time when querying a lot of track informations for a huge playlist
-or tracks search.
+of concurrent requests (and threads) used to fetch track informations.
+Increasing this value will speed up response time when querying a lot of track
+informations for a huge playlist, tracks search or favorite tracks.
 
 Default: `10`
 
@@ -85,6 +85,16 @@ track details from Deezer. You should know that this can slow down the CLI
 reactivity.
 
 Default: `false`
+
+---
+
+### `FAVORITE_SONGS_PAGINATE_BY`
+
+Favorite tracks (see the `my tracks` command) are fetched page by page: this
+setting defines the number of tracks per page. Tracks details of a page are
+fetched in parallel (see `CONNECTION_POOL_MAXSIZE`).
+
+Default: `10000`
 
 ---
 
@@ -179,3 +189,13 @@ THEME:
 ```
 
 Colors should be given as hexadecimal codes or names (_e.g._ `red`).
+
+---
+
+### `CLI_TABLE_RENDERING_STATUS_MIN_ROWS`
+
+Rendering large tables (_e.g._ thousands of favorite tracks) may take a few
+seconds: for tables with at least this number of rows, a "Rendering table…"
+status is displayed while rendering (unless the `--quiet` flag is used).
+
+Default: `1000`
