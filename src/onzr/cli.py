@@ -13,7 +13,7 @@ from itertools import chain
 from operator import attrgetter
 from pathlib import Path
 from random import shuffle
-from typing import Iterator, List, NoReturn, Optional, Set, cast
+from typing import Iterable, Iterator, List, NoReturn, Optional, Set, cast
 
 import click
 import pendulum
@@ -44,6 +44,7 @@ from .models.core import (
     AlbumShort,
     ArtistShort,
     Collection,
+    CollectionItem,
     PlayerControl,
     PlaylistShort,
     ServerState,
@@ -125,7 +126,7 @@ def require_server(func):
     return wrapper
 
 
-def print_collection_ids(collection: Collection):
+def print_collection_ids(collection: Iterable[CollectionItem]):
     """Print a collection as ids."""
     for item in collection:
         console.print(item.id)
@@ -154,10 +155,8 @@ def print_collection_table(
     theme = get_theme()
     table = Table(title=title)
 
-    # Iterators (e.g. favorite tracks) are fetched lazily: consume them once
-    items: List[ArtistShort | AlbumShort | TrackShort | PlaylistShort] = list(
-        collection
-    )
+    # Copy the collection, as it may be sorted below
+    items: List[CollectionItem] = list(collection)
     if not items:
         return
     sample = items[0]

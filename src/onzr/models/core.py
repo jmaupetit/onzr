@@ -2,7 +2,7 @@
 
 from datetime import date
 from enum import StrEnum
-from typing import Annotated, Iterator, List, Optional, TypeAlias
+from typing import Annotated, List, Optional, TypeAlias
 
 from pydantic import BaseModel, Field, PositiveInt
 from pydantic_extra_types.color import Color
@@ -104,12 +104,10 @@ class PlaylistShort(BaseModel):
     tracks: Optional[List[TrackShort]] = None
 
 
+CollectionItem: TypeAlias = ArtistShort | AlbumShort | TrackShort | PlaylistShort
+
 Collection: TypeAlias = (
-    List[ArtistShort]
-    | List[AlbumShort]
-    | List[TrackShort]
-    | List[PlaylistShort]
-    | Iterator[TrackShort]
+    List[ArtistShort] | List[AlbumShort] | List[TrackShort] | List[PlaylistShort]
 )
 
 
