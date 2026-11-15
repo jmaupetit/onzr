@@ -515,21 +515,18 @@ def test_my_commands_with_no_result(
     assert result.stdout == ""
 
 
-def test_add_command(test_server, responses, configured_cli_runner):
+def test_add_command(
+    test_server, configured_cli_runner, configured_onzr, song_data, wait_for_requests
+):
     """Test the `onzr add` command."""
     track_ids = [1, 2, -3]
-    for track_id in track_ids:
-        responses.post(
-            "http://www.deezer.com/ajax/gw-light.php",
-            status=200,
-            json=DeezerSongResponseFactory.build(
-                error={}, results=DeezerSongFactory.build(SNG_ID=track_id)
-            ).model_dump(),
-        )
 
     result = configured_cli_runner.invoke(cli, ["add", "--", "1", "2", "-3"])
     assert result.exit_code == ExitCodes.OK
     assert "Added 3 track(s) to queue" in result.stdout
+    # Track informations are fetched by the server in background threads
+    wait_for_requests()
+    assert [t.track_id for t in configured_onzr.queue.tracks] == track_ids
 
     # Pass ids via stdin
     result = configured_cli_runner.invoke(
@@ -537,6 +534,8 @@ def test_add_command(test_server, responses, configured_cli_runner):
     )
     assert result.exit_code == ExitCodes.OK
     assert "Added 3 track(s) to queue" in result.stdout
+    wait_for_requests()
+    assert [t.track_id for t in configured_onzr.queue.tracks] == track_ids * 2
 
 
 def test_queue_command(test_server, configured_cli_runner, configured_onzr, track):
