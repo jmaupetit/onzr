@@ -70,6 +70,12 @@ testpaths = [
     "tests",
 ]
 
+[tool.black]
+# Format for the oldest supported Python version: otherwise Black infers target
+# versions from `requires-python` (up to the latest Python release) and its
+# safety check fails when running with an older Python.
+target-version = ["py311"]
+
 [tool.ruff]
 target-version = "py311"
 # Exclude a variety of commonly ignored directories.
