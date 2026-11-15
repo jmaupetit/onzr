@@ -271,6 +271,75 @@ onzr mix --ids --deep --limit 4 Metallica Slayer Megadeth Anthrax | \
     onzr add -
 ```
 
+## `my`
+
+The `my` command explores your 💜 Deezer library: your playlists, favorite
+artists, albums and tracks.
+
+```sh
+onzr my --help
+```
+
+### `my playlists`
+
+List your playlists (public and private ones):
+
+```sh
+onzr my playlists
+```
+
+Use the `--private` flag to only list your private playlists. As for other
+commands, the `--ids` flag allows you to pipe your playlists to another command,
+_e.g._ to list the tracks of your first private playlist:
+
+```sh
+onzr my playlists --private --ids | head -n 1 | \
+    onzr playlist -
+```
+
+### `my artists`
+
+List your favorite artists, sorted by name:
+
+```sh
+onzr my artists
+```
+
+### `my albums`
+
+List your favorite albums, sorted by title (default) or by artist using the
+`--by` option:
+
+```sh
+onzr my albums --by artist
+```
+
+### `my tracks`
+
+List your favorite tracks, most recent favorites first:
+
+```sh
+onzr my tracks
+```
+
+Use the `--by` option to sort them by `album`, `artist` or `title`. Want to
+listen to all your favorite tracks? Pipe them to the `add` command:
+
+```sh
+onzr my tracks --ids | onzr add -
+```
+
+!!! Tip
+
+    Favorite tracks ids are printed as soon as they are fetched, unless you
+    sort them using the `--by` option (all tracks need to be fetched first).
+
+!!! Note
+
+    When your library is empty (or you have no private playlist), `my` commands
+    exit with a non-zero exit code (`30`), printing nothing with the `--ids`
+    flag.
+
 ## `add`
 
 The `add` allows you to add tracks to the queue. Tracks identifiers should be
