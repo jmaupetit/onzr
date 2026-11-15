@@ -1,12 +1,13 @@
 """Tests configuration."""
 
 import importlib
+import json
 import logging
 import tempfile
 import threading
 from pathlib import Path
 from time import sleep, time
-from typing import Generator
+from typing import Callable, Generator
 
 import pytest
 import requests
@@ -26,18 +27,53 @@ from tests.factories import DeezerSongFactory, DeezerSongResponseFactory
 logger = logging.getLogger(__name__)
 
 
-def wait_for_requests(mock, timeout: float = 5.0) -> None:
-    """Wait until all requests registered in the mock have been executed.
+@pytest.fixture
+def wait_for_requests(responses) -> Callable[..., None]:
+    """Wait until all requests registered in the `responses` mock have been executed.
 
     This is useful to wait for requests made in background threads (e.g. track
     informations fetched by the server) before giving the control back to the
     `responses` fixture, which asserts all registered mocks have been fired.
     """
-    deadline = time() + timeout
-    while any(response.call_count == 0 for response in mock.registered()):
-        if time() > deadline:
-            return
-        sleep(0.01)
+
+    def wait(timeout: float = 5.0) -> None:
+        deadline = time() + timeout
+        while any(response.call_count == 0 for response in responses.registered()):
+            if time() > deadline:
+                return
+            sleep(0.01)
+
+    return wait
+
+
+@pytest.fixture
+def song_data(responses) -> None:
+    """Mock the `song.getData` gateway call, serving the requested track.
+
+    Track informations are fetched concurrently in background threads (e.g. by the
+    server when adding tracks to the queue), making the request order unpredictable:
+    the response is built from the requested `SNG_ID` instead of relying on the mock
+    registration order.
+    """
+
+    def callback(request):
+        sng_id = json.loads(request.body)["SNG_ID"]
+        song = DeezerSongFactory.build(SNG_ID=sng_id, FALLBACK=None)
+        return (
+            200,
+            {},
+            json.dumps({"error": {}, "results": json.loads(song.model_dump_json())}),
+        )
+
+    responses.add_callback(
+        responses.POST,
+        "http://www.deezer.com/ajax/gw-light.php",
+        callback=callback,
+        content_type="application/json",
+        match=[
+            matchers.query_param_matcher({"method": "song.getData"}, strict_match=False)
+        ],
+    )
 
 
 @pytest.fixture
