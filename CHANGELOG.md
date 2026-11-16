@@ -30,9 +30,9 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `fastapi` to `0.139`
-- Upgrade `typer` to `0.27`
-- Upgrade `uvicorn` to `0.51`
+- Upgrade `fastapi` to `0.162`
+- Upgrade `typer` to `0.28`
+- Upgrade `uvicorn` to `0.54`
 
 ### Fixed
 
