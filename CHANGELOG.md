@@ -45,6 +45,10 @@ and this project adheres to
 - CLI: the `--release` option short flag is now `-R` (`search` and `artist`
   commands), fixing a clash with `artist --radio/-r`
 
+### Removed
+
+- Drop Python 3.10 support
+
 ## [0.6.0] - 2025-12-12
 
 ### Added
