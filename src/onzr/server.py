@@ -4,7 +4,7 @@ import logging
 from functools import lru_cache
 from typing import Annotated, List
 
-from fastapi import Depends, FastAPI, HTTPException, Path, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, status
 from fastapi.responses import StreamingResponse
 
 from .config import get_settings
@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-app = FastAPI(title="Onzr", root_path=settings.API_ROOT_URL, debug=settings.DEBUG)
+app = FastAPI(title="Onzr", debug=settings.DEBUG)
+router = APIRouter(prefix=settings.API_ROOT_URL)
 
 
 @lru_cache
@@ -36,7 +37,7 @@ def get_onzr() -> Onzr:
 # --- Routes
 
 
-@app.post("/queue/")
+@router.post("/queue/")
 async def queue_add(
     onzr: Annotated[Onzr, Depends(get_onzr)],
     track_ids: List[int],
@@ -47,7 +48,7 @@ async def queue_add(
     return ServerMessage(message=f"Added {len(tracks)} track(s) to queue")
 
 
-@app.delete("/queue/")
+@router.delete("/queue/")
 async def queue_clear(
     onzr: Annotated[Onzr, Depends(get_onzr)],
 ) -> ServerState:
@@ -57,7 +58,7 @@ async def queue_clear(
     return onzr.state()
 
 
-@app.get("/queue/")
+@router.get("/queue/")
 async def queue_list(
     onzr: Annotated[Onzr, Depends(get_onzr)],
 ) -> QueuedTracks:
@@ -65,7 +66,7 @@ async def queue_list(
     return onzr.queue.serialize()
 
 
-@app.get(settings.TRACK_STREAM_ENDPOINT)
+@router.get(settings.TRACK_STREAM_ENDPOINT)
 async def stream_track(
     onzr: Annotated[Onzr, Depends(get_onzr)],
     rank: Annotated[int, Path(title="Track queue rank")],
@@ -87,7 +88,7 @@ async def stream_track(
     return StreamingResponse(track.stream(quality), media_type=quality.media_type)
 
 
-@app.get("/now")
+@router.get("/now")
 async def now_playing(
     onzr: Annotated[Onzr, Depends(get_onzr)],
 ) -> PlayingState:
@@ -109,7 +110,7 @@ async def now_playing(
     )
 
 
-@app.post("/play")
+@router.post("/play")
 async def play(
     onzr: Annotated[Onzr, Depends(get_onzr)], params: PlayQueryParams
 ) -> PlayerControl:
@@ -122,7 +123,7 @@ async def play(
     return PlayerControl(action="play", state=onzr.state())
 
 
-@app.post("/pause")
+@router.post("/pause")
 async def pause(
     onzr: Annotated[Onzr, Depends(get_onzr)],
 ) -> PlayerControl:
@@ -131,7 +132,7 @@ async def pause(
     return PlayerControl(action="pause", state=onzr.state())
 
 
-@app.post("/stop")
+@router.post("/stop")
 async def stop(
     onzr: Annotated[Onzr, Depends(get_onzr)],
 ) -> PlayerControl:
@@ -140,7 +141,7 @@ async def stop(
     return PlayerControl(action="stop", state=onzr.state())
 
 
-@app.post("/next")
+@router.post("/next")
 async def next(
     onzr: Annotated[Onzr, Depends(get_onzr)],
 ) -> PlayerControl:
@@ -149,7 +150,7 @@ async def next(
     return PlayerControl(action="next", state=onzr.state())
 
 
-@app.post("/previous")
+@router.post("/previous")
 async def previous(
     onzr: Annotated[Onzr, Depends(get_onzr)],
 ) -> PlayerControl:
@@ -158,7 +159,7 @@ async def previous(
     return PlayerControl(action="previous", state=onzr.state())
 
 
-@app.get("/state")
+@router.get("/state")
 async def state(
     onzr: Annotated[Onzr, Depends(get_onzr)],
 ) -> ServerState:
@@ -166,7 +167,10 @@ async def state(
     return onzr.state()
 
 
-@app.get("/ping")
+@router.get("/ping")
 async def ping() -> None:
     """Server ping."""
     return
+
+
+app.include_router(router)

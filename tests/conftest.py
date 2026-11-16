@@ -195,7 +195,9 @@ def client(configured_onzr):
 
     # Override dependency to ensure we have got a deezer-mocked Onzr instance
     server.app.dependency_overrides[server.get_onzr] = get_configured_onzr
-    yield TestClient(server.app)
+    yield TestClient(
+        server.app, base_url=f"http://testserver{server.settings.API_ROOT_URL}"
+    )
 
 
 @pytest.fixture
