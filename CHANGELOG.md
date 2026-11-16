@@ -40,6 +40,8 @@ and this project adheres to
 - Apply the `CONNECTION_POOL_MAXSIZE` setting to Deezer gateway API requests
 - CLI: keep colors in the pager (`queue` command) when no pager is configured
 - Fix typos in docs, docstrings and comments
+- CLI: the `--release` option short flag is now `-R` (`search` and `artist`
+  commands), fixing a clash with `artist --radio/-r`
 
 ## [0.6.0] - 2025-12-12
 

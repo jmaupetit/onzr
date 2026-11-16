@@ -337,7 +337,7 @@ def search(
     ] = False,
     release: Annotated[
         bool,
-        typer.Option("--release", "-r", help="Fetch albums or tracks release date."),
+        typer.Option("--release", "-R", help="Fetch albums or tracks release date."),
     ] = False,
     first: Annotated[
         bool, typer.Option("--first", "-f", help="Limit to the first match.")
@@ -390,7 +390,7 @@ def artist(
     ] = False,
     release: Annotated[
         bool,
-        typer.Option("--release", "-r", help="Fetch albums or tracks release date."),
+        typer.Option("--release", "-R", help="Fetch albums or tracks release date."),
     ] = False,
     limit: Annotated[
         int, typer.Option("--limit", "-l", help="Limit to the first l hits.")
