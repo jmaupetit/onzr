@@ -93,9 +93,10 @@ def test_init_command(cli_runner, settings_file):
     # SETTINGS_FILE should be updated compared to the distributed template
     settings_dist = Path(onzr.__file__).parent / Path(f"{settings_file.name}.dist")
     assert settings_dist.exists()
-    settings_file_content = settings_file.read_text()
-    assert settings_dist.read_text() != settings_file_content
-    assert re.search("^ARL: .*", settings_file_content)
+    # Only the ARL line should be set, commented default settings are kept
+    assert settings_file.read_text() == settings_dist.read_text().replace(
+        "# ARL:", "ARL: fake-arl", 1
+    )
 
 
 def test_init_command_does_not_overwrite_settings(cli_runner, settings_file):

@@ -36,10 +36,12 @@ and this project adheres to
 
 ### Fixed
 
+- Fix typos in docs, docstrings and comments
 - Support user-uploaded tracks (negative track ids)
 - Apply the `CONNECTION_POOL_MAXSIZE` setting to Deezer gateway API requests
 - CLI: keep colors in the pager (`queue` command) when no pager is configured
-- Fix typos in docs, docstrings and comments
+- CLI: the `init` command keeps commented default settings in the generated
+  configuration file
 - CLI: the `--release` option short flag is now `-R` (`search` and `artist`
   commands), fixing a clash with `artist --radio/-r`
 

@@ -1,14 +1,15 @@
-# ARL:
-# QUALITY: MP3_128
-# CONNECTION_POOL_MAXSIZE: 10
 # ALWAYS_FETCH_RELEASE_DATE: false
+# API_ROOT_URL: /api/v1
+# ARL:
+# CLI_TABLE_RENDERING_STATUS_MIN_ROWS: 1000
+# CONNECTION_POOL_MAXSIZE: 10
 # DEBUG: false
-# SCHEMA: http
+DEEZER_BLOWFISH_SECRET: "g4el58wc0zvf9na1"
+# FAVORITE_SONGS_PAGINATE_BY: 10000
 # HOST: localhost
 # PORT: 9473
-# API_ROOT_URL: /api/v1
-# TRACK_STREAM_ENDPOINT: /queue/{rank}/stream
-DEEZER_BLOWFISH_SECRET: "g4el58wc0zvf9na1"
+# QUALITY: MP3_128
+# SCHEMA: http
 # THEME:
 #   # Base palette
 #   primary_color: "#9B6BDF"
@@ -20,3 +21,4 @@ DEEZER_BLOWFISH_SECRET: "g4el58wc0zvf9na1"
 #   album_color: "#E356A7"
 #   # Messages
 #   alert_color: "red"
+# TRACK_STREAM_ENDPOINT: /queue/{rank}/stream

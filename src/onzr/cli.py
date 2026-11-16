@@ -4,6 +4,7 @@ import json
 import logging
 import logging.config
 import os
+import re
 import sys
 import time
 from contextlib import AbstractContextManager, contextmanager, nullcontext
@@ -270,19 +271,18 @@ def init():
         raise OnzrConfigurationError(f"Configuration file '{dest}' already exists!")
 
     logger.info(f"Will create base setting file '{dest}'")
-    dest.write_text(src.read_text())
+    base_settings = src.read_text()
+    dest.write_text(base_settings)
     logger.debug(f"Copied base setting file to: {dest}")
 
-    # Open base configuration
-    with src.open() as f:
-        user_settings = yaml.safe_load(f)
-
     logger.debug("ARL value will be (re)set.")
-    user_settings["ARL"] = Prompt.ask("Paste your ARL 📋")
+    arl = yaml.safe_dump({"ARL": Prompt.ask("Paste your ARL 📋")}).strip()
 
+    # Only set the ARL line to keep commented default settings
     logger.info(f"Writing settings configuration to: {dest}")
-    with dest.open(mode="w") as f:
-        yaml.dump(user_settings, f)
+    dest.write_text(
+        re.sub(r"^# ARL:.*$", lambda _: arl, base_settings, count=1, flags=re.M)
+    )
 
     console.print("🎉 Everything looks ok from here. You can start playing 💫")
 
