@@ -20,8 +20,8 @@ project's future.
 ### 2. Creating a new issue
 
 Use the provided
-[issue template](https://github.com/jmaupetit/onzr/issues/new/choose) that fits
-the best to your concern. Provide as much information as possible when writing
+[issue template](https://github.com/jmaupetit/onzr/issues/new/choose) that best fits
+your concern. Provide as much information as possible when writing
 your issue. Your issue will be reviewed by a project maintainer and you may be
 offered to open a PR if you want to contribute to the code. If not, and if your
 issue is relevant, a contributor will apply the changes to the project. The
@@ -113,7 +113,7 @@ based on the Angular commit message guidelines.
 Push your branch to your GitHub repository:
 
 ```bash
-git push origin feature/your-new-feature
+git push origin your-new-feature
 ```
 
 ### 6. Create a pull request
@@ -144,4 +144,4 @@ main project. Congratulations, you've successfully contributed to onzr! 🎉
 This project follows OpenFUN's standard process to release a new version. We
 invite you to read their
 [handbook](https://handbook.openfun.fr/git#releasing-new-software-version) that
-describes it into details.
+describes it in detail.

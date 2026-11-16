@@ -339,7 +339,7 @@ class DeezerSong(BaseDeezerModel):
         )
 
     def to_short(self) -> TrackShort:
-        """Convert DeezerSong to ShortTrack."""
+        """Convert DeezerSong to TrackShort."""
         return TrackShort(
             id=self.SNG_ID,
             title=(

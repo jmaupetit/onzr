@@ -250,7 +250,7 @@ def print_collection_table(
 
 @cli.command()
 def init():
-    """Initialize onzr player."""
+    """Initialize Onzr configuration."""
     console.print("⚙️ Initializing onzr…")
 
     app_dir = get_onzr_dir()
@@ -336,7 +336,8 @@ def search(
         bool, typer.Option("--strict", "-s", help="Only consider strict matches.")
     ] = False,
     release: Annotated[
-        bool, typer.Option("--release", "-r", help="Fetch albums or tracks release.")
+        bool,
+        typer.Option("--release", "-r", help="Fetch albums or tracks release date."),
     ] = False,
     first: Annotated[
         bool, typer.Option("--first", "-f", help="Limit to the first match.")
@@ -348,7 +349,7 @@ def search(
 ):
     """Search tracks, artists and/or albums.
 
-    Note that search criterion can be combined (e.g. artist and album).
+    Note that search criteria can be combined (e.g. artist and album).
     """
     if ids:
         quiet = True
@@ -388,20 +389,20 @@ def artist(
         bool, typer.Option("--albums", "-a", help="Show artist albums.")
     ] = False,
     release: Annotated[
-        bool, typer.Option("--release", "-r", help="Fetch albums or tracks release.")
+        bool,
+        typer.Option("--release", "-r", help="Fetch albums or tracks release date."),
     ] = False,
     limit: Annotated[
-        int, typer.Option("--limit", "-l", help="Limit to the l first hits.")
+        int, typer.Option("--limit", "-l", help="Limit to the first l hits.")
     ] = 10,
     quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
     ids: Annotated[
         bool, typer.Option("--ids", "-i", help="Show only result IDs.")
     ] = False,
 ):
-    """Get artist popular track ids.
+    """Get artist top tracks, radio or albums.
 
-    Remember to increase the default limit to show all artist albums if it has produced
-    more than one.
+    Increase the default limit to list more than 10 albums.
     """
     if all([not top, not radio, not albums]):
         console.print("You should choose either top titles, artist radio or albums.")
@@ -507,7 +508,7 @@ def mix(
         ),
     ] = False,
     limit: Annotated[
-        int, typer.Option("--limit", "-l", help="Limit to the l first hits per artist.")
+        int, typer.Option("--limit", "-l", help="Limit to the first l hits per artist.")
     ] = 10,
     quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Quiet output.")] = False,
     ids: Annotated[
@@ -889,9 +890,7 @@ def now(
 def play(
     rank: Annotated[
         int | None,
-        typer.Option(
-            "--rank", "-r", help="Start playing the queue starting at the rank r."
-        ),
+        typer.Option("--rank", "-r", help="Start playing the queue at rank r."),
     ] = None,
 ):
     """Play queued tracks.
@@ -959,7 +958,7 @@ def serve(
         ),
     ] = "info",
 ):
-    """Run onzr http server."""
+    """Run Onzr HTTP server."""
     theme = get_theme()
     # Typer does not support complex types such as Literal, so let's check log_level
     # validity by ourselves.

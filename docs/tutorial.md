@@ -4,7 +4,7 @@ behind it.
 !!! tip
 
     While following this tutorial, you will be invited to type shell commands.
-    Every command appears in a code block as follow:
+    Every command appears in a code block as follows:
 
     ```sh
     echo "Hello world!"
@@ -19,13 +19,13 @@ behind it.
 
 Onzr is a Python package, but it depends on [VLC media
 player](https://www.videolan.org/vlc/) to play your music. You need to make
-sure it's installed on your machine; don't be afraid most (every?) operating
+sure it's installed on your machine; don't be afraid, most (every?) operating
 systems are compatible.
 
 [Python](https://www.python.org) should also be installed in your machine. If
 you are using a UNIX-based operating system such as MacOS or GNU/Linux, it
-should already be installed. Make sure your version of python is at least
-Python `11.0` by typing the following command in your favorite terminal:
+should already be installed. Make sure your version of Python is at least
+Python `3.11` by typing the following command in your favorite terminal:
 
 ```sh
 python --version
@@ -96,8 +96,8 @@ When prompted, copy/paste your ARL token and validate by pressing ++enter++
 That's it: Onzr is now configured 🎉 A configuration file (`settings.yaml`)
 should have been generated at the following path (depending on your OS):
 
-- **MacOS**: `~/Library/Application Support/onzr/settings.yaml`
-- **Windows**: `%appdata%\watson\config`, which usually expands to `C:\Users\<user>\AppData\Roaming\onzr\settings.yaml`
+- **macOS**: `~/Library/Application Support/onzr/settings.yaml`
+- **Windows**: `%appdata%\onzr\settings.yaml`, which usually expands to `C:\Users\<user>\AppData\Roaming\onzr\settings.yaml`
 - **Linux**: `~/.config/onzr/settings.yaml`
 
 You can check the configuration path using the `config -p` command:
@@ -153,8 +153,8 @@ you will need to start a new terminal to run new commands to act on it.
 
 !!! Tip
 
-    If you want to run the Onzr server as a background process, we recommend to
-    lower the log-level so that it won't disturb your terminal flow:
+    If you want to run the Onzr server as a background process, we recommend
+    lowering the log-level so that it won't disturb your terminal flow:
 
     ```sh
     onzr serve --log-level error &
@@ -198,8 +198,8 @@ In this top track list, we can find the track identifiers, title and album.
 
 !!! Tip "Pro tip for power users ™"
 
-    An alternative way to achieve the previous suite of commands is to leverage the
-    power of UNIX shells by using the pipe operator (`|` character) that send the
+    An alternative way to achieve the previous sequence of commands is to leverage the
+    power of UNIX shells by using the pipe operator (`|` character) that sends the
     output of a command as input of another command (we say it is "piped" to the
     second command):
 
@@ -220,7 +220,7 @@ onzr artist --albums --limit 20 399 # (1)
 ```
 
 1. The `--limit` option is used here to avoid being limited to the 10 latest
-   albums (API default page size it `10`).
+   albums (API default page size is `10`).
 
 The output should look like:
 
@@ -228,9 +228,9 @@ The output should look like:
 
 I hear you from here saying:
 
-> — Ok that great, but we are here to listen to music, not get creepy identifiers!
+> — OK that's great, but we are here to listen to music, not get creepy identifiers!
 
-Loud and clear, let's continue to the next section to listen good music!
+Loud and clear, let's continue to the next section to listen to good music!
 
 ## Add tracks to queue
 
@@ -242,7 +242,7 @@ onzr add 138539157
 ```
 
 In this case, we've added the track with the `138539157` identifier to the
-queue. Since you may not remember Deezer identifier from your favorite tracks,
+queue. Since you may not remember Deezer identifiers of your favorite tracks,
 the `add` command is often the last command of a more complete pipeline,
 _e.g._:
 
@@ -255,7 +255,7 @@ onzr search --artist "Radiohead" --ids --first | # (1) \
 1. Note that we use the `--ids` option to only display artists identifiers
 2. Note that we use the `--ids` option to only display tracks identifiers
 3. Note that the `add` command also accepts the `-` special operator to read
-   identifiers from the standard input (`stdint`)
+   identifiers from the standard input (`stdin`)
 
 In this case, we will add Radiohead's top-10 tracks to the queue. This is a
 classical pipeline.
@@ -273,7 +273,7 @@ classical pipeline.
 
 ## Enjoy your music
 
-Once you filled Onzr's queue, you can start playing it!
+Once you have filled Onzr's queue, you can start playing it!
 
 ```sh
 onzr play
@@ -303,7 +303,7 @@ onzr play --rank 7
 
 ## Control the player
 
-As you may expect, there are few commands that do what they say to control the
+As you may expect, there are a few commands that do what they say to control the
 player:
 
 - `pause`: toggle pause
@@ -323,7 +323,7 @@ player:
 ## Create playlists on-the-fly
 
 One last thing: the `mix` command is Onzr's secret sauce! This command can
-create playlists on the fly given a list of artists names. Let's see it in
+create playlists on the fly given a list of artist names. Let's see it in
 action:
 
 ```sh
@@ -338,10 +338,10 @@ onzr mix "avishai cohen" "go go penguin" "yom" --limit 20 --ids | # (1) \
 2. The `shuf` command shuffles standard input lines
 
 With this command we add 60 tracks to the queue (20 tracks per artist) in a
-random order. By default, we consider the `--limit` first artist's top-tracks
+random order. By default, we take the first `--limit` top tracks of each artist
 (defaults to 10).
 
-So if you want to go deeper and discover artists inspired from the ones you
+So if you want to go deeper and discover artists inspired by the ones you
 choose, use the `--deep` option to get tracks from each artist's radio. There
 is a great chance that you discover new sounds:
 
@@ -355,4 +355,4 @@ onzr mix --deep "avishai cohen" "go go penguin" "yom" --limit 20 --ids | \
 !!! Tip
 
     The cool thing about this `mix --deep` command is that if you run it twice,
-    you won't have the same mix, since artist's radio are randomly created.
+    you won't have the same mix, since artist radios are randomly generated.

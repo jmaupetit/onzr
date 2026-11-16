@@ -1,6 +1,6 @@
 # Onzr, the one-hour-late Deezer 💜 CLI.
 
-> Pronounced onze heure (11 O-Clock à-la-française) 🤡
+> Pronounced onze heure (11 o'clock à-la-française) 🤡
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jmaupetit/onzr/quality.yml)
 ![PyPI - Version](https://img.shields.io/pypi/v/onzr)
@@ -27,8 +27,8 @@ manager you may use):
 pip install --user onzr
 ```
 
-Once installed the `onzr` command should be available (if not check your `PATH`
-definition). Before using Onzr, you should configure it (once for all):
+Once installed the `onzr` command should be available (if not, check your `PATH`
+definition). Before using Onzr, you should configure it (once and for all):
 
 ```sh
 onzr init
@@ -51,7 +51,7 @@ should run the server before starting to use it:
 onzr serve --log-level error &
 ```
 
-In this case, the server is ran as a background job; see the `serve` command
+In this case, the server is run as a background job; see the `serve` command
 documentation for details about running Onzr server.
 
 Play your first album:

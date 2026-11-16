@@ -59,7 +59,7 @@ class OnzrClient:
         return ServerState.model_validate_json(response.text)
 
     def ping(self) -> bool:
-        """Get server status."""
+        """Ping the server."""
         try:
             response = self.session.get(
                 f"{self.base_url}/ping", timeout=self.ping_timeout

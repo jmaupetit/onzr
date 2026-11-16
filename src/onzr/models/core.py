@@ -134,7 +134,7 @@ class QueuedTrack(BaseModel):
 
 
 class QueuedTracks(BaseModel):
-    """Queued Tracks list."""
+    """Queued tracks list."""
 
     playing: int | None
     tracks: List[QueuedTrack]

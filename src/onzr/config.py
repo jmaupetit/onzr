@@ -1,4 +1,4 @@
-"""Dzr configuration."""
+"""Onzr: configuration."""
 
 import logging
 from functools import cache
@@ -98,7 +98,7 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        """Add Toml configuration support."""
+        """Add YAML configuration support."""
         return env_settings, YamlConfigSettingsSource(
             settings_cls, yaml_file=get_onzr_dir() / SETTINGS_FILE
         )

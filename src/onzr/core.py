@@ -100,7 +100,7 @@ class Queue:
 
 
 class Onzr:
-    """Onzr main class that communicates with every components.
+    """Onzr main class that communicates with all components.
 
     - deezer: Deezer API client
     - player: VLC player

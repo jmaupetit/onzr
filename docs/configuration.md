@@ -1,4 +1,4 @@
-Onzr can be set either by defining environment variables or a configuration
+Onzr can be configured either by defining environment variables or a configuration
 file.
 
 This configuration file respects general and specific rules that we will
@@ -8,7 +8,7 @@ describe in detail in the following sections.
 
 ### Use `onzr init` to bootstrap your configuration
 
-Onzr CLI comes with a `init` command that can help you boostraping your project
+Onzr CLI comes with an `init` command that can help you bootstrap your configuration
 (see the [tutorial](./tutorial.md)). Remember that the `onzr init` command will
 generate the configuration file for you. Once generated it's up to you to
 change setting values to suit your needs.
@@ -18,7 +18,7 @@ change setting values to suit your needs.
 Onzr configuration file is stored inside your user's application folder.
 Depending on your system, the default path is likely:
 
-- MacOSX: `~/Library/Application Support/onzr/settings.yaml`
+- macOS: `~/Library/Application Support/onzr/settings.yaml`
 - Windows: `%appdata%\onzr\settings.yaml`, which usually expands to
   `C:\Users\<user>\AppData\Roaming\onzr\settings.yaml`
 - Linux: `~/.config/onzr/settings.yaml`
@@ -62,23 +62,23 @@ Default: `MP3_128`
 
 ### `CONNECTION_POOL_MAXSIZE`
 
-Setup the HTTP requests connection pool maximal size, _e.g._ the maximal number
+Sets up the HTTP requests connection pool maximal size, _i.e._ the maximal number
 of concurrent requests (and threads) used to fetch track information.
 Increasing this value will speed up response time when querying a lot of track
 information for a huge playlist, tracks search or favorite tracks.
 
 Default: `10`
 
-!!! Warning 
+!!! Warning
 
-    Set this configuration to a reasonable value: not higher than 30. Deewer
-    will rate-limit you in either way.
+    Set this configuration to a reasonable value: not higher than 30. Deezer
+    will rate-limit you anyway.
 
 ---
 
 ### `ALWAYS_FETCH_RELEASE_DATE`
 
-When listing track details, by default track list don't show track release date
+When listing track details, by default track lists don't show track release dates
 (except for album tracks). If you want to always have this information, you can
 set this configuration to `true`. By doing so, you will systematically fetch
 track details from Deezer. You should know that this can slow down the CLI
@@ -91,7 +91,7 @@ Default: `false`
 ### `FAVORITE_SONGS_PAGINATE_BY`
 
 Favorite tracks (see the `my tracks` command) are fetched page by page: this
-setting defines the number of tracks per page. Tracks details of a page are
+setting defines the number of tracks per page. Track details of a page are
 fetched in parallel (see `CONNECTION_POOL_MAXSIZE`).
 
 Default: `10000`
@@ -107,7 +107,7 @@ Default: `false`
 
 !!! Warning
 
-    We strongly recommend to keep default `false` value when running Onzr outside from development.
+    We strongly recommend to keep default `false` value when running Onzr outside of development.
 
 ---
 
@@ -121,7 +121,7 @@ Default: `http`
 
 ### `HOST`
 
-This is the host socket will be bind to. It can be an IPv4 or IPv6 address, or a
+This is the host the socket will be bound to. It can be an IPv4 or IPv6 address, or a
 fully qualified domain name (_e.g._ `onzr.example.org`). Set this to `0.0.0.0`
 if you want your application to be available from your local network.
 
@@ -131,7 +131,7 @@ Default: `localhost`
 
 ### `PORT`
 
-This the host port the socket will be bind to.
+This is the port the socket will be bound to.
 
 Default: `9473`
 
@@ -139,7 +139,7 @@ Default: `9473`
 
 ### `API_ROOT_URL`
 
-This the root URL Onzr server will respond from.
+This is the root URL Onzr server will respond from.
 
 Default: `/api/v1`
 

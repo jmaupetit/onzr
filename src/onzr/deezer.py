@@ -107,12 +107,12 @@ class DeezerClient(deezer.Deezer):
         self._user: Optional[DeezerUser] = None
 
     def _login(self):
-        """Login to deezer API."""
+        """Log in to the Deezer API."""
         logger.debug("Login in to deezer using defined ARL…")
         self.login_via_arl(self.arl)
 
     def _fast_login(self):
-        """Fasting login using ARL cookie."""
+        """Fast login using ARL cookie."""
         cookie_obj = requests.cookies.create_cookie(
             domain=".deezer.com",
             name="arl",
@@ -129,7 +129,7 @@ class DeezerClient(deezer.Deezer):
     ) -> Collection:
         """Add detailed information to collection.
 
-        Detailed information are fetched in parallel (up to the connection pool size)
+        Detailed information is fetched in parallel (up to the connection pool size)
         to speed up response time for large collections. Items that cannot be fetched
         are dropped. Collection ordering is preserved.
         """
@@ -293,14 +293,14 @@ class DeezerClient(deezer.Deezer):
 
     def playlist(self, playlist_id: int) -> PlaylistShort:
         """Get playlist tracks."""
-        # Supposed it's a public playlist
+        # Assume it's a public playlist
         try:
             playlist = self._api(
                 DeezerPlaylist, self.api.get_playlist, playlist_id=playlist_id
             ).to_short()
         # Looks like it's a private playlist
         except PermissionException:
-            # We've only the 10-first tracks of the playlist here
+            # We only have the first 10 tracks of the playlist here
             playlist = self._api(
                 DeezerGWPlaylistResponse,
                 self.gw.get_playlist,
@@ -513,7 +513,7 @@ class Track:
         self.track_info: Optional[TrackInfo] = None
         self.key: Optional[bytes] = None
 
-        # Fetch track info in a separated thread to make instantiation non-blocking
+        # Fetch track info in a separate thread to make instantiation non-blocking
         if background:
             thread = Thread(target=self._set_track_info)
             thread.start()
@@ -621,8 +621,8 @@ class Track:
     def query_quality(self, quality: StreamQuality) -> StreamQuality:
         """Get track quality among available formats.
 
-        All stream qualities are not available for every tracks, if queried quality
-        is not available return the best available quality among supported formats.
+        Not all stream qualities are available for every track: if the queried quality
+        is not available, return the best available quality among supported formats.
         """
         if quality in self.formats:
             return quality
@@ -673,7 +673,7 @@ class Track:
     def stream(self, quality: StreamQuality = StreamQuality.MP3_128) -> Iterator[bytes]:
         """Fetch track in-memory.
 
-        quality (StreamQuality): audio file to stream quality
+        quality (StreamQuality): audio quality to stream
         """
         if (best := self.query_quality(quality)) != quality:
             logger.warning(

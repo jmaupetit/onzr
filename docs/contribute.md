@@ -45,7 +45,7 @@ uv run onzr artist 1 --top --ids | \
 
 !!! Question "Musical quiz"
 
-    Enjoying what you ear? What is the artist who was given the ID `1`?
+    Enjoying what you hear? What is the artist who was given the ID `1`?
 
 ## Quality checks
 
@@ -61,6 +61,6 @@ make lint
 
 !!! tip
 
-    💡 Don't be surprised to ear strange noises during tests execution 😅
+    💡 Don't be surprised to hear strange noises during tests execution 😅
 
 Happy hacking 😻

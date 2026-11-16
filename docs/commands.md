@@ -71,14 +71,14 @@ Using the `--path` (or `-p`) option will only display the configuration file
 path:
 
 ```sh
-onzr -p
+onzr config -p
 ```
 
 ```
 /home/johndoe/.config/onzr/settings.yaml
 ```
 
-And you can also edit your configuration using the `--edit` (or `-e`):
+And you can also edit your configuration using the `--edit` (or `-e`) option:
 
 ```sh
 onzr config -e
@@ -99,7 +99,7 @@ The `serve` command should be run once to start Onzr web server:
 onzr serve
 ```
 
-Once ran, Onzr server main instance is active (by default at:
+Once started, Onzr server main instance is active (by default at:
 [localhost:9473](http://localhost:9473)).
 
 !!! Tip "Pro Tip ™"
@@ -136,7 +136,7 @@ The command output looks like:
 ![`onzr search --artist "Lady Gaga"`](./img/tapes/cmd-search.gif)
 
 Use the `--ids` flag to only print identifiers to the standard output if your
-intent is to pipe your search result to another command (e.g. `artist` or
+intent is to pipe your search result to another command (_e.g._ `artist` or
 `play`).
 
 ```sh
@@ -148,18 +148,18 @@ onzr search --artist "Lady Gaga" --ids --first | \
 1. 💡 the `-` argument of the `artist` command indicates to read artist ID from `stdin`
 2. the `--release` flag adds the `Released` column with tracks release date.
 
-Your search result piped to the artist command display the artist top tracks
+Your search result piped to the artist command displays the artist top tracks
 (with release dates):
 
 ![`onzr search --artist "Lady Gaga" --ids --first | onzr artist - --release`](./img/tapes/cmd-search-pipe.gif)
 
 !!! Tip
 
-    The `search` command `--strict` flag decreases fuzzyness in search results.
+    The `search` command `--strict` flag decreases fuzziness in search results.
 
 ## `artist`
 
-The `artist` command allows to explore artist top tracks and radios. So you want
+The `artist` command allows you to explore an artist's top tracks and radios. So you want
 to explore Eric Clapton's world (ID `192`)?
 
 ```sh
@@ -238,8 +238,8 @@ And there it is:
 
 ## `mix`
 
-The `mix` command generates playlists using various artists definition. You can
-generate a "The Big Four" playlist on-the-fly as follow:
+The `mix` command generates playlists from a list of artists. You can
+generate a "The Big Four" playlist on-the-fly as follows:
 
 ```sh
 onzr mix --limit 2 Metallica Slayer Megadeth Anthrax
@@ -342,7 +342,7 @@ onzr my tracks --ids | onzr add -
 
 ## `add`
 
-The `add` allows you to add tracks to the queue. Tracks identifiers should be
+The `add` command allows you to add tracks to the queue. Tracks identifiers should be
 given as command arguments:
 
 ```sh
@@ -363,7 +363,7 @@ This command adds a track search result to the queue.
 
 ## `queue`
 
-The `queue` command list tracks added to the queue:
+The `queue` command lists tracks added to the queue:
 
 ```sh
 onzr queue
@@ -385,7 +385,7 @@ The `onzr now` command gives you details about the track being currently played:
 onzr now
 ```
 
-You can follow tracks being played in live using the `-f` option:
+You can follow tracks being played live using the `-f` option:
 
 ```sh
 onzr now -f
@@ -445,7 +445,7 @@ The `next` command plays the next track in queue:
 onzr next
 ```
 
-Note that it has no effect if you reach the end of the queue.
+Note that it has no effect if you have reached the end of the queue.
 
 ## `previous`
 
@@ -455,7 +455,7 @@ The `previous` command plays the previous track in queue:
 onzr previous
 ```
 
-Note that it has no effect if you reach the beginning of the queue.
+Note that it has no effect if you have reached the beginning of the queue.
 
 ## `state`
 
