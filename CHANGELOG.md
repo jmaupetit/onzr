@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
+- Add Python 3.15 support
 - Add support for user data
 - Add private playlists support (`playlist` command)
 - Add the `FAVORITE_SONGS_PAGINATE_BY` configuration setting
