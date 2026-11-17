@@ -160,11 +160,11 @@ def test_play(test_server, configured_onzr, track):
     configured_onzr.queue.add([track(track_id) for track_id in track_ids])
     assert len(configured_onzr.queue) == len(track_ids)
 
-    # Start playing: should be opening the file
+    # Start playing: should be playing the first track
     assert client.play() == PlayerControl(
         action="play",
         state=ServerState(
-            player="State.Opening", queue=QueueState(playing=None, queued=3)
+            player="State.Playing", queue=QueueState(playing=0, queued=3)
         ),
     )
 
@@ -178,7 +178,7 @@ def test_play(test_server, configured_onzr, track):
     assert client.play(rank=1) == PlayerControl(
         action="play",
         state=ServerState(
-            player="State.Opening", queue=QueueState(playing=0, queued=3)
+            player="State.Playing", queue=QueueState(playing=1, queued=3)
         ),
     )
 
@@ -206,7 +206,7 @@ def test_pause(test_server, configured_onzr, track):
     configured_onzr.queue.add([track(track_id) for track_id in track_ids])
     assert len(configured_onzr.queue) == len(track_ids)
 
-    # Start playing: should be opening the file
+    # Start playing: should be playing the first track
     configured_onzr.player.play()
 
     # Wait a bit and we should really be playing something
@@ -247,7 +247,7 @@ def test_stop(test_server, configured_onzr, track):
     configured_onzr.queue.add([track(track_id) for track_id in track_ids])
     assert len(configured_onzr.queue) == len(track_ids)
 
-    # Start playing: should be opening the file
+    # Start playing: should be playing the first track
     configured_onzr.player.play()
 
     # Wait a bit and we should really be playing something
@@ -286,7 +286,7 @@ def test_next(test_server, configured_onzr, track):
     assert client.next() == PlayerControl(
         action="next",
         state=ServerState(
-            player="State.Opening", queue=QueueState(playing=None, queued=3)
+            player="State.Playing", queue=QueueState(playing=0, queued=3)
         ),
     )
 
@@ -300,7 +300,7 @@ def test_next(test_server, configured_onzr, track):
     assert client.next() == PlayerControl(
         action="next",
         state=ServerState(
-            player="State.Opening", queue=QueueState(playing=0, queued=3)
+            player="State.Playing", queue=QueueState(playing=1, queued=3)
         ),
     )
 
@@ -332,7 +332,7 @@ def test_previous(test_server, configured_onzr, track):
     assert client.previous() == PlayerControl(
         action="previous",
         state=ServerState(
-            player="State.Opening", queue=QueueState(playing=None, queued=3)
+            player="State.Playing", queue=QueueState(playing=0, queued=3)
         ),
     )
     # Wait a bit and we should really be playing something
@@ -359,7 +359,7 @@ def test_previous(test_server, configured_onzr, track):
     assert client.previous() == PlayerControl(
         action="previous",
         state=ServerState(
-            player="State.Opening", queue=QueueState(playing=0, queued=3)
+            player="State.Playing", queue=QueueState(playing=1, queued=3)
         ),
     )
     # Wait a bit and we should be playing the previous track
@@ -372,7 +372,7 @@ def test_previous(test_server, configured_onzr, track):
     assert client.previous() == PlayerControl(
         action="previous",
         state=ServerState(
-            player="State.Opening", queue=QueueState(playing=1, queued=3)
+            player="State.Playing", queue=QueueState(playing=0, queued=3)
         ),
     )
     # Wait a bit and we should be playing the previous track

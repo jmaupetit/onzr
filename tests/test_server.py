@@ -198,14 +198,16 @@ def test_play(client, configured_onzr, track):
     track_ids = [1, 2, 3]
     configured_onzr.queue.add([track(track_id) for track_id in track_ids])
 
-    # FIXME
     # Start playing
+    #
+    # Nota bene: the test client does not serve HTTP requests, VLC cannot fetch the
+    # track stream, hence the player ends.
     response = client.post("/play", json={})
     status = response.json()
     assert status == {
         "action": "play",
         "state": {
-            "player": "State.Opening",
+            "player": "State.Ended",
             "queue": {"playing": None, "queued": 3},
         },
     }

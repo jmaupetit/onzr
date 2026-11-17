@@ -743,7 +743,10 @@ def test_play_command(test_server, configured_cli_runner, configured_onzr, track
     result = configured_cli_runner.invoke(cli, ["play"])
     assert result.exit_code == ExitCodes.OK
     assert configured_onzr.player.is_playing() == 1
-    assert configured_onzr.player.get_state() == vlc.State.Opening
+    assert configured_onzr.player.get_state() == vlc.State.Playing
+    assert configured_onzr.queue.playing == 0
+    assert "Player: Playing" in result.stdout
+    assert "Queue: 1 / 3" in result.stdout
 
     # Play an invalid track rank
     result = configured_cli_runner.invoke(cli, ["play", "--rank", "0"])
@@ -754,13 +757,17 @@ def test_play_command(test_server, configured_cli_runner, configured_onzr, track
     result = configured_cli_runner.invoke(cli, ["play", "--rank", "1"])
     assert result.exit_code == ExitCodes.OK
     assert configured_onzr.player.is_playing() == 1
-    assert configured_onzr.player.get_state() == vlc.State.Opening
+    assert configured_onzr.player.get_state() == vlc.State.Playing
+    assert configured_onzr.queue.playing == 0
+    assert "Queue: 1 / 3" in result.stdout
 
     # Play the second track in queue
     result = configured_cli_runner.invoke(cli, ["play", "--rank", "2"])
     assert result.exit_code == ExitCodes.OK
     assert configured_onzr.player.is_playing() == 1
-    assert configured_onzr.player.get_state() == vlc.State.Opening
+    assert configured_onzr.player.get_state() == vlc.State.Playing
+    assert configured_onzr.queue.playing == 1
+    assert "Queue: 2 / 3" in result.stdout
 
     # Stop the player
     configured_onzr.player.stop()

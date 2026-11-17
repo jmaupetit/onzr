@@ -83,6 +83,10 @@ class Settings(BaseSettings):
     # Player
     # How long should we wait before getting player status after player control action?
     STATE_DELAY: float = 0.005  # in seconds
+    # Polling interval and timeout while waiting for the player to leave transient
+    # states (opening, buffering) after a player control action.
+    STATE_POLL_INTERVAL: float = 0.05  # in seconds
+    STATE_TIMEOUT: float = 5.0  # in seconds
 
     model_config = SettingsConfigDict(
         env_prefix=f"{APP_NAME.upper()}_",

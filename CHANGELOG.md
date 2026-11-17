@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Report settled player state after player control actions (was stale)
+
 ## [0.7.0] - 2026-11-17
 
 ### Added

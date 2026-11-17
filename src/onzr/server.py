@@ -120,7 +120,7 @@ async def play(
         onzr.player.play_item_at_index(params.rank)
     else:
         onzr.player.play()
-    return PlayerControl(action="play", state=onzr.state())
+    return PlayerControl(action="play", state=await onzr.settled_state())
 
 
 @router.post("/pause")
@@ -129,7 +129,7 @@ async def pause(
 ) -> PlayerControl:
     """Pause/resume playing."""
     onzr.player.pause()
-    return PlayerControl(action="pause", state=onzr.state())
+    return PlayerControl(action="pause", state=await onzr.settled_state())
 
 
 @router.post("/stop")
@@ -138,7 +138,7 @@ async def stop(
 ) -> PlayerControl:
     """Stop playing."""
     onzr.player.stop()
-    return PlayerControl(action="stop", state=onzr.state())
+    return PlayerControl(action="stop", state=await onzr.settled_state())
 
 
 @router.post("/next")
@@ -147,7 +147,7 @@ async def next(
 ) -> PlayerControl:
     """Play next track in queue."""
     onzr.player.next()
-    return PlayerControl(action="next", state=onzr.state())
+    return PlayerControl(action="next", state=await onzr.settled_state())
 
 
 @router.post("/previous")
@@ -156,7 +156,7 @@ async def previous(
 ) -> PlayerControl:
     """Play previous track in queue."""
     onzr.player.previous()
-    return PlayerControl(action="previous", state=onzr.state())
+    return PlayerControl(action="previous", state=await onzr.settled_state())
 
 
 @router.get("/state")

@@ -1,12 +1,13 @@
 """Onzr: core module."""
 
+import asyncio
 import logging
 import random
 from functools import cached_property
-from time import sleep
+from time import monotonic
 from typing import List
 
-from vlc import Instance, MediaList, MediaListPlayer
+from vlc import Instance, MediaList, MediaListPlayer, State
 
 from onzr.config import get_settings
 
@@ -129,8 +130,21 @@ class Onzr:
 
     def state(self) -> ServerState:
         """Get Onzr state."""
-        # Wait a bit before returning the server/player state, since after performing
-        # a control action on the player, its state may need some time to get updated.
-        sleep(self.settings.STATE_DELAY)
-
         return ServerState(player=str(self.player.get_state()), queue=self.queue.state)
+
+    async def settled_state(self) -> ServerState:
+        """Get Onzr state once the player left transient states.
+
+        After a player control action, VLC needs some time to update its state. When
+        playing, it also needs to fetch the track stream from this very server (which
+        updates the queue playing index), so we must not block the event loop while
+        waiting.
+        """
+        await asyncio.sleep(self.settings.STATE_DELAY)
+        deadline = monotonic() + self.settings.STATE_TIMEOUT
+        while (
+            self.player.get_state() in (State.Opening, State.Buffering)
+            and monotonic() < deadline
+        ):
+            await asyncio.sleep(self.settings.STATE_POLL_INTERVAL)
+        return self.state()
