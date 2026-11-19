@@ -670,10 +670,15 @@ class Track:
         """Get track full title (artist/title/album)."""
         return f"{self.artist} - {self.title} [{self.album}]"
 
-    def stream(self, quality: StreamQuality = StreamQuality.MP3_128) -> Iterator[bytes]:
+    def stream(
+        self,
+        quality: StreamQuality = StreamQuality.MP3_128,
+        timeout: float | None = None,
+    ) -> Iterator[bytes]:
         """Fetch track in-memory.
 
         quality (StreamQuality): audio quality to stream
+        timeout (float | None): stream request connect/read timeout (in seconds)
         """
         if (best := self.query_quality(quality)) != quality:
             logger.warning(
@@ -697,7 +702,7 @@ class Track:
         self.status = TrackStatus.IDLE
 
         url = self._get_url(quality)
-        with self.session.get(str(url), stream=True) as r:
+        with self.session.get(str(url), stream=True, timeout=timeout) as r:
             r.raise_for_status()
             filesize = int(r.headers.get("Content-Length", 0))
             logger.debug(f"Track size: {filesize}")

@@ -250,7 +250,7 @@ def test_server(responses, settings, configured_onzr):
 def track(responses, configured_onzr, faker, monkeypatch):
     """Track factory fixture."""
 
-    def stream_local_file(_) -> Generator[bytes, None, None]:
+    def stream_local_file(*args, **kwargs) -> Generator[bytes, None, None]:
         """Stream the same file for every track."""
         chunk_size: int = 2048 * 3
         with Path("./tests/intro-lvs.mp3").open("rb") as content:

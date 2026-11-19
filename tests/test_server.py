@@ -4,6 +4,8 @@ from io import BytesIO
 from time import sleep
 from unittest.mock import patch
 
+import pytest
+import requests
 from fastapi import status
 
 from onzr.models.core import PlayingState
@@ -167,15 +169,18 @@ def test_now_playing(client, configured_onzr, track):
     assert len(configured_onzr.queue) == len(track_ids)
 
     # Play
+    #
+    # Nota bene: the test client does not serve HTTP requests, VLC cannot fetch the
+    # track stream, hence the player fails and is automatically stopped.
     configured_onzr.player.play()
     sleep(0.5)
 
     response = client.get("/now")
     state = PlayingState(**response.json())
-    assert state.player.length == 0
-    assert state.player.position == 0
-    assert state.player.state == "State.Ended"
-    assert state.player.time == 0
+    assert state.player.length == -1
+    assert state.player.position == -1
+    assert state.player.state == "State.Stopped"
+    assert state.player.time == -1
     assert state.track is None
 
 
@@ -201,8 +206,10 @@ def test_play(client, configured_onzr, track):
     # Start playing
     #
     # Nota bene: the test client does not serve HTTP requests, VLC cannot fetch the
-    # track stream, hence the player ends.
-    response = client.post("/play", json={})
+    # track stream, hence the player ends (we disable automatic failure handling to
+    # avoid race conditions).
+    with patch.object(configured_onzr, "_skip_failed"):
+        response = client.post("/play", json={})
     status = response.json()
     assert status == {
         "action": "play",
@@ -334,3 +341,56 @@ def test_ping(client):
     response = client.get("/ping")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() is None
+
+
+def test_stream_track_refresh_failure(client, configured_onzr, track):
+    """Test the GET /queue/{rank}/stream endpoint when track refresh fails."""
+    configured_onzr.queue.add([track(1)])
+
+    with patch.object(
+        configured_onzr.queue[0], "refresh", side_effect=ValueError("ARL expired")
+    ):
+        with client.stream("GET", "/queue/0/stream") as response:
+            assert response.status_code == status.HTTP_502_BAD_GATEWAY
+    assert configured_onzr.queue.playing == 0
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        requests.exceptions.ConnectionError("Connection refused"),
+        requests.exceptions.ReadTimeout("Read timed out"),
+        requests.exceptions.HTTPError("403 Forbidden"),
+        StopIteration(),
+    ],
+)
+def test_stream_track_stream_failure(client, configured_onzr, track, error):
+    """Test the GET /queue/{rank}/stream endpoint when track stream fails."""
+    configured_onzr.queue.add([track(1)])
+
+    def failing_stream(*args, **kwargs):
+        raise error
+        yield b""  # pragma: no cover
+
+    with (
+        patch.object(configured_onzr.queue[0], "refresh"),
+        patch.object(configured_onzr.queue[0], "stream", failing_stream),
+    ):
+        with client.stream("GET", "/queue/0/stream") as response:
+            assert response.status_code == status.HTTP_502_BAD_GATEWAY
+
+
+def test_stream_track_timeout(client, configured_onzr, track, settings):
+    """Test the GET /queue/{rank}/stream endpoint passes the stream timeout."""
+    configured_onzr.queue.add([track(1)])
+
+    with (
+        patch.object(configured_onzr.queue[0], "refresh"),
+        patch.object(
+            configured_onzr.queue[0], "stream", return_value=iter([b"ID3"])
+        ) as mocked_stream,
+    ):
+        with client.stream("GET", "/queue/0/stream") as response:
+            assert response.status_code == status.HTTP_200_OK
+            assert response.read() == b"ID3"
+    assert mocked_stream.call_args.kwargs["timeout"] == settings.STREAM_TIMEOUT

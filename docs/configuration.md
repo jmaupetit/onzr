@@ -60,6 +60,27 @@ Default: `MP3_128`
 
 ---
 
+### `STREAM_TIMEOUT`
+
+Connection and read timeout (in seconds) when fetching a track stream from
+Deezer. If Deezer does not respond in time, the track is considered as failed
+and the next track in queue will be played.
+
+Default: `10.0`
+
+---
+
+### `MAX_CONSECUTIVE_FAILURES`
+
+When a track cannot be played (_e.g._ stream not available or expired `ARL`),
+Onzr automatically skips to the next track in queue. To avoid skipping the
+whole queue when nothing can be played, the player stops after this number of
+consecutive failures.
+
+Default: `5`
+
+---
+
 ### `CONNECTION_POOL_MAXSIZE`
 
 Sets up the HTTP requests connection pool maximal size, _i.e._ the maximal number
