@@ -397,7 +397,7 @@ onzr now -f
 
 !!! Tip
 
-    Hit ++ctrl+c++ to kill the command and restore your shell prompt.
+    Hit ++q++ to quit follow mode and restore your shell prompt.
 
 ## `play`
 

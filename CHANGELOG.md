@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- CLI: type `q` to exit the `now --follow` mode (exit code is now 0)
+
 ### Fixed
 
 - Report settled player state after player control actions (was stale)

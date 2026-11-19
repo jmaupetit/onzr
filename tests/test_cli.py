@@ -726,6 +726,35 @@ def test_now_command(
     assert " 00:02:08" in result.stdout
 
 
+def test_now_command_follow_quit(test_server, configured_cli_runner):
+    """Test the `onzr now --follow` command exits cleanly when typing `q`."""
+    keys = iter([None, "x", "q"])
+
+    @contextmanager
+    def follow_keys():
+        yield lambda timeout: next(keys)
+
+    with patch("onzr.cli.follow_keys", follow_keys):
+        result = configured_cli_runner.invoke(cli, ["now", "--follow"])
+    assert result.exit_code == ExitCodes.OK
+    assert next(keys, "exhausted") == "exhausted"
+
+
+def test_now_command_follow_ctrl_c(test_server, configured_cli_runner):
+    """Test the `onzr now --follow` command exits cleanly on CTRL+C."""
+
+    def interrupt(timeout):
+        raise KeyboardInterrupt
+
+    @contextmanager
+    def follow_keys():
+        yield interrupt
+
+    with patch("onzr.cli.follow_keys", follow_keys):
+        result = configured_cli_runner.invoke(cli, ["now", "--follow"])
+    assert result.exit_code == ExitCodes.OK
+
+
 def test_play_command(test_server, configured_cli_runner, configured_onzr, track):
     """Test the `onzr play` command."""
     # Empty queue

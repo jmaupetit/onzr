@@ -5,8 +5,11 @@ import logging
 import logging.config
 import os
 import re
+import select
 import sys
+import termios
 import time
+import tty
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from enum import IntEnum
 from functools import cache, wraps
@@ -15,7 +18,7 @@ from itertools import chain
 from operator import attrgetter
 from pathlib import Path
 from random import shuffle
-from typing import Iterable, Iterator, List, NoReturn, Optional, Set, cast
+from typing import Callable, Iterable, Iterator, List, NoReturn, Optional, Set, cast
 
 import click
 import pendulum
@@ -780,6 +783,35 @@ def clear():
     _print_server_state(state)
 
 
+@contextmanager
+def follow_keys() -> Iterator[Callable[[float], str | None]]:
+    """Yield a non-blocking single key reader (stdin in cbreak mode).
+
+    If stdin is not a TTY, the reader only waits for the given timeout.
+    """
+    if not sys.stdin.isatty():
+
+        def wait(timeout: float) -> str | None:
+            time.sleep(timeout)
+            return None
+
+        yield wait
+        return
+
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+
+    def read_key(timeout: float) -> str | None:
+        ready, _, _ = select.select([fd], [], [], timeout)
+        return os.read(fd, 1).decode(errors="ignore") if ready else None
+
+    try:
+        tty.setcbreak(fd)
+        yield read_key
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+
 @cli.command()
 @require_server
 def now(
@@ -789,8 +821,7 @@ def now(
 ):
     """Show details about the track that is being played and the player status.
 
-    In follow mode, you won't get the prompt back. You should type CTRL+C to exit this
-    mode.
+    In follow mode, type `q` (or CTRL+C) to exit.
     """
     client = OnzrClient()
     theme = get_theme()
@@ -879,10 +910,12 @@ def now(
         console.print(display())
         return
 
-    with Live(display(), refresh_per_second=4) as live:
-        while True:
-            time.sleep(0.1)
-            live.update(display())
+    with follow_keys() as read_key, Live(display(), refresh_per_second=4) as live:
+        try:
+            while read_key(0.1) != "q":
+                live.update(display())
+        except KeyboardInterrupt:
+            pass
 
 
 @cli.command()

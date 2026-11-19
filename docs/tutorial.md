@@ -320,6 +320,8 @@ player:
     onzr now -f
     ```
 
+    Hit ++q++ to quit follow mode.
+
 ## Create playlists on-the-fly
 
 One last thing: the `mix` command is Onzr's secret sauce! This command can
