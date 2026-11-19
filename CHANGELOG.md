@@ -11,6 +11,7 @@ and this project adheres to
 ### Changed
 
 - CLI: type `q` to exit the `now --follow` mode (exit code is now 0)
+- CLI: show a spinner while adding tracks to the queue (`add` command)
 
 ### Fixed
 

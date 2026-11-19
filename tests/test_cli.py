@@ -641,6 +641,13 @@ def test_add_command(
     wait_for_requests()
     assert [t.track_id for t in configured_onzr.queue.tracks] == track_ids * 2
 
+    # Multiple ids per line and blank lines on stdin
+    result = configured_cli_runner.invoke(cli, ["add", "-"], input="1 2\n\n-3\n")
+    assert result.exit_code == ExitCodes.OK
+    assert "Added 3 track(s) to queue" in result.stdout
+    wait_for_requests()
+    assert [t.track_id for t in configured_onzr.queue.tracks] == track_ids * 3
+
 
 def test_queue_command(test_server, configured_cli_runner, configured_onzr, track):
     """Test the `onzr queue` command."""

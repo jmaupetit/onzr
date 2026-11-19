@@ -689,13 +689,16 @@ def add(track_ids: List[str]):
     """Add one (or more) tracks to the queue."""
     if track_ids == ["-"]:
         logger.debug("Reading track ids from stdin…")
-        track_ids = click.get_text_stream("stdin").read().split()
+        track_ids = []
+        with progress("Reading track ids…") as status:
+            for line in click.get_text_stream("stdin"):
+                track_ids.extend(line.split())
+                status.update(f"Reading track ids… ({len(track_ids)})")
         logger.debug(f"{track_ids=}")
 
-    console.print("➕ Adding tracks to queue…")
-
     client = OnzrClient()
-    response = client.queue_add(track_ids)
+    with progress(f"Adding {len(track_ids)} track(s) to queue…"):
+        response = client.queue_add(track_ids)
 
     console.print(f"✅ {response.message}")
 
