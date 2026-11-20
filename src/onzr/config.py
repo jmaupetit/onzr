@@ -87,6 +87,10 @@ class Settings(BaseSettings):
     # states (opening, buffering) after a player control action.
     STATE_POLL_INTERVAL: float = 0.05  # in seconds
     STATE_TIMEOUT: float = 5.0  # in seconds
+    # Deezer track stream connect/read timeout
+    STREAM_TIMEOUT: float = 10.0  # in seconds
+    # Stop playing after this number of consecutive track playback failures
+    MAX_CONSECUTIVE_FAILURES: int = 5
 
     model_config = SettingsConfigDict(
         env_prefix=f"{APP_NAME.upper()}_",

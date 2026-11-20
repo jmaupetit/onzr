@@ -3,11 +3,12 @@
 import asyncio
 import logging
 import random
+import threading
 from functools import cached_property
 from time import monotonic
 from typing import List
 
-from vlc import Instance, MediaList, MediaListPlayer, State
+from vlc import EventType, Instance, MediaList, MediaListPlayer, State
 
 from onzr.config import get_settings
 
@@ -127,6 +128,42 @@ class Onzr:
 
         # Queue
         self.queue: Queue = Queue(player=self.player)
+
+        # Automatically skip tracks that cannot be played
+        self._consecutive_failures: int = 0
+        events = self.player.get_media_player().event_manager()
+        events.event_attach(EventType.MediaPlayerEncounteredError, self._on_error)
+        events.event_attach(EventType.MediaPlayerPlaying, self._on_playing)
+
+    def _on_playing(self, event) -> None:
+        """Reset consecutive failures counter once a track is playing."""
+        self._consecutive_failures = 0
+
+    def _on_error(self, event) -> None:
+        """Handle player errors (called from a VLC thread).
+
+        LibVLC functions must not be called from an event callback (this would
+        deadlock), hence we skip the failed track from a separate thread.
+        """
+        logger.warning("Player cannot play track at rank %s", self.queue.playing)
+        threading.Thread(target=self._skip_failed, daemon=True).start()
+
+    def _skip_failed(self) -> None:
+        """Play the next track after a playback failure, or stop playing."""
+        self._consecutive_failures += 1
+        if self._consecutive_failures >= self.settings.MAX_CONSECUTIVE_FAILURES:
+            logger.error(
+                "Stop playing after %d consecutive failures",
+                self._consecutive_failures,
+            )
+            self.player.stop()
+            return
+        if self.queue.playing is None or self.queue.playing >= len(self.queue) - 1:
+            logger.info("No more track to play after failure")
+            self.player.stop()
+            return
+        logger.info("Skipping to next track")
+        self.player.next()
 
     def state(self) -> ServerState:
         """Get Onzr state."""

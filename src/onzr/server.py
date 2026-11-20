@@ -1,7 +1,9 @@
 """Onzr: http server."""
 
+import builtins
 import logging
 from functools import lru_cache
+from itertools import chain
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, status
@@ -82,10 +84,22 @@ async def stream_track(
         )
     onzr.queue.playing = rank
     track = onzr.queue[rank]
-    # Refresh track token in case it expired
-    track.refresh()
-    quality = track.query_quality(settings.QUALITY)
-    return StreamingResponse(track.stream(quality), media_type=quality.media_type)
+    try:
+        # Refresh track token in case it expired
+        track.refresh()
+        quality = track.query_quality(settings.QUALITY)
+        chunks = track.stream(quality, timeout=settings.STREAM_TIMEOUT)
+        # Fetch the first chunk now so that stream failures are reported to the
+        # player as an HTTP error instead of an empty successful response.
+        # Note: `next` builtin is shadowed by the `/next` route below.
+        first = builtins.next(chunks)
+    except Exception as err:
+        logger.exception("Cannot stream track %s (rank: %d)", track, rank)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Cannot stream track: {err}",
+        ) from err
+    return StreamingResponse(chain([first], chunks), media_type=quality.media_type)
 
 
 @router.get("/now")

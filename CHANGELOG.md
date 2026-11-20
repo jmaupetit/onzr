@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Server: automatically play the next track when the current one cannot be
+  played (configurable `STREAM_TIMEOUT` and `MAX_CONSECUTIVE_FAILURES`)
+
 ### Changed
 
 - CLI: type `q` to exit the `now --follow` mode (exit code is now 0)
